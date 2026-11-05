@@ -17,8 +17,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
-      - name: Load safe local build settings
-        run: cp .env.example .env
+      - name: Export safe frontend build settings
+        shell: bash
+        run: |
+          set -a
+          source .env.example
+          set +a
+          printf 'NEXT_PUBLIC_API_URL=%s\n' "$NEXT_PUBLIC_API_URL" >> "$GITHUB_ENV"
       - name: Set up Node.js LTS
         uses: actions/setup-node@v7
         with:
