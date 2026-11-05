@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node.js LTS
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check formatting
+        run: npm --workspace frontend run format:check
+      - name: Lint
+        run: npm --workspace frontend run lint
+      - name: Test (when configured)
+        run: npm --workspace frontend test --if-present
+      - name: Build
+        run: npm --workspace frontend run build
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+psycopg2://ci:ci@127.0.0.1:5432/ci
+      POSTGRES_PORT: "5432"
+      CORS_ORIGINS: http://localhost:3000
+      SQLALCHEMY_ECHO: "false"
+      API_HOST: 127.0.0.1
+      API_PORT: "8000"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend and development dependencies
+        working-directory: backend
+        run: python -m pip install -e ".[dev]"
+      - name: Check formatting
+        working-directory: backend
+        run: python -m ruff format --check .
+      - name: Lint
+        working-directory: backend
+        run: python -m ruff check .
+      - name: Test
+        working-directory: backend
+        run: python -m pytest

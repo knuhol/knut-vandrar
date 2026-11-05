@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    command: ["postgres", "-p", "${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env}"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:?Set POSTGRES_PORT in .env}:${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env} -U ${POSTGRES_USER:?Set POSTGRES_USER in .env} -d ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE in .env}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+      args:
+        API_PORT: ${API_PORT:?Set API_PORT in .env}
+    environment:
+      DATABASE_SERVICE_HOST: ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST in .env}
+      POSTGRES_INTERNAL_PORT: ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      API_HOST: ${API_HOST:?Set API_HOST in .env}
+      API_PORT: ${API_PORT:?Set API_PORT in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
+      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:?Set SQLALCHEMY_ECHO in .env}
+    ports:
+      - "${BACKEND_PORT:?Set BACKEND_PORT in .env}:${API_PORT:?Set API_PORT in .env}"
+    volumes:
+      - ./backend:/app
+    command: sh -c "alembic -c alembic.ini upgrade head && uvicorn src.main:app --host $${API_HOST} --port $${API_PORT} --reload"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT:?Set API_PORT in .env}/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+      args:
+        FRONTEND_INTERNAL_PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
+      PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
+      FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST in .env}
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:?Set WATCHPACK_POLLING in .env}
+    ports:
+      - "${FRONTEND_PORT:?Set FRONTEND_PORT in .env}:${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    command: sh -c "npm run dev -- --hostname $${FRONTEND_HOST}"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  frontend_node_modules:
+  frontend_next:
+
+networks:
+  default:

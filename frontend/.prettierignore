@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+build
+coverage
+out
+.turbo
+*.min.*
+*.generated.*
+next-env.d.ts
+*.tsbuildinfo
+package-lock.json

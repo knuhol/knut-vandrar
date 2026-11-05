@@ -1,0 +1,26 @@
+{
+  "name": "knut-vandrar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Knut vandrar - Full-stack travel companion monorepo",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "docker compose up --build",
+    "build": "docker compose build",
+    "start": "docker compose up -d",
+    "stop": "docker compose down",
+    "fresh": "docker compose down -v && docker compose up --build",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt"
+  },
+  "keywords": [
+    "travel",
+    "nextjs",
+    "fastapi",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "MIT"
+}
