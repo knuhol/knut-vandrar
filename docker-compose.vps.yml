@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    command: ["postgres", "-p", "${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT}"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:?Set POSTGRES_PORT}:${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_INTERNAL_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: ${DOCKER_TARGET:?Set DOCKER_TARGET in .env}
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:?Set PYTHON_VERSION}
+        API_PORT: ${API_PORT:?Set API_PORT}
+        API_HOST: ${API_HOST:?Set API_HOST}
+    restart: unless-stopped
+    environment:
+      DATABASE_SERVICE_HOST: ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST}
+      POSTGRES_INTERNAL_PORT: ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      API_HOST: ${API_HOST:?Set API_HOST}
+      API_PORT: ${API_PORT:?Set API_PORT}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS}
+    networks:
+      - default
+      - traefik
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT}/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: ${DOCKER_TARGET:?Set DOCKER_TARGET in .env}
+      args:
+        NODE_VERSION: ${NODE_VERSION:?Set NODE_VERSION}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL}
+        FRONTEND_INTERNAL_PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT}
+        FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
+    restart: unless-stopped
+    environment:
+      PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT}
+      FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
+    networks:
+      - traefik
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + process.env.PORT + '/').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+  traefik:
+    name: vandrar_web-net
+    external: true

@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
+    branches:
+      - main
+      - dev
   workflow_dispatch:
 
 permissions:
@@ -44,16 +47,18 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql+psycopg2://ci:ci@127.0.0.1:5432/ci
-      POSTGRES_PORT: "5432"
-      CORS_ORIGINS: http://localhost:3000
-      SQLALCHEMY_ECHO: "false"
-      API_HOST: 127.0.0.1
-      API_PORT: "8000"
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
+      - name: Export backend settings from template
+        shell: bash
+        run: |
+          set -a
+          source .env.example
+          set +a
+          for name in DATABASE_URL POSTGRES_PORT CORS_ORIGINS API_HOST API_PORT; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
+          done
       - name: Set up Python
         uses: actions/setup-python@v7.1.0
         with:
@@ -84,14 +89,65 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
       - name: Configure local Compose environment
-        run: cp .env.example .env
+        shell: bash
+        run: |
+          cp .env.example .env
+          set -a
+          source .env.example
+          set +a
+          for name in FRONTEND_PORT BACKEND_PORT; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
+          done
       - name: Build and start services
         run: ./scripts/compose.sh up --build --detach --wait --wait-timeout 240
       - name: Check application endpoints
         run: |
-          curl --fail --silent --show-error --output /dev/null --retry 5 --retry-connrefused --retry-delay 2 http://localhost:3000/
-          curl --fail --silent --show-error --output /dev/null http://localhost:8000/health
+          curl --fail --silent --show-error --output /dev/null --retry 5 --retry-connrefused --retry-delay 2 "http://localhost:${FRONTEND_PORT}/"
+          curl --fail --silent --show-error --output /dev/null "http://localhost:${BACKEND_PORT}/health"
       - name: Stop services
         if: always()
         run: ./scripts/compose.sh down --volumes
 
+  deploy:
+    name: Deploy to VPS
+    needs: [frontend, backend, docker]
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.base.ref == 'main' &&
+       github.event.pull_request.head.ref == 'dev' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'development' || 'production' }}
+      url: ${{ github.event_name == 'pull_request' && 'https://dev.vandrar.se' || 'https://knut.vandrar.se' }}
+    concurrency:
+      group: deploy-${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+      cancel-in-progress: false
+    steps:
+      - name: Configure SSH
+        shell: bash
+        env:
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Request VPS deployment
+        shell: bash
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DEPLOY_ENV: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+          DEPLOY_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          case "$DEPLOY_ENV" in
+            dev) checkout=/srv/knut-vandrar/dev; branch=dev ;;
+            prod) checkout=/srv/knut-vandrar/prod; branch=main ;;
+            *) exit 2 ;;
+          esac
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SERVER_USER@$SERVER_HOST" \
+            "git -C '$checkout' fetch --prune origin '+refs/heads/$branch:refs/remotes/origin/$branch' && git -C '$checkout' checkout --detach '$DEPLOY_SHA' && cd '$checkout' && ./scripts/deploy.sh '$DEPLOY_ENV' '$DEPLOY_SHA'"

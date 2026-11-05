@@ -1,0 +1,22 @@
+services:
+  backend:
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=vandrar_web-net
+      - traefik.http.routers.knut-vandrar-prod-api.rule=Host(`knut.vandrar.se`) && PathPrefix(`/api`)
+      - traefik.http.routers.knut-vandrar-prod-api.entrypoints=websecure
+      - traefik.http.routers.knut-vandrar-prod-api.tls=true
+      - traefik.http.routers.knut-vandrar-prod-api.tls.certresolver=myresolver
+      - traefik.http.routers.knut-vandrar-prod-api.priority=100
+      - traefik.http.services.knut-vandrar-prod-api.loadbalancer.server.port=${API_PORT}
+
+  frontend:
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=vandrar_web-net
+      - traefik.http.routers.knut-vandrar-prod-web.rule=Host(`knut.vandrar.se`)
+      - traefik.http.routers.knut-vandrar-prod-web.entrypoints=websecure
+      - traefik.http.routers.knut-vandrar-prod-web.tls=true
+      - traefik.http.routers.knut-vandrar-prod-web.tls.certresolver=myresolver
+      - traefik.http.routers.knut-vandrar-prod-web.priority=10
+      - traefik.http.services.knut-vandrar-prod-web.loadbalancer.server.port=${FRONTEND_INTERNAL_PORT}

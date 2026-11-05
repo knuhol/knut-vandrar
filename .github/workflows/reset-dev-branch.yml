@@ -1,0 +1,34 @@
+name: Reset dev to main after promotion
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reset-dev:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.ref == 'dev' &&
+       github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reset dev to the merged main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MAIN_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          if [[ -z "$MAIN_SHA" ]]; then
+            MAIN_SHA="$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
+          fi
+          gh api --method PATCH "repos/$GH_REPO/git/refs/heads/dev" \
+            -f sha="$MAIN_SHA" \
+            -F force=true

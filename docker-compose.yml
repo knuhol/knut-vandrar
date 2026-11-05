@@ -1,3 +1,5 @@
+name: knut-vandrar
+
 services:
   postgres:
     image: postgres:18.6-alpine
@@ -16,7 +18,7 @@ services:
           - ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST in .env}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env} -U ${POSTGRES_USER:?Set POSTGRES_USER in .env} -d ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE in .env}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
 
@@ -24,10 +26,11 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      target: development
+      target: ${DOCKER_TARGET:?Set DOCKER_TARGET in .env}
       args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-}
+        PYTHON_VERSION: ${PYTHON_VERSION:?Set PYTHON_VERSION from .python-version}
         API_PORT: ${API_PORT:?Set API_PORT in .env}
+        API_HOST: ${API_HOST:?Set API_HOST in .env}
     environment:
       DATABASE_SERVICE_HOST: ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST in .env}
       POSTGRES_INTERNAL_PORT: ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env}
@@ -37,7 +40,6 @@ services:
       API_HOST: ${API_HOST:?Set API_HOST in .env}
       API_PORT: ${API_PORT:?Set API_PORT in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
-      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:?Set SQLALCHEMY_ECHO in .env}
     ports:
       - "${BACKEND_PORT:?Set BACKEND_PORT in .env}:${API_PORT:?Set API_PORT in .env}"
     volumes:
@@ -45,10 +47,10 @@ services:
     command: sh -c "alembic -c alembic.ini upgrade head && uvicorn src.main:app --host $${API_HOST} --port $${API_PORT} --reload"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT:?Set API_PORT in .env}/health', timeout=3)"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,15 +59,14 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      target: development
+      target: ${DOCKER_TARGET:?Set DOCKER_TARGET in .env}
       args:
-        NODE_VERSION: ${NODE_VERSION:-}
+        NODE_VERSION: ${NODE_VERSION:?Set NODE_VERSION from .nvmrc}
         FRONTEND_INTERNAL_PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
       PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
       FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST in .env}
-      WATCHPACK_POLLING: ${WATCHPACK_POLLING:?Set WATCHPACK_POLLING in .env}
     ports:
       - "${FRONTEND_PORT:?Set FRONTEND_PORT in .env}:${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}"
     volumes:
@@ -78,17 +79,18 @@ services:
         - CMD
         - node
         - -e
-        - "fetch(`http://127.0.0.1:$${process.env.PORT}`).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 15s
+        - "fetch('http://127.0.0.1:' + process.env.PORT + '/').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
       backend:
         condition: service_healthy
 
 volumes:
   postgres_data_v18:
+    name: knut-vandrar_postgres_data_v18
   frontend_node_modules:
   frontend_next:
 

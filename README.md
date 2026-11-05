@@ -29,6 +29,10 @@ Stop the services with `Ctrl+C`; use `docker compose down` to remove containers.
 
 When upgrading an existing PostgreSQL 16 installation, PostgreSQL does not support reusing its data directory directly in PostgreSQL 18. Before changing Compose, create a logical backup with `docker compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /tmp/knut-vandrar-pg16.dump`. Then start only the new database with `docker compose up -d postgres`, restore it with `docker compose exec -T postgres sh -c 'pg_restore --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /tmp/knut-vandrar-pg16.dump`, and start the remaining services with `./scripts/compose.sh up --build`. Keep the old volume until the restored data is verified.
 
+## VPS deployment
+
+See [the VPS deployment guide](docs/vps-deployment.md) for production and development deployment, Traefik routing, public database ports, GitHub setup, and VPS preparation.
+
 ## Development
 
 The frontend source and backend source are mounted into their development containers. Next.js and Uvicorn reload when files change. On frontend startup, the container compares the package manifests with a hash saved in its `node_modules` volume and runs `npm ci` if dependencies have changed; this keeps persistent volumes in sync after rebuilds. Database migrations run automatically each time the backend container starts. `CORS_ORIGINS` controls allowed browser origins. The frontend validates and uses `NEXT_PUBLIC_API_URL` for its API health request; it is browser-visible and must not contain credentials or other secrets.
