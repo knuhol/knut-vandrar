@@ -44,16 +44,18 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql+psycopg2://ci:ci@127.0.0.1:5432/ci
-      POSTGRES_PORT: "5432"
-      CORS_ORIGINS: http://localhost:3000
-      SQLALCHEMY_ECHO: "false"
-      API_HOST: 127.0.0.1
-      API_PORT: "8000"
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
+      - name: Export backend settings from template
+        shell: bash
+        run: |
+          set -a
+          source .env.example
+          set +a
+          for name in DATABASE_URL POSTGRES_PORT CORS_ORIGINS SQLALCHEMY_ECHO API_HOST API_PORT; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
+          done
       - name: Set up Python
         uses: actions/setup-python@v7.1.0
         with:
@@ -84,13 +86,21 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
       - name: Configure local Compose environment
-        run: cp .env.example .env
+        shell: bash
+        run: |
+          cp .env.example .env
+          set -a
+          source .env.example
+          set +a
+          for name in FRONTEND_PORT BACKEND_PORT; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
+          done
       - name: Build and start services
         run: ./scripts/compose.sh up --build --detach --wait --wait-timeout 240
       - name: Check application endpoints
         run: |
-          curl --fail --silent --show-error --output /dev/null --retry 5 --retry-connrefused --retry-delay 2 http://localhost:3000/
-          curl --fail --silent --show-error --output /dev/null http://localhost:8000/health
+          curl --fail --silent --show-error --output /dev/null --retry 5 --retry-connrefused --retry-delay 2 "http://localhost:${FRONTEND_PORT}/"
+          curl --fail --silent --show-error --output /dev/null "http://localhost:${BACKEND_PORT}/health"
       - name: Stop services
         if: always()
         run: ./scripts/compose.sh down --volumes
