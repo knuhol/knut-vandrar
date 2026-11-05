@@ -1,4 +1,4 @@
-FROM node:20-alpine AS development
+FROM node:22-alpine AS development
 ARG FRONTEND_INTERNAL_PORT
 WORKDIR /app
 COPY package*.json ./

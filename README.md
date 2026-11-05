@@ -27,7 +27,33 @@ Stop the services with `Ctrl+C`; use `docker compose down` to remove containers.
 
 ## Development
 
-The frontend source and backend source are mounted into their development containers. Next.js and Uvicorn reload when files change. Database migrations run automatically each time the backend container starts. `CORS_ORIGINS` controls allowed browser origins. The frontend validates and uses `NEXT_PUBLIC_API_URL` for its API health request; it is browser-visible and must not contain credentials or other secrets.
+The frontend source and backend source are mounted into their development containers. Next.js and Uvicorn reload when files change. On frontend startup, the container compares the package manifests with a hash saved in its `node_modules` volume and runs `npm ci` if dependencies have changed; this keeps persistent volumes in sync after rebuilds. Database migrations run automatically each time the backend container starts. `CORS_ORIGINS` controls allowed browser origins. The frontend validates and uses `NEXT_PUBLIC_API_URL` for its API health request; it is browser-visible and must not contain credentials or other secrets.
+
+## API schema and typed frontend client
+
+FastAPI is the source of truth for the API contract and serves its OpenAPI document at `/openapi.json`. The frontend uses the [feTS client](https://www.fets.dev/) with a generated TypeScript OpenAPI constant; the API client takes its endpoint from `NEXT_PUBLIC_API_URL`.
+
+feTS is a TypeScript client library, so it is installed in `frontend/`. The backend remains FastAPI and uses its built-in `app.openapi()` method; no feTS Python package or server is needed. The exporter imports the FastAPI app directly, so schema generation does not require a running PostgreSQL connection.
+
+After creating `backend/.venv`, installing `backend`'s `[dev]` dependencies, activating that environment, and creating the project `.env`, generate the checked-in client schema from the repository root:
+
+```sh
+npm --workspace frontend run generate:api
+```
+
+Check that the committed generated file matches the current backend schema:
+
+```sh
+npm --workspace frontend run check:api
+```
+
+When the Docker Compose stack is running, generate using the backend container's Python environment and the host-mounted frontend source:
+
+```sh
+make generate-api-docker
+```
+
+The generated `frontend/src/generated/openapi.ts` is committed. CI and `make check` verify it is current. After changing API routes or response/request models, regenerate the schema and include the updated file with the backend change. feTS itself does not require client code generation; this small exporter serializes FastAPI's OpenAPI output as a TypeScript `as const` document so feTS can infer the API types as its documented client workflow expects.
 
 Run backend tests locally from the repository root:
 

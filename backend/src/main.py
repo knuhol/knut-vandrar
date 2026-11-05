@@ -2,6 +2,7 @@
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -20,13 +21,25 @@ app.add_middleware(
 app.include_router(locations_router)
 
 
+class HealthUnavailable(BaseModel):
+    detail: str
+
+
 @app.get("/", tags=["health"])
 def root() -> dict[str, str]:
     return {"message": "Knut vandrar API", "health": "/health"}
 
 
-@app.get("/health", tags=["health"])
-@app.get("/api/health", tags=["health"])
+@app.get(
+    "/health",
+    tags=["health"],
+    responses={503: {"model": HealthUnavailable, "description": "Database unavailable"}},
+)
+@app.get(
+    "/api/health",
+    tags=["health"],
+    responses={503: {"model": HealthUnavailable, "description": "Database unavailable"}},
+)
 def health(db: Session = Depends(get_db)) -> dict[str, str]:
     """Report healthy only when the API can reach its database."""
     try:

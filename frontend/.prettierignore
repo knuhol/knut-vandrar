@@ -1,6 +1,7 @@
 node_modules
 .next
 eslint.config.mjs
+src/generated/
 dist
 build
 coverage

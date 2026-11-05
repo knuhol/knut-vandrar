@@ -1,4 +1,17 @@
-.PHONY: format-check format-fix lint test check
+.PHONY: generate-api generate-api-docker check-api format-check format-fix lint test check
+
+generate-api:
+	cd backend && python3 scripts/export_openapi.py
+
+generate-api-docker:
+	@set -e; temp=frontend/src/generated/openapi.ts.tmp; \
+	trap 'rm -f "$$temp"' EXIT; \
+	docker compose exec -T backend python scripts/export_openapi.py --stdout > "$$temp"; \
+	mv "$$temp" frontend/src/generated/openapi.ts; \
+	trap - EXIT
+
+check-api:
+	cd backend && python3 scripts/export_openapi.py --check
 
 format-check:
 	cd frontend && npm run format:check
@@ -17,4 +30,4 @@ test:
 	cd frontend && npm test --if-present
 	cd backend && python3 -m pytest
 
-check: format-check lint test
+check: format-check lint test check-api
