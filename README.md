@@ -111,7 +111,7 @@ Review generated migrations before committing them.
 
 ## Formatting, linting, tests, and CI
 
-Prettier formats the frontend, and Ruff formats and lints the backend. Run these commands from the repository root:
+Prettier formats the frontend. Ruff formats and lints the backend, and mypy checks its types. Run these commands from the repository root:
 
 ```sh
 make format-check # check both applications without modifying files
@@ -128,7 +128,7 @@ The frontend has no test suite configured yet; its test command is skipped until
 ```text
 frontend/          Next.js app and Tailwind styles
 frontend/scripts/  Frontend container entrypoint
-backend/src/       FastAPI routes, SQLAlchemy models, and DB sessions
+backend/src/knut_vandrar_backend/ FastAPI app, routes, schemas, models, and database code
 backend/alembic/   Database migration environment and revisions
 backend/scripts/   Backend schema exporter
 backend/tests/     API tests

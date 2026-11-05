@@ -25,6 +25,7 @@ format-fix:
 lint:
 	cd frontend && npm run lint
 	cd backend && python3 -m ruff check .
+	cd backend && python3 -m mypy
 
 test:
 	cd frontend && npm test --if-present
