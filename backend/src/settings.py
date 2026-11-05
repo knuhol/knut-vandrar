@@ -48,17 +48,9 @@ def _database_url() -> URL:
     )
 
 
-def _boolean(name: str) -> bool:
-    value = _required(name).lower()
-    if value not in {"true", "false"}:
-        raise RuntimeError(f"Configuration variable {name} must be true or false")
-    return value == "true"
-
-
 @dataclass(frozen=True)
 class Settings:
     database_url: URL
-    sqlalchemy_echo: bool
     cors_origins: tuple[str, ...]
     api_host: str
     api_port: int
@@ -72,7 +64,6 @@ def load_settings() -> Settings:
         raise RuntimeError("CORS_ORIGINS must contain at least one allowed origin")
     return Settings(
         database_url=_database_url(),
-        sqlalchemy_echo=_boolean("SQLALCHEMY_ECHO"),
         cors_origins=origins,
         api_host=_required("API_HOST"),
         api_port=_port("API_PORT"),

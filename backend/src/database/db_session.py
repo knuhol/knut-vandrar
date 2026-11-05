@@ -8,7 +8,6 @@ from src.settings import settings
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    echo=settings.sqlalchemy_echo,
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
