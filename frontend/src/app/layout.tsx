@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
-import globalStyles from './globals.css'
-
-const _globalStyles = globalStyles
+import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Knut vandrar',

@@ -7,7 +7,7 @@ Create and activate a virtual environment, then install the development extras t
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install -c constraints.txt -e ".[dev]"
 ```
 
 From this directory, use these Ruff commands:

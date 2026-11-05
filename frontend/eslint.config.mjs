@@ -1,31 +1,34 @@
+import { fixupConfigRules, fixupPluginRules } from '@eslint/compat'
 import eslint from '@eslint/js'
-import typescriptEslint from 'typescript-eslint'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import globals from 'globals'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import typescriptEslint from 'typescript-eslint'
 
 import ConfusingGlobals from 'confusing-browser-globals'
-import reactPlugin from 'eslint-plugin-react'
+import reactPluginLegacy from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
-// import jestPlugin from 'eslint-plugin-jest'
-import jsxA11yPlugin from 'eslint-plugin-jsx-a11y'
+import jsxA11yPluginLegacy from 'eslint-plugin-jsx-a11y'
 import unicornPlugin from 'eslint-plugin-unicorn'
 import promisePlugin from 'eslint-plugin-promise'
 import importPlugin from 'eslint-plugin-import'
 import nextPlugin from '@next/eslint-plugin-next'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+// Preserve rules from plugins that still use APIs removed in ESLint 10.
+const reactPlugin = fixupPluginRules(reactPluginLegacy)
+const jsxA11yPlugin = fixupPluginRules(jsxA11yPluginLegacy)
+
+const configDirectory = dirname(fileURLToPath(import.meta.url))
 
 export default typescriptEslint.config(
   {
     ignores: ['**/node_modules/**', '**/.next/**', '**/eslint.config.*', 'next-env.d.ts'],
   },
   eslint.configs.recommended,
-  importPlugin.flatConfigs.recommended,
+  ...fixupConfigRules(importPlugin.flatConfigs.recommended),
   typescriptEslint.configs.recommendedTypeChecked,
   {
-    files: ['**/*.{js,ts,ts,tsx,mjs}'],
+    files: ['**/*.{js,ts,tsx,mjs}'],
     plugins: {
       '@next/next': nextPlugin,
     },
@@ -46,9 +49,8 @@ export default typescriptEslint.config(
   {
     languageOptions: {
       parserOptions: {
-        requireConfigFile: false,
-        tsconfigRootDir: __dirname,
-        project: [join(__dirname, 'tsconfig.json')],
+        tsconfigRootDir: configDirectory,
+        projectService: true,
         ecmaFeatures: {
           jsx: true,
         },
@@ -386,39 +388,13 @@ export default typescriptEslint.config(
     },
     rules: jsxA11yPlugin.configs.recommended.rules,
   },
-  // {
-  //   files: ['**/*.spec.ts', '**/*.spec.tsx'],
-  //   ...jestPlugin.configs['flat/recommended'],
-  //   rules: {
-  //     ...jestPlugin.configs['flat/recommended'].rules,
-  //     'jest/expect-expect': ['error'],
-  //     'jest/no-commented-out-tests': ['error'],
-  //     'jest/no-conditional-expect': ['error'],
-  //     'jest/no-deprecated-functions': ['error'],
-  //     'jest/no-disabled-tests': ['error'],
-  //     'jest/no-done-callback': ['error'],
-  //     'jest/no-export': ['error'],
-  //     'jest/no-focused-tests': ['error'],
-  //     'jest/no-identical-title': ['error'],
-  //     'jest/no-interpolation-in-snapshots': ['error'],
-  //     'jest/no-jasmine-globals': ['error'],
-  //     'jest/no-standalone-expect': ['error'],
-  //     'jest/no-mocks-import': ['error'],
-  //     'jest/no-test-prefixes': ['error'],
-  //     'jest/valid-describe-callback': ['error'],
-  //     'jest/valid-expect': ['error'],
-  //     'jest/valid-expect-in-promise': ['error'],
-  //     'jest/valid-title': ['error'],
-  //     '@typescript-eslint/unbound-method': ['off'],
-  //   },
-  // },
   {
     files: ['**/*.{ts,tsx,d.ts,js,jsx}'],
     plugins: {
       unicorn: unicornPlugin,
     },
     rules: {
-      'unicorn/better-regex': ['error'],
+      // better-regex was removed upstream and was already inactive in Unicorn 65.
       'unicorn/catch-error-name': ['error'],
       'unicorn/consistent-destructuring': ['error'],
       'unicorn/consistent-function-scoping': ['error', { checkArrowFunctions: false }],
@@ -432,14 +408,14 @@ export default typescriptEslint.config(
       'unicorn/new-for-builtins': ['error'],
       'unicorn/no-abusive-eslint-disable': ['error'],
       'unicorn/no-array-callback-reference': ['error'],
-      'unicorn/no-array-for-each': ['off'],
       'unicorn/no-array-method-this-argument': ['error'],
       'unicorn/prefer-single-call': ['error'],
       'unicorn/no-console-spaces': ['error'],
       'unicorn/no-document-cookie': ['error'],
       'unicorn/no-for-loop': ['error'],
-      'unicorn/no-hex-escape': ['error'],
-      'unicorn/no-instanceof-array': ['error'],
+      'unicorn/prefer-literal-ascii': ['error'],
+      'unicorn/prefer-unicode-code-point-escapes': ['error'],
+      'unicorn/no-instanceof-builtins': ['error', { include: ['Array'] }],
       'unicorn/no-lonely-if': ['error'],
       'unicorn/no-nested-ternary': ['off'],
       'unicorn/no-new-array': ['error'],
@@ -463,7 +439,7 @@ export default typescriptEslint.config(
       'unicorn/prefer-date-now': ['error'],
       'unicorn/prefer-default-parameters': ['error'],
       'unicorn/prefer-dom-node-append': ['error'],
-      'unicorn/prefer-dom-node-dataset': ['error'],
+      'unicorn/dom-node-dataset': ['error'],
       'unicorn/prefer-dom-node-remove': ['error'],
       'unicorn/prefer-dom-node-text-content': ['error'],
       'unicorn/prefer-includes': ['error'],
@@ -487,7 +463,7 @@ export default typescriptEslint.config(
       'unicorn/prefer-switch': ['error'],
       'unicorn/prefer-ternary': ['off'],
       'unicorn/prefer-type-error': ['error'],
-      'unicorn/prevent-abbreviations': [
+      'unicorn/name-replacements': [
         'error',
         {
           replacements: { props: false, ref: false, params: false, args: false, utils: false },
@@ -534,7 +510,7 @@ export default typescriptEslint.config(
       'import/order': ['error'],
       'import/newline-after-import': ['error'],
       'import/prefer-default-export': ['off'],
-      'import/no-unassigned-import': ['error'],
+      'import/no-unassigned-import': ['error', { allow: ['**/*.css'] }],
       'import/no-named-default': ['error'],
       'import/no-anonymous-default-export': ['error'],
       'import/dynamic-import-chunkname': ['error'],

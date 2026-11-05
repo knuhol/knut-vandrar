@@ -1,6 +1,8 @@
 # knut-vandrar
 
-A Docker-first starter for a travel companion application. The stack is Next.js 15, React, TypeScript, Tailwind CSS, FastAPI, SQLAlchemy 2, Alembic, and PostgreSQL 16.
+A Docker-first starter for a travel companion application. The stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, FastAPI, SQLAlchemy 2, Alembic, and PostgreSQL 18.
+
+Runtime versions are defined only in `.nvmrc` and `.python-version`. CI reads these files. The development images use the official Node and Python slim images as their base, then install the exact runtime versions specified by these files. `./scripts/compose.sh` reads the files, exports `NODE_VERSION` and `PYTHON_VERSION`, and passes them as Compose build arguments. Use the wrapper for builds so Compose receives both build arguments; `docker compose` directly requires `NODE_VERSION` and `PYTHON_VERSION` to be exported in the shell. Use `nvm install` and `nvm use` locally; Python version managers such as pyenv can read `.python-version`. npm saves exact versions via `.npmrc`; keep all direct dependency pins exact and synchronize both npm lockfiles when updating them. Python installs use `backend/constraints.txt` to pin transitive dependencies; keep that file aligned with the exact pins in `pyproject.toml` and `requirements.txt`.
 
 ## Start the application
 
@@ -9,7 +11,7 @@ Install Docker Desktop (or Docker Engine with the Compose plugin), then run this
 ```sh
 # First run only, and only if .env does not already exist.
 cp .env.example .env
-docker compose up --build
+./scripts/compose.sh up --build
 ```
 
 Compose starts PostgreSQL, waits for its health check, applies Alembic migrations, then starts the reloading API and frontend. `.env` is the source for local configuration. `.env.example` has the same variables and structure with safe local placeholders. The PostgreSQL database name, user, and password are required. The existing host-run `DATABASE_URL` is preserved; Compose creates its container URL from the PostgreSQL variables because containers use Docker service DNS rather than the host address.
@@ -23,7 +25,9 @@ Use the configured host ports from `.env` (shown here with the template defaults
 
 `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT` are host-published ports. `FRONTEND_INTERNAL_PORT`, `API_PORT`, and `POSTGRES_INTERNAL_PORT` configure the ports inside the containers. The browser uses the public `NEXT_PUBLIC_API_URL`; the backend container uses `DATABASE_SERVICE_HOST` and PostgreSQL's internal port. `127.0.0.1` in the backend health check refers to the backend container itself.
 
-Stop the services with `Ctrl+C`; use `docker compose down` to remove containers. PostgreSQL data persists in the named `postgres_data` volume. `docker compose down -v` removes that data.
+Stop the services with `Ctrl+C`; use `docker compose down` to remove containers. PostgreSQL 18 data persists in the named `postgres_data_v18` volume. `docker compose down -v` removes the active PostgreSQL volume. The old PostgreSQL 16 volume is left intact after the upgrade as a rollback copy; do not delete it until you have confirmed the new database contains the data you need.
+
+When upgrading an existing PostgreSQL 16 installation, PostgreSQL does not support reusing its data directory directly in PostgreSQL 18. Before changing Compose, create a logical backup with `docker compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /tmp/knut-vandrar-pg16.dump`. Then start only the new database with `docker compose up -d postgres`, restore it with `docker compose exec -T postgres sh -c 'pg_restore --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /tmp/knut-vandrar-pg16.dump`, and start the remaining services with `./scripts/compose.sh up --build`. Keep the old volume until the restored data is verified.
 
 ## Development
 
@@ -61,11 +65,12 @@ Run backend tests locally from the repository root:
 cd backend
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install -c constraints.txt -e ".[dev]"
 python -m pytest
 ```
 
 Tests use an isolated in-memory SQLite database. To run them inside Docker while the stack is up:
+
 
 ```sh
 docker compose exec backend pytest

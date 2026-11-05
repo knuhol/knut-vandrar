@@ -8,11 +8,11 @@
     "backend"
   ],
   "scripts": {
-    "dev": "docker compose up --build",
-    "build": "docker compose build",
-    "start": "docker compose up -d",
-    "stop": "docker compose down",
-    "fresh": "docker compose down -v && docker compose up --build",
+    "dev": "./scripts/compose.sh up --build",
+    "build": "./scripts/compose.sh build",
+    "start": "./scripts/compose.sh up -d",
+    "stop": "./scripts/compose.sh down",
+    "fresh": "./scripts/compose.sh down -v && ./scripts/compose.sh up --build",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt"
   },
   "keywords": [
