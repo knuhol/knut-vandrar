@@ -2,7 +2,9 @@
 
 A Docker-first starter for a travel companion application. The stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, FastAPI, SQLAlchemy 2, Alembic, and PostgreSQL 18.
 
-Runtime versions are defined only in `.nvmrc` and `.python-version`. CI reads these files. The development images use the official Node and Python slim images as their base, then install the exact runtime versions specified by these files. `./scripts/compose.sh` reads the files, exports `NODE_VERSION` and `PYTHON_VERSION`, and passes them as Compose build arguments. Use the wrapper for builds so Compose receives both build arguments; `docker compose` directly requires `NODE_VERSION` and `PYTHON_VERSION` to be exported in the shell. Use `nvm install` and `nvm use` locally; Python version managers such as pyenv can read `.python-version`. npm saves exact versions via `.npmrc`; keep all direct dependency pins exact and synchronize both npm lockfiles when updating them. Python installs use `backend/constraints.txt` to pin transitive dependencies; keep that file aligned with the exact pins in `pyproject.toml` and `requirements.txt`.
+Runtime versions are defined only in `.nvmrc` and `.python-version`, and CI reads those files. Docker builds use the official Node Alpine and Python slim images with the versions from those files. `./scripts/compose.sh` exports `NODE_VERSION` and `PYTHON_VERSION` for Compose; use it because the Compose files require both build arguments. Use `nvm install` and `nvm use` locally; Python version managers such as pyenv can read `.python-version`.
+
+npm saves exact dependency versions via `.npmrc`; keep direct dependency pins exact and synchronize both npm lockfiles when updating them. Python installs use `backend/constraints.txt` to pin transitive dependencies; keep it aligned with the pins in `pyproject.toml` and `requirements.txt`.
 
 ## Start the application
 
@@ -16,6 +18,8 @@ cp .env.example .env
 
 Compose starts PostgreSQL, waits for its health check, applies Alembic migrations, then starts the reloading API and frontend. `.env` is the source for local configuration. `.env.example` has the same variables and structure with safe local placeholders. The PostgreSQL database name, user, and password are required. The existing host-run `DATABASE_URL` is preserved; Compose creates its container URL from the PostgreSQL variables because containers use Docker service DNS rather than the host address.
 
+The root npm shortcut for the foreground startup command above is `npm run dev`. Other root shortcuts are listed below.
+
 Use the configured host ports from `.env` (shown here with the template defaults):
 
 - Frontend: `http://localhost:${FRONTEND_PORT}`
@@ -25,9 +29,22 @@ Use the configured host ports from `.env` (shown here with the template defaults
 
 `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT` are host-published ports. `FRONTEND_INTERNAL_PORT`, `API_PORT`, and `POSTGRES_INTERNAL_PORT` configure the ports inside the containers. The browser uses the public `NEXT_PUBLIC_API_URL`; the backend container uses `DATABASE_SERVICE_HOST` and PostgreSQL's internal port. `127.0.0.1` in the backend health check refers to the backend container itself.
 
-Stop the services with `Ctrl+C`; use `docker compose down` to remove containers. PostgreSQL 18 data persists in the named `postgres_data_v18` volume. `docker compose down -v` removes the active PostgreSQL volume. The old PostgreSQL 16 volume is left intact after the upgrade as a rollback copy; do not delete it until you have confirmed the new database contains the data you need.
+Stop the foreground services with `Ctrl+C`, or run `./scripts/compose.sh down` (shortcut: `npm stop`) to remove containers while preserving volumes. PostgreSQL data persists in the named `postgres_data_v18` volume. `./scripts/compose.sh down -v` removes all project volumes, including the database and frontend caches; use it only when you intentionally want to reset local container data.
 
-When upgrading an existing PostgreSQL 16 installation, PostgreSQL does not support reusing its data directory directly in PostgreSQL 18. Before changing Compose, create a logical backup with `docker compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /tmp/knut-vandrar-pg16.dump`. Then start only the new database with `docker compose up -d postgres`, restore it with `docker compose exec -T postgres sh -c 'pg_restore --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /tmp/knut-vandrar-pg16.dump`, and start the remaining services with `./scripts/compose.sh up --build`. Keep the old volume until the restored data is verified.
+### Root npm scripts
+
+Run these commands from the repository root:
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Builds and starts the Compose stack in the foreground. |
+| `npm run build` | Builds the Compose service images without starting them. |
+| `npm start` | Starts the Compose stack in the background without forcing an image rebuild. |
+| `npm stop` | Stops and removes the Compose containers while preserving volumes. |
+| `npm run fresh` | Removes the Compose containers and **all project volumes**, then rebuilds and starts the stack. This deletes local database and other volume data. |
+| `npm run install:all` | Installs npm workspace dependencies and backend Python requirements for local development outside Docker. Activate `backend/.venv` first. |
+
+The Compose commands in this table use `scripts/compose.sh`, which supplies the Node and Python build versions from `.nvmrc` and `.python-version`.
 
 ## VPS deployment
 
@@ -81,7 +98,7 @@ Tests use an isolated in-memory SQLite database. To run them inside Docker while
 
 
 ```sh
-docker compose exec backend pytest
+./scripts/compose.sh exec backend pytest
 ```
 
 Create a new database migration from `backend/` with:
@@ -104,16 +121,17 @@ make test         # run configured tests (currently backend pytest)
 make check        # run formatting checks, linting, and tests
 ```
 
-The frontend has no test suite configured yet; its test command is skipped until one is added. Backend tests use in-memory SQLite. GitHub Actions runs frontend and backend CI jobs in parallel for all branch pushes, pull requests, and manual runs. CI only checks formatting and never writes source files.
-
-To apply formatting automatically, open **Actions → Format → Run workflow**. This workflow applies Prettier and Ruff fixes, then opens a pull request only when files changed. It does not push changes directly to the default branch. For pull request creation, enable **Allow GitHub Actions to create and approve pull requests** under **Settings → Actions → General → Workflow permissions**; the workflow's token is limited to repository contents and pull requests.
+The frontend has no test suite configured yet; its test command is skipped until one is added. Backend tests use in-memory SQLite. GitHub Actions runs frontend, backend, and Docker build/health checks on pull requests targeting `main` or `dev`, on pushes to `main`, and when manually dispatched (manual runs perform checks only). Successful `dev` → `main` pull requests deploy the proposed commit to development; pushes to `main` deploy production. The promotion workflow opens the `dev` → `main` pull request, and another workflow resets the `dev` branch to the merged `main` commit. Because the promotion PR is created with `GITHUB_TOKEN`, GitHub may hold its pull request checks for maintainer approval; approve them from the pull request banner. CI and deployment do not commit source changes.
 
 ## Project layout
 
 ```text
 frontend/          Next.js app and Tailwind styles
+frontend/scripts/  Frontend container entrypoint
 backend/src/       FastAPI routes, SQLAlchemy models, and DB sessions
 backend/alembic/   Database migration environment and revisions
+backend/scripts/   Backend schema exporter
 backend/tests/     API tests
+scripts/           Compose, deployment, and database backup/restore tooling
 docker-compose.yml Local development services and persistent volumes
 ```
