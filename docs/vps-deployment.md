@@ -58,4 +58,4 @@ Allow GitHub Actions to update the `dev` branch after a promotion PR merges. If 
 - Pushes to `main` deploy to production after CI passes.
 - Deployments use the exact workflow commit SHA, serialize per environment, wait for Compose health checks, and keep dev and production database volumes separate.
 
-Back up each database independently. For a remote backup, use `pg_dump` over the corresponding public PostgreSQL port; keep backup files off the VPS or copy them to your chosen backup storage. Never use `docker compose down -v` on either deployment project unless you intend to delete that project's database volume.
+Back up each database independently with the [database backup scripts](database-backups.md). Keep backup files off the VPS or copy them to your chosen backup storage. Never use `docker compose down -v` on either deployment project unless you intend to delete that project's database volume.

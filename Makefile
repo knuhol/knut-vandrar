@@ -6,7 +6,7 @@ generate-api:
 generate-api-docker:
 	@set -e; temp=frontend/src/generated/openapi.ts.tmp; \
 	trap 'rm -f "$$temp"' EXIT; \
-	docker compose exec -T backend python scripts/export_openapi.py --stdout > "$$temp"; \
+	./scripts/compose.sh exec -T backend python scripts/export_openapi.py --stdout > "$$temp"; \
 	mv "$$temp" frontend/src/generated/openapi.ts; \
 	trap - EXIT
 
