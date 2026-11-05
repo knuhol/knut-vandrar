@@ -1,4 +1,4 @@
-import { ApiStatusIndicator } from './api-status'
+import { ApiStatusIndicator } from './apiStatus'
 
 export default function Home() {
   return (

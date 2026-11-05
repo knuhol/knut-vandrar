@@ -11,10 +11,16 @@ export function ApiStatusIndicator() {
 
   useEffect(() => {
     const controller = new AbortController()
-    void checkApiHealth(controller.signal).then((healthy) => {
+
+    const updateStatus = async () => {
+      const healthy = await checkApiHealth(controller.signal)
       setStatus(healthy ? 'connected' : 'unavailable')
-    })
-    return () => controller.abort()
+    }
+
+    void updateStatus()
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   return (

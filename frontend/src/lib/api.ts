@@ -7,8 +7,13 @@ export async function checkApiHealth(signal?: AbortSignal): Promise<boolean> {
       signal,
     })
     if (!response.ok) return false
-    const health: { status?: string } = await response.json()
-    return health.status === 'healthy'
+    const health: unknown = await response.json()
+    return (
+      typeof health === 'object' &&
+      health !== null &&
+      'status' in health &&
+      health.status === 'healthy'
+    )
   } catch {
     return false
   }

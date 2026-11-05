@@ -1,6 +1,11 @@
-const path = require('path')
-const fs = require('fs')
-const { loadEnvConfig } = require('@next/env')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import nextEnv from '@next/env'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const loadEnvConfig = Reflect.get(nextEnv, 'loadEnvConfig')
 
 // Also load the repository-root .env for commands run from frontend/.
 loadEnvConfig(
@@ -24,4 +29,4 @@ const nextConfig = {
   env: { NEXT_PUBLIC_API_URL: publicApiUrl },
 }
 
-module.exports = nextConfig
+export default nextConfig
