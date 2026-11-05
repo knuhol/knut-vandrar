@@ -7,14 +7,15 @@ import sys
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_SOURCE = BACKEND_ROOT / "src"
 REPOSITORY_ROOT = BACKEND_ROOT.parent
 DEFAULT_OUTPUT = REPOSITORY_ROOT / "frontend" / "src" / "generated" / "openapi.ts"
 
-sys.path.insert(0, str(BACKEND_ROOT))
+sys.path.insert(0, str(BACKEND_SOURCE))
 
 
 def generated_schema() -> str:
-    app = importlib.import_module("src.main").app
+    app = importlib.import_module("knut_vandrar_backend.main").app
     schema = app.openapi()
     serialized_schema = json.dumps(schema, ensure_ascii=False, indent=2)
     return (

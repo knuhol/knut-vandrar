@@ -44,7 +44,7 @@ services:
       - "${BACKEND_PORT:?Set BACKEND_PORT in .env}:${API_PORT:?Set API_PORT in .env}"
     volumes:
       - ./backend:/app
-    command: sh -c "alembic -c alembic.ini upgrade head && uvicorn src.main:app --host $${API_HOST} --port $${API_PORT} --reload"
+    command: sh -c "alembic -c alembic.ini upgrade head && uvicorn knut_vandrar_backend.main:app --host $${API_HOST} --port $${API_PORT} --reload"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT:?Set API_PORT in .env}/health', timeout=3)"]
       interval: 10s

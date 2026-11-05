@@ -1,46 +1,39 @@
-"""FastAPI application and starter health endpoints."""
+"""Application and database health endpoints."""
 
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from src.api.routes import router as locations_router
-from src.database.db_session import get_db
-from src.settings import settings
+from knut_vandrar_backend.database.dependencies import get_db
 
-app = FastAPI(title="Knut vandrar API", version="0.1.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=list(settings.cors_origins),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-app.include_router(locations_router)
+router = APIRouter(tags=["health"])
+DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
 class HealthUnavailable(BaseModel):
+    """Error response when the database cannot be reached."""
+
     detail: str
 
 
-@app.get("/", tags=["health"])
+@router.get("/")
 def root() -> dict[str, str]:
+    """Return a small API welcome payload."""
     return {"message": "Knut vandrar API", "health": "/health"}
 
 
-@app.get(
+@router.get(
     "/health",
-    tags=["health"],
     responses={503: {"model": HealthUnavailable, "description": "Database unavailable"}},
 )
-@app.get(
+@router.get(
     "/api/health",
-    tags=["health"],
     responses={503: {"model": HealthUnavailable, "description": "Database unavailable"}},
 )
-def health(db: Session = Depends(get_db)) -> dict[str, str]:
+def health(db: DatabaseSession) -> dict[str, str]:
     """Report healthy only when the API can reach its database."""
     try:
         db.execute(text("SELECT 1"))

@@ -74,6 +74,9 @@ jobs:
       - name: Lint
         working-directory: backend
         run: python -m ruff check .
+      - name: Type check
+        working-directory: backend
+        run: python -m mypy
       - name: Verify generated OpenAPI schema is current
         working-directory: backend
         run: python scripts/export_openapi.py --check

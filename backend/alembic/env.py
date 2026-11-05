@@ -1,16 +1,11 @@
 """Alembic environment configured from DATABASE_URL."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from src.database.db_session import Base
-from src.models.location import Location  # noqa: F401 - register model metadata
-from src.settings import settings
+from knut_vandrar_backend.database.base import Base
+from knut_vandrar_backend.models.location import Location  # noqa: F401 - register model metadata
+from knut_vandrar_backend.settings import settings
 
 config = context.config
 database_url = settings.database_url.render_as_string(hide_password=False)

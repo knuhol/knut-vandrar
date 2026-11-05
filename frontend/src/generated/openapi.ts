@@ -118,6 +118,7 @@ export const openapi = {
           "health"
         ],
         "summary": "Root",
+        "description": "Return a small API welcome payload.",
         "operationId": "root__get",
         "responses": {
           "200": {
@@ -236,7 +237,8 @@ export const openapi = {
         "required": [
           "detail"
         ],
-        "title": "HealthUnavailable"
+        "title": "HealthUnavailable",
+        "description": "Error response when the database cannot be reached."
       },
       "LocationCreate": {
         "properties": {
@@ -287,7 +289,8 @@ export const openapi = {
         "required": [
           "name"
         ],
-        "title": "LocationCreate"
+        "title": "LocationCreate",
+        "description": "Fields accepted when creating a saved location."
       },
       "LocationRead": {
         "properties": {
@@ -354,7 +357,8 @@ export const openapi = {
           "name",
           "id"
         ],
-        "title": "LocationRead"
+        "title": "LocationRead",
+        "description": "Location representation returned by the API."
       },
       "ValidationError": {
         "properties": {
