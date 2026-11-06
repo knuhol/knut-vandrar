@@ -55,6 +55,33 @@ services:
       postgres:
         condition: service_healthy
 
+  translation-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: ${DOCKER_TARGET:?Set DOCKER_TARGET in .env}
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:?Set PYTHON_VERSION from .python-version}
+        API_PORT: ${API_PORT:?Set API_PORT in .env}
+        API_HOST: ${API_HOST:?Set API_HOST in .env}
+    environment:
+      DATABASE_SERVICE_HOST: ${DATABASE_SERVICE_HOST:?Set DATABASE_SERVICE_HOST in .env}
+      POSTGRES_INTERNAL_PORT: ${POSTGRES_INTERNAL_PORT:?Set POSTGRES_INTERNAL_PORT in .env}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:?Set POSTGRES_DATABASE in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      API_HOST: ${API_HOST:?Set API_HOST in .env}
+      API_PORT: ${API_PORT:?Set API_PORT in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./backend:/app
+    command: ["python", "-m", "knut_vandrar_backend.translations.worker"]
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
     build:
       context: .

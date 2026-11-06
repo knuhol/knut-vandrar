@@ -3,6 +3,7 @@
 import argparse
 import importlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -16,12 +17,23 @@ sys.path.insert(0, str(BACKEND_SOURCE))
 
 def generated_schema() -> str:
     app = importlib.import_module("knut_vandrar_backend.main").app
-    schema = app.openapi()
+    schema = _normalize_numbers(app.openapi())
     serialized_schema = json.dumps(schema, ensure_ascii=False, indent=2)
     return (
         "/* Generated from FastAPI by backend/scripts/export_openapi.py. */\n"
         f"export const openapi = {serialized_schema} as const\n"
     )
+
+
+def _normalize_numbers(value: object) -> object:
+    """Serialize integral JSON numbers as integers for stable generated TypeScript."""
+    if isinstance(value, dict):
+        return {key: _normalize_numbers(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_numbers(item) for item in value]
+    if isinstance(value, float) and math.isfinite(value) and value.is_integer():
+        return int(value)
+    return value
 
 
 def main() -> int:

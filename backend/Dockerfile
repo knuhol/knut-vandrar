@@ -19,4 +19,4 @@ ARG API_PORT
 ARG API_HOST
 COPY backend/ .
 EXPOSE ${API_PORT}
-CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && uvicorn knut_vandrar_backend.main:app --host ${API_HOST} --port ${API_PORT}"]
+CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && uvicorn knut_vandrar_backend.main:app --host ${API_HOST} --port ${API_PORT} --proxy-headers --forwarded-allow-ips=*"]

@@ -22,7 +22,7 @@ class HealthUnavailable(BaseModel):
 @router.get("/")
 def root() -> dict[str, str]:
     """Return a small API welcome payload."""
-    return {"message": "Knut vandrar API", "health": "/health"}
+    return {"message": "knut-vandrar API", "health": "/health"}
 
 
 @router.get(
