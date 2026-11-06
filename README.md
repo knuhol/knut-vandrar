@@ -16,7 +16,7 @@ cp .env.example .env
 ./scripts/compose.sh up --build
 ```
 
-Compose starts PostgreSQL, waits for its health check, applies Alembic migrations, then starts the reloading API and frontend. `.env` is the source for local configuration. `.env.example` has the same variables and structure with safe local placeholders. The PostgreSQL database name, user, and password are required. The existing host-run `DATABASE_URL` is preserved; Compose creates its container URL from the PostgreSQL variables because containers use Docker service DNS rather than the host address.
+Compose starts PostgreSQL, waits for its health check, applies Alembic migrations, then starts the API, translation worker, and frontend. `.env` is the source for local configuration. `.env.example` has the same variables and structure with safe local placeholders. The PostgreSQL database name, user, and password are required. Set `OPENAI_API_KEY` to enable automatic translations; without it, the worker leaves queued translations untouched. The existing host-run `DATABASE_URL` is preserved; Compose creates its container URL from the PostgreSQL variables because containers use Docker service DNS rather than the host address.
 
 The root npm shortcut for the foreground startup command above is `npm run dev`. Other root shortcuts are listed below.
 
@@ -43,6 +43,7 @@ Run these commands from the repository root:
 | `npm stop` | Stops and removes the Compose containers while preserving volumes. |
 | `npm run fresh` | Removes the Compose containers and **all project volumes**, then rebuilds and starts the stack. This deletes local database and other volume data. |
 | `npm run install:all` | Installs npm workspace dependencies and backend Python requirements for local development outside Docker. Activate `backend/.venv` first. |
+| `npm run translations:retranslate` | Queues missing, outdated, and `needs_retranslation` hike translations for the worker. Requires the stack to be running. |
 
 The Compose commands in this table use `scripts/compose.sh`, which supplies the Node and Python build versions from `.nvmrc` and `.python-version`.
 
@@ -57,6 +58,8 @@ Use [`scripts/db-backup.sh`](scripts/db-backup.sh) and [`scripts/db-restore.sh`]
 ## Development
 
 The frontend source and backend source are mounted into their development containers. Next.js and Uvicorn reload when files change. On frontend startup, the container compares the package manifests with a hash saved in its `node_modules` volume and runs `npm ci` if dependencies have changed; this keeps persistent volumes in sync after rebuilds. Database migrations run automatically each time the backend container starts. `CORS_ORIGINS` controls allowed browser origins. The frontend validates and uses `NEXT_PUBLIC_API_URL` for its API health request; it is browser-visible and must not contain credentials or other secrets.
+
+Hike text is authored in English and translated into Swedish and Czech by the background worker. The generated locale is published immediately; when a translation is missing it is omitted, and an older translation remains available while a newer version is queued. Translation profiles and glossary entries live in the database (`translation_profiles` and `translation_glossary_entries`) and can be maintained directly there. Set a translation's `review_status` to `needs_retranslation` to flag it. Then run `npm run translations:retranslate` (or `make translations-retranslate`) to queue every missing, outdated, or flagged translation. New English content changes are queued automatically.
 
 ## API schema and typed frontend client
 

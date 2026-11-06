@@ -54,6 +54,7 @@ class Settings:
     cors_origins: tuple[str, ...]
     api_host: str
     api_port: int
+    openai_api_key: str | None
 
 
 def load_settings() -> Settings:
@@ -67,6 +68,7 @@ def load_settings() -> Settings:
         cors_origins=origins,
         api_host=_required("API_HOST"),
         api_port=_port("API_PORT"),
+        openai_api_key=os.getenv("OPENAI_API_KEY", "").strip() or None,
     )
 
 

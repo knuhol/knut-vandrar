@@ -1,4 +1,4 @@
-.PHONY: generate-api generate-api-docker check-api format-check format-fix lint test check
+.PHONY: generate-api generate-api-docker check-api translations-retranslate format-check format-fix lint test check
 
 generate-api:
 	cd backend && python3 scripts/export_openapi.py
@@ -12,6 +12,9 @@ generate-api-docker:
 
 check-api:
 	cd backend && python3 scripts/export_openapi.py --check
+
+translations-retranslate:
+	./scripts/compose.sh exec -T backend python -m knut_vandrar_backend.translations.cli
 
 format-check:
 	cd frontend && npm run format:check
