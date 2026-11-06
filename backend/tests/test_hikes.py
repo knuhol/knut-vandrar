@@ -2,12 +2,14 @@
 
 from collections.abc import Generator, Iterator
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 from typing import cast
 from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -75,6 +77,12 @@ def client(tmp_path: Path) -> Iterator[TestClient]:
     engine.dispose()
 
 
+def _png_image(size: tuple[int, int]) -> bytes:
+    output = BytesIO()
+    Image.new("RGB", size, (20, 100, 180)).save(output, format="PNG")
+    return output.getvalue()
+
+
 def _planned_payload(**overrides: object) -> dict[str, object]:
     start = datetime(2026, 5, 1, 9, tzinfo=UTC)
     payload: dict[str, object] = {
@@ -108,7 +116,12 @@ def test_missing_translation_is_not_fallback_and_outdated_translation_is_served(
 ) -> None:
     response = client.post("/api/hikes", json=_planned_payload())
     hike_id = response.json()["id"]
-    assert client.get("/api/hikes?locale=sv").json() == []
+    assert client.get("/api/hikes?locale=sv").json() == {
+        "items": [],
+        "total": 0,
+        "limit": 10,
+        "offset": 0,
+    }
     assert client.get("/api/hikes/sv/hike-through-the-highlands").status_code == 404
 
     hike_start = datetime.fromisoformat(response.json()["planned_start_at"])
@@ -144,8 +157,8 @@ def test_missing_translation_is_not_fallback_and_outdated_translation_is_served(
     # Current English changed; the old Swedish copy is returned and identified as stale.
     localized = client.get("/api/hikes?locale=sv")
     assert localized.status_code == 200
-    assert localized.json()[0]["translation"]["title"] == "Gammal översättning"
-    assert localized.json()[0]["translation"]["is_outdated"] is True
+    assert localized.json()["items"][0]["translation"]["title"] == "Gammal översättning"
+    assert localized.json()["items"][0]["translation"]["is_outdated"] is True
 
 
 def test_changing_a_title_keeps_the_old_localized_slug_as_redirect(client: TestClient) -> None:
@@ -194,7 +207,7 @@ def test_trail_logo_is_stored_and_served_from_backend(client: TestClient) -> Non
     ).json()
     assert trail["logo_url"] is None
 
-    logo_bytes = b"\x89PNG\r\n\x1a\nlogo-test"
+    logo_bytes = _png_image((1024, 512))
     uploaded = client.put(
         f"/api/trails/{trail['id']}/logo",
         content=logo_bytes,
@@ -205,8 +218,10 @@ def test_trail_logo_is_stored_and_served_from_backend(client: TestClient) -> Non
 
     served = client.get(uploaded.json()["logo_url"])
     assert served.status_code == 200
-    assert served.content == logo_bytes
-    assert served.headers["content-type"] == "image/png"
+    with Image.open(BytesIO(served.content)) as image:
+        assert image.size == (512, 256)
+        assert image.getpixel((0, 0)) == (20, 100, 180)
+    assert served.headers["content-type"] == "image/webp"
     assert served.headers["x-content-type-options"] == "nosniff"
     cached = client.get(
         uploaded.json()["logo_url"], headers={"If-None-Match": served.headers["etag"]}
@@ -258,7 +273,7 @@ def test_hike_points_youtube_card_and_cover_image(client: TestClient) -> None:
     assert hike["cover_image_url"] is None
     assert hike["cards"] == [{"type": "youtube_video", "url": "https://youtu.be/dQw4w9WgXcQ"}]
 
-    image_bytes = b"\x89PNG\r\n\x1a\ncover-test"
+    image_bytes = _png_image((2400, 1200))
     uploaded = client.put(
         f"/api/hikes/{hike['id']}/cover-image",
         content=image_bytes,
@@ -269,11 +284,13 @@ def test_hike_points_youtube_card_and_cover_image(client: TestClient) -> None:
     assert image_url.endswith(f"/api/hikes/{hike['id']}/cover-image")
     served = client.get(image_url)
     assert served.status_code == 200
-    assert served.content == image_bytes
-    assert served.headers["content-type"] == "image/png"
+    with Image.open(BytesIO(served.content)) as image:
+        assert image.size == (1920, 960)
+        assert image.format == "WEBP"
+    assert served.headers["content-type"] == "image/webp"
 
     listed = client.get("/api/hikes?locale=en")
-    assert listed.json()[0]["cover_image_url"] == image_url
+    assert listed.json()["items"][0]["cover_image_url"] == image_url
 
     deleted = client.delete(f"/api/hikes/{hike['id']}/cover-image")
     assert deleted.status_code == 204
