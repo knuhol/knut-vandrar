@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import nextEnv from '@next/env'
+import createNextIntlPlugin from 'next-intl/plugin'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const loadEnvConfig = Reflect.get(nextEnv, 'loadEnvConfig')
@@ -29,4 +30,5 @@ const nextConfig = {
   env: { NEXT_PUBLIC_API_URL: publicApiUrl },
 }
 
-export default nextConfig
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
+export default withNextIntl(nextConfig)

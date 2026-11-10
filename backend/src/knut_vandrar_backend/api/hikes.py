@@ -115,7 +115,11 @@ def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> Hi
     return _detail(db, hike, english, request)
 
 
-@router.get("/{hike_id}", response_model=HikeRead)
+@router.get(
+    "/{hike_id}",
+    response_model=HikeRead,
+    responses={404: {"description": "Hike translation not found"}},
+)
 def get_hike(
     hike_id: UUID, request: Request, db: DatabaseSession, locale: str = SOURCE_LOCALE
 ) -> HikeRead:
@@ -148,7 +152,12 @@ def get_hike_cover_image(hike_id: UUID, request: Request, db: DatabaseSession) -
 
 
 @router.get(
-    "/{locale}/{slug}", response_model=HikeRead, responses={308: {"description": "Old slug"}}
+    "/{locale}/{slug}",
+    response_model=HikeRead,
+    responses={
+        308: {"description": "Old slug"},
+        404: {"description": "Hike translation not found"},
+    },
 )
 def get_hike_by_slug(
     locale: str, slug: str, request: Request, db: DatabaseSession

@@ -12,3 +12,16 @@
 - Verify changes with checks relevant to the task. Do not start, restart, or check running Docker containers automatically at task completion. Run Docker container verification only when the user explicitly requests it; if task scope suggests it is needed, ask first. Avoid redundant test runs after checks pass unless something changes.
 - Do not commit, push, publish, or send messages to others without explicit authorization.
 - Inspect existing work and preserve unrelated changes. Use `rg` for searches and report changes, verification, and remaining limitations clearly.
+
+## Frontend instructions
+
+- Prefer Tailwind utilities for component styling whenever practical.
+- Keep `frontend/src/app/globals.css` limited to essential global rules that cannot be handled through Tailwind configuration or component styling. Prefer removing it when no such rules remain.
+- Use the frontend design-token CSS file as the source of truth for spacing, font sizes, colors, and other design values. Never hardcode these values when a token exists. If a needed token does not exist, add a reusable variable to the token file instead of introducing a one-off value.
+- Put component-specific CSS in a colocated CSS Module named after its React component, such as `Hero.tsx` and `Hero.module.css`. Keep global selectors and styles out of component modules unless they are required for that component.
+- Name React component files with an uppercase initial letter.
+- Add a blank line before every `export function` declaration.
+- Keep generic components in `frontend/src/components` limited to components shared across the site. Put site-specific components in the app directory near the `page.tsx` that uses them.
+- Never hardcode English UI text in components. Add UI strings to the locale message files and provide initial translations for every supported locale.
+- Avoid repeated UI and logic; extract reusable components when that makes the code clearer.
+- Build toward a component library: prefer configurable shared components, such as buttons, over repeated hardcoded implementations.

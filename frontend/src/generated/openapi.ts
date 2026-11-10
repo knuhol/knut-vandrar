@@ -155,6 +155,9 @@ export const openapi = {
               }
             }
           },
+          "404": {
+            "description": "Hike translation not found"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -422,6 +425,9 @@ export const openapi = {
           },
           "308": {
             "description": "Old slug"
+          },
+          "404": {
+            "description": "Hike translation not found"
           },
           "422": {
             "description": "Validation Error",
@@ -960,8 +966,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "equipment",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "equipment"
+            ]
           },
           "url": {
             "type": "string",
@@ -1650,8 +1658,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "live_position",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "live_position"
+            ]
           },
           "state": {
             "type": "string",
@@ -1750,8 +1760,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "progress",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "progress"
+            ]
           },
           "url": {
             "type": "string",
@@ -1773,8 +1785,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "route",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "route"
+            ]
           },
           "url": {
             "type": "string",
@@ -1796,8 +1810,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "social_feed",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "social_feed"
+            ]
           },
           "url": {
             "type": "string",
@@ -1993,8 +2009,10 @@ export const openapi = {
         "properties": {
           "type": {
             "type": "string",
-            "const": "youtube_video",
-            "title": "Type"
+            "title": "Type",
+            "enum": [
+              "youtube_video"
+            ]
           },
           "url": {
             "type": "string",

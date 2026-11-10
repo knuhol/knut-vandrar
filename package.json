@@ -14,7 +14,8 @@
     "stop": "./scripts/compose.sh down",
     "fresh": "./scripts/compose.sh down -v && ./scripts/compose.sh up --build",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
-    "translations:retranslate": "./scripts/compose.sh exec -T backend python -m knut_vandrar_backend.translations.cli"
+    "translations:retranslate": "./scripts/compose.sh exec -T backend python -m knut_vandrar_backend.translations.cli",
+    "cache:refresh": "./scripts/refresh-cache.sh"
   },
   "keywords": [
     "travel",

@@ -1,0 +1,43 @@
+@reference '../../../../globals.css';
+
+.dialog::backdrop {
+  background: var(--modal-backdrop);
+}
+
+.loadingBar::after {
+  @apply block h-full bg-orange;
+  content: '';
+  width: var(--loading-bar-width);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: modal-enter var(--motion-enter) ease-out both;
+  }
+  .player {
+    transition: opacity var(--motion-fade) ease;
+  }
+  .loadingBar::after {
+    animation: video-loading var(--motion-loading) ease-in-out infinite alternate;
+  }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 2)) scale(var(--motion-enter-scale));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes video-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(var(--loading-bar-end));
+  }
+}

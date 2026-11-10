@@ -54,6 +54,8 @@ class Settings:
     cors_origins: tuple[str, ...]
     api_host: str
     api_port: int
+    frontend_revalidation_url: str | None
+    cache_revalidation_secret: str | None
     openai_api_key: str | None
 
 
@@ -68,6 +70,8 @@ def load_settings() -> Settings:
         cors_origins=origins,
         api_host=_required("API_HOST"),
         api_port=_port("API_PORT"),
+        frontend_revalidation_url=os.getenv("FRONTEND_REVALIDATION_URL", "").strip() or None,
+        cache_revalidation_secret=os.getenv("CACHE_REVALIDATION_SECRET", "").strip() or None,
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip() or None,
     )
 

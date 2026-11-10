@@ -59,3 +59,29 @@ Allow GitHub Actions to update the `dev` branch after a promotion PR merges. If 
 - Deployments use the exact workflow commit SHA, serialize per environment, wait for Compose health checks, and keep dev and production database volumes separate.
 
 Back up each database independently with the [database backup scripts](database-backups.md). Keep backup files off the VPS or copy them to your chosen backup storage. Never use `docker compose down -v` on either deployment project unless you intend to delete that project's database volume.
+
+### Frontend content caching and languages
+
+The public site uses Next.js server rendering with a five-minute tagged API data cache.
+Backend content commits (including worker-published translations, trail changes and image uploads)
+notify the frontend after the transaction succeeds. This expires the shared `hikes` cache;
+the next page request loads fresh content. Failed notifications are logged and the cache
+expires automatically within five minutes. Direct SQL changes do not send notifications.
+Run `make cache-refresh` after direct database edits (using the appropriate Compose environment
+when administering a VPS checkout).
+
+Set `CACHE_REVALIDATION_SECRET` to a long random value in each deployment's private `.env`.
+Compose supplies the same value to the frontend, backend and translation worker. Use a
+separate value for development and production. Do not expose it with `NEXT_PUBLIC_`.
+Recreate the services after changing environment variables; a restart alone does not inject
+new values. `INTERNAL_API_URL` and `FRONTEND_REVALIDATION_URL` are supplied by Compose using
+service addresses. Their `.env` equivalents are only for running processes on the host.
+
+Pages have explicit `/sv`, `/en` and `/cs` prefixes and localized hike paths/slugs.
+Unprefixed requests use the saved locale cookie, then browser language preferences,
+then Swedish. Explicit locale URLs take priority. No location permission or IP geolocation
+service is used. Missing hike translations are omitted; outdated translations stay visible.
+
+Only the public hiking interface is implemented. The shared Radix dropdown, Tailwind tokens,
+fonts and component styles can be reused for the future admin panel; no admin CRUD UI or
+authentication has been introduced in this redesign.

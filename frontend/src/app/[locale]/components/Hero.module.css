@@ -1,0 +1,47 @@
+@reference '../../globals.css';
+
+.landscape::before {
+  @apply pointer-events-none absolute inset-0;
+  content: '';
+  background: url('/brand/forest.svg') center bottom / var(--hero-landscape-width) auto no-repeat;
+  translate: 0 var(--poster-offset, 0);
+}
+
+.copy {
+  @apply relative z-1 pt-9.5 tablet:pt-13.5 wide:pt-18.75;
+  padding-bottom: var(--hero-landscape-space);
+
+  @variant tablet {
+    padding-left: var(--hero-inset-tablet);
+  }
+
+  @variant desktop {
+    padding-left: var(--hero-inset-desktop);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landscape::before {
+    animation: landscape-reveal var(--motion-reveal) var(--ease-reveal) both;
+  }
+}
+
+.landscape::before {
+  @variant max-parallax {
+    translate: none;
+  }
+  @variant motion-reduce {
+    translate: none;
+  }
+}
+
+@keyframes landscape-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 4));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

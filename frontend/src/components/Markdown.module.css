@@ -1,0 +1,52 @@
+@reference '../app/globals.css';
+
+.prose {
+  overflow-wrap: anywhere;
+}
+
+.prose p {
+  margin-bottom: var(--prose-paragraph-gap);
+}
+
+.prose a {
+  @apply text-forest underline;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: var(--prose-list-inset);
+  margin-bottom: var(--prose-list-gap);
+  list-style: revert;
+}
+
+.prose h2,
+.prose h3 {
+  @apply font-display leading-heading font-extrabold tracking-heading;
+  margin-top: var(--prose-heading-before);
+  margin-bottom: var(--prose-heading-after);
+}
+
+.prose h2 {
+  @apply text-section;
+}
+
+.prose h3 {
+  @apply text-card;
+}
+
+.prose h2:first-child {
+  @apply mt-0;
+}
+
+.prose table {
+  @apply block overflow-x-auto border-collapse;
+}
+
+.prose td,
+.prose th {
+  @apply border border-line p-2;
+}
+
+.prose blockquote {
+  @apply border-l-3 border-sage pl-5 text-forest;
+}

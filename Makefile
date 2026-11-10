@@ -35,3 +35,7 @@ test:
 	cd backend && python3 -m pytest
 
 check: format-check lint test check-api
+
+.PHONY: cache-refresh
+cache-refresh:
+	./scripts/refresh-cache.sh

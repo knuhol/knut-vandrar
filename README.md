@@ -138,3 +138,24 @@ backend/tests/     API tests
 scripts/           Compose, deployment, and database backup/restore tooling
 docker-compose.yml Local development services and persistent volumes
 ```
+
+### Public hiking website
+
+The homepage and hike detail pages support Swedish (default), English and Czech.
+Unprefixed URLs select a language from the saved preference or browser settings;
+explicit language URLs always win. The language menu keeps the same hike where
+that translation is available.
+
+The frontend caches typed backend responses for five minutes. Committed hike,
+trail, image and translation changes notify the frontend and expire the content
+cache immediately. Set a shared private `CACHE_REVALIDATION_SECRET` in `.env`;
+Compose wires the internal service URLs automatically. Choose a long random secret for each environment. For VPS setup, see
+[deployment instructions](docs/vps-deployment.md).
+
+After editing content directly in the database, run `npm run cache:refresh` or
+`make cache-refresh`. Public pages update on their next request; currently open
+browser tabs do not receive live updates. Failed notifications are logged and
+fall back to the five-minute expiry.
+
+Visual assets in `frontend/public/brand` are optimized web copies of the supplied
+forest artwork and individually extracted hiking icons. Source files are preserved.
