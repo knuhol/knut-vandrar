@@ -28,7 +28,13 @@ def generated_schema() -> str:
 def _normalize_numbers(value: object) -> object:
     """Serialize integral JSON numbers as integers for stable generated TypeScript."""
     if isinstance(value, dict):
-        return {key: _normalize_numbers(item) for key, item in value.items()}
+        normalized = {
+            key: _normalize_numbers(item) for key, item in value.items() if key != "const"
+        }
+        # feTS understands singleton enums; OpenAPI 3.1 const is equivalent.
+        if "const" in value:
+            normalized["enum"] = [_normalize_numbers(value["const"])]
+        return normalized
     if isinstance(value, list):
         return [_normalize_numbers(item) for item in value]
     if isinstance(value, float) and math.isfinite(value) and value.is_integer():

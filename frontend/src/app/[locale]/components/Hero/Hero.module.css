@@ -1,0 +1,49 @@
+@reference '../../../globals.css';
+
+.landscape::before {
+  @apply pointer-events-none absolute inset-0;
+  content: '';
+  background: url('/brand/forest.svg') center bottom / max(calc(var(--spacing) * 224), 100%) auto
+    no-repeat;
+  translate: 0 var(--poster-offset, 0);
+}
+
+.copy {
+  @apply relative z-1 mx-auto w-full max-w-page px-5 pt-9.5 tablet:px-7 tablet:pt-13.5 wide:pt-18.75;
+  /* Reserve space using the landscape's aspect ratio and the shared spacing scale. */
+  padding-bottom: calc(max(var(--spacing) * 52, 23.5vw) + var(--spacing) * 12);
+
+  @variant tablet {
+    padding-left: clamp(calc(var(--spacing) * 32), 20vw, calc(var(--spacing) * 58));
+  }
+
+  @variant desktop {
+    padding-left: clamp(calc(var(--spacing) * 44), 15vw, calc(var(--spacing) * 58));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landscape::before {
+    animation: landscape-reveal var(--duration-slow) ease-out both;
+  }
+}
+
+.landscape::before {
+  @variant max-desktop {
+    translate: none;
+  }
+  @variant motion-reduce {
+    translate: none;
+  }
+}
+
+@keyframes landscape-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 4));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

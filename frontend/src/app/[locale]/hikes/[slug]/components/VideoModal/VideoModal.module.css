@@ -1,0 +1,52 @@
+@reference '../../../../../globals.css';
+
+.dialog {
+  /* Fit the video and its controls inside the viewport using the spacing scale. */
+  width: min(
+    calc(var(--spacing) * 240),
+    calc(100vw - var(--spacing) * 8),
+    calc((100dvh - var(--spacing) * 28) * 16 / 9)
+  );
+  max-height: calc(100dvh - var(--spacing) * 8);
+}
+
+.dialog::backdrop {
+  @apply bg-ink/80;
+}
+
+.loadingBar::after {
+  @apply block h-full w-1/3 bg-orange;
+  content: '';
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: modal-enter var(--duration-fast) ease-out both;
+  }
+  .player {
+    transition: opacity var(--duration-fast) ease;
+  }
+  .loadingBar::after {
+    animation: video-loading var(--duration-loading) ease-in-out infinite alternate;
+  }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 2));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes video-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

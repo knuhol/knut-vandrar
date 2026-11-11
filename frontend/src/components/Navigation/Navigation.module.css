@@ -1,0 +1,5 @@
+@reference '../../app/globals.css';
+
+.links a[aria-current] {
+  @apply underline decoration-orange decoration-3;
+}

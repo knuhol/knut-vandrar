@@ -59,3 +59,30 @@ Allow GitHub Actions to update the `dev` branch after a promotion PR merges. If 
 - Deployments use the exact workflow commit SHA, serialize per environment, wait for Compose health checks, and keep dev and production database volumes separate.
 
 Back up each database independently with the [database backup scripts](database-backups.md). Keep backup files off the VPS or copy them to your chosen backup storage. Never use `docker compose down -v` on either deployment project unless you intend to delete that project's database volume.
+
+### Frontend content caching and languages
+
+The public site uses Next.js server rendering and fetches API data on each
+server request with caching disabled. Content changes, including translations
+and direct SQL edits, are available on the next server request. Currently open
+browser tabs do not receive live updates.
+
+`INTERNAL_API_URL` is supplied by Compose as `http://backend-internal:${API_PORT}`.
+The `backend-internal` alias exists only on each deployment's private default
+network, which the frontend also joins. This keeps server-side API requests within
+the correct environment. Both deployments share the Traefik network for public
+routing, so the generic `backend` hostname on that network can resolve to either
+environment and must not be used for internal API requests.
+
+The `.env` equivalent of `INTERNAL_API_URL` is only for running the frontend on the
+host. Recreate services after changing environment variables or network membership;
+a restart alone does not apply those changes.
+
+Pages have explicit `/sv`, `/en` and `/cs` prefixes and localized hike paths/slugs.
+Unprefixed requests use the saved locale cookie, then browser language preferences,
+then Swedish. Explicit locale URLs take priority. No location permission or IP geolocation
+service is used. Missing hike translations are omitted; outdated translations stay visible.
+
+Only the public hiking interface is implemented. The shared Radix dropdown, Tailwind tokens,
+fonts and component styles can be reused for the future admin panel; no admin CRUD UI or
+authentication has been introduced in this redesign.

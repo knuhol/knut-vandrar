@@ -7,6 +7,7 @@ if (!configuredApiUrl) {
 }
 
 const parsedApiUrl = new URL(configuredApiUrl)
+
 if (parsedApiUrl.username || parsedApiUrl.password) {
   throw new Error('NEXT_PUBLIC_API_URL must not include credentials')
 }

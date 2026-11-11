@@ -1,0 +1,15 @@
+@reference '../../../globals.css';
+
+.background::before,
+.background::after {
+  @apply absolute inset-0 -z-1;
+  content: '';
+}
+
+.background::before {
+  background: url('/brand/forest.svg') center / cover no-repeat;
+}
+
+.background::after {
+  @apply bg-cream/30;
+}

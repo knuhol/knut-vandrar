@@ -41,7 +41,7 @@ export default typescriptEslint.config(
     },
   },
   {
-    files: ['src/app/**'],
+    files: ['src/app/**/*'],
     rules: {
       'unicorn/filename-case': ['off'],
     },
@@ -91,6 +91,7 @@ export default typescriptEslint.config(
   {
     files: ['**/*.{js,jsx,cjs,mjs,ts,tsx,d.ts}'],
     rules: {
+      curly: ['error', 'all'],
       'for-direction': ['error'],
       'getter-return': ['error'],
       'no-async-promise-executor': ['error'],
@@ -181,6 +182,11 @@ export default typescriptEslint.config(
       'no-restricted-syntax': [
         'error',
         {
+          selector: 'ForStatement[init=null][test=null][update=null]',
+          message:
+            'Avoid unbounded for (;;) loops. Prefer forEach for arrays or a loop with an explicit stopping condition.',
+        },
+        {
           selector: 'JSXAttribute[name.name=/role/][value.value=/presentation/]',
           message:
             'Avoid using role="presentation". It\'s bad for accessibility. If you\'re using this to be able to add a click handler, then please try to use a semantic element that that is made for clicks instead, like a button or a button role.',
@@ -194,7 +200,7 @@ export default typescriptEslint.config(
   },
   {
     files: [
-      'src/**/{page.tsx,page.ts,layout.tsx,error.tsx,global-error.tsx,not-found.tsx,default.tsx,loading.tsx}',
+      'src/**/{page.tsx,page.ts,layout.tsx,error.tsx,global-error.tsx,not-found.tsx,global-not-found.tsx,default.tsx,loading.tsx}',
       '**/*.config.*',
       '**/*.stories.*',
     ],
@@ -510,7 +516,7 @@ export default typescriptEslint.config(
       'import/order': ['error'],
       'import/newline-after-import': ['error'],
       'import/prefer-default-export': ['off'],
-      'import/no-unassigned-import': ['error', { allow: ['**/*.css'] }],
+      'import/no-unassigned-import': ['error', { allow: ['**/*.css', 'server-only'] }],
       'import/no-named-default': ['error'],
       'import/no-anonymous-default-export': ['error'],
       'import/dynamic-import-chunkname': ['error'],
@@ -545,4 +551,13 @@ export default typescriptEslint.config(
       'promise/prefer-await-to-callbacks': ['off'],
     },
   },
+  {
+    files: ['src/i18n/request.ts', 'src/proxy.ts'],
+    rules: { 'no-restricted-exports': 'off' },
+  },
+  {
+    files: ['src/app/**/not-found.tsx'],
+    rules: { 'unicorn/filename-case': 'off' },
+  },
+
 )

@@ -138,3 +138,17 @@ backend/tests/     API tests
 scripts/           Compose, deployment, and database backup/restore tooling
 docker-compose.yml Local development services and persistent volumes
 ```
+
+### Public hiking website
+
+The homepage and hike detail pages support Swedish (default), English and Czech.
+Unprefixed URLs select a language from the saved preference or browser settings;
+explicit language URLs always win. The language menu keeps the same hike where
+that translation is available.
+
+The frontend fetches typed backend responses on each server request without
+persisting them in the Next.js data cache. Content changes are available on the
+next server request; currently open browser tabs do not receive live updates.
+
+Visual assets in `frontend/public/brand` are optimized web copies of the supplied
+forest artwork and individually extracted hiking icons. Source files are preserved.

@@ -1,0 +1,49 @@
+@reference '../../app/globals.css';
+
+.prose {
+  overflow-wrap: anywhere;
+}
+
+.prose p {
+  @apply mb-5;
+}
+
+.prose a {
+  @apply text-forest underline;
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-4 pl-6;
+  list-style: revert;
+}
+
+.prose h2,
+.prose h3 {
+  @apply mt-6 mb-4 font-display leading-tight font-bold tracking-tight;
+}
+
+.prose h2 {
+  @apply text-3xl;
+}
+
+.prose h3 {
+  @apply text-xl;
+}
+
+.prose h2:first-child {
+  @apply mt-0;
+}
+
+.prose table {
+  @apply block overflow-x-auto border-collapse;
+}
+
+.prose td,
+.prose th {
+  @apply border border-beige p-2;
+}
+
+.prose blockquote {
+  @apply border-l-3 border-sage pl-5 text-forest;
+}

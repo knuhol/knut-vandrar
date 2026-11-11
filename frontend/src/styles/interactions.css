@@ -1,0 +1,37 @@
+@layer base {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Preserve HikeCard's interaction without changing card backgrounds or borders. */
+@utility card-interactive {
+  @apply transition-[transform,box-shadow] duration-(--duration-fast) hover:-translate-y-1 hover:shadow-lg;
+}
+
+@utility link-interaction {
+  @apply text-forest underline decoration-forest;
+  text-decoration-thickness: auto;
+}
+
+/* Keep existing underlines at the same distance in every interaction state. */
+a[href]:not([data-link-kind]),
+a[data-link-kind='card'] [data-link-label] {
+  text-underline-offset: var(--link-underline-offset);
+}
+
+/* Text links share their active appearance regardless of their resting styles. */
+a[href]:not([data-link-kind]):not([aria-current]):is(:hover, :focus-visible),
+a[data-link-kind='card']:is(:hover, :focus-visible) [data-link-label] {
+  @apply link-interaction;
+}
