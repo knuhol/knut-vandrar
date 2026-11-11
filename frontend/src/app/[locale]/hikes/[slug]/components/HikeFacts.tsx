@@ -14,65 +14,9 @@ export function HikeFacts({ hike, locale }: { hike: Hike; locale: Locale }) {
   const countries = new Intl.DisplayNames([locale], { type: 'region' })
 
   return (
-    <aside className="order-first self-start rounded-lg border border-beige bg-cream p-6.25 tablet:order-none">
-      <dl className="[&_dt]:mt-4.5 [&_dt]:font-statistic [&_dt]:text-xs [&_dt]:tracking-widest [&_dt]:text-muted [&_dt]:uppercase [&_dt:first-child]:mt-0 [&_dd]:my-0.75 [&_dd]:flex [&_dd]:flex-wrap [&_dd]:items-center [&_dd]:gap-1.75 [&_dd]:text-base [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1.5 [&_a]:underline [&_svg]:shrink-0">
-        {start && (
-          <>
-            <dt>{t('dates')}</dt>
-            <dd>
-              {format.dateTime(new Date(start), {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-              {end && (
-                <>
-                  {' '}
-                  <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />{' '}
-                  {format.dateTime(new Date(end), {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </>
-              )}
-            </dd>
-          </>
-        )}
-        {hike.start_point && (
-          <>
-            <dt>{t('start')}</dt>
-            <dd>{hike.start_point}</dd>
-          </>
-        )}
-        {hike.end_point && (
-          <>
-            <dt>{t('finish')}</dt>
-            <dd>{hike.end_point}</dd>
-          </>
-        )}
-        {hike.trail && (
-          <>
-            <dt>{t('trail')}</dt>
-            <dd>
-              {hike.trail.official_url ? (
-                <a href={hike.trail.official_url} rel="noopener noreferrer" target="_blank">
-                  {hike.trail.name} <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
-                </a>
-              ) : (
-                hike.trail.name
-              )}
-            </dd>
-            <dt>{t('country')}</dt>
-            <dd>
-              {hike.trail.country_codes.map((code) => countries.of(code) ?? code).join(', ')} ·{' '}
-              {t(hike.trail.type)}
-            </dd>
-          </>
-        )}
-      </dl>
+    <aside className="min-w-0 self-start rounded-lg border border-beige bg-cream p-5">
       {hike.trail?.logo_url && (
-        <div className="mt-5.75 border-t border-beige pt-5">
+        <div className="mb-5.75 flex justify-center border-b border-beige pb-5">
           <Image
             src={imageUrl(hike.trail.logo_url)}
             alt={hike.trail.name}
@@ -83,6 +27,71 @@ export function HikeFacts({ hike, locale }: { hike: Hike; locale: Locale }) {
           />
         </div>
       )}
+      <dl className="grid grid-cols-1 gap-y-4.5 [&_dt]:font-statistic [&_dt]:text-xs [&_dt]:tracking-widest [&_dt]:text-muted [&_dt]:uppercase [&_dd]:my-0.75 [&_dd]:flex [&_dd]:flex-wrap [&_dd]:items-center [&_dd]:gap-1.75 [&_dd]:text-base [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1.5 [&_a]:underline [&_svg]:shrink-0">
+        {start && (
+          <div>
+            <dt>{t('dates')}</dt>
+            <dd>
+              <time dateTime={start}>
+                {format.dateTime(new Date(start), {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </time>
+              {end && (
+                <>
+                  {' '}
+                  <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />{' '}
+                  <time dateTime={end}>
+                    {format.dateTime(new Date(end), {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </time>
+                </>
+              )}
+            </dd>
+          </div>
+        )}
+        {hike.start_point && (
+          <div>
+            <dt>{t('start')}</dt>
+            <dd>{hike.start_point}</dd>
+          </div>
+        )}
+        {hike.end_point && (
+          <div>
+            <dt>{t('finish')}</dt>
+            <dd>{hike.end_point}</dd>
+          </div>
+        )}
+        {hike.trail && (
+          <>
+            <div>
+              <dt>{t('trail')}</dt>
+              <dd>
+                {hike.trail.official_url ? (
+                  <a href={hike.trail.official_url} rel="noopener noreferrer" target="_blank">
+                    {hike.trail.name}{' '}
+                    <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
+                  </a>
+                ) : (
+                  hike.trail.name
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>{t('country')}</dt>
+              <dd>
+                {hike.trail.country_codes.map((code) => countries.of(code) ?? code).join(', ')} ·{' '}
+                {t(hike.trail.type)}
+              </dd>
+            </div>
+          </>
+        )}
+      </dl>
     </aside>
   )
 }

@@ -1,7 +1,9 @@
 .PHONY: generate-api generate-api-docker check-api translations-retranslate format-check format-fix lint test check
 
+BACKEND_PYTHON ?= .venv/bin/python
+
 generate-api:
-	cd backend && python3 scripts/export_openapi.py
+	cd backend && $(BACKEND_PYTHON) scripts/export_openapi.py
 
 generate-api-docker:
 	@set -e; temp=frontend/src/generated/openapi.ts.tmp; \
@@ -11,27 +13,27 @@ generate-api-docker:
 	trap - EXIT
 
 check-api:
-	cd backend && python3 scripts/export_openapi.py --check
+	cd backend && $(BACKEND_PYTHON) scripts/export_openapi.py --check
 
 translations-retranslate:
 	./scripts/compose.sh exec -T backend python -m knut_vandrar_backend.translations.cli
 
 format-check:
 	cd frontend && npm run format:check
-	cd backend && python3 -m ruff format --check .
+	cd backend && $(BACKEND_PYTHON) -m ruff format --check .
 
 format-fix:
 	cd frontend && npm run format:fix
-	cd backend && python3 -m ruff format .
-	cd backend && python3 -m ruff check --fix .
+	cd backend && $(BACKEND_PYTHON) -m ruff format .
+	cd backend && $(BACKEND_PYTHON) -m ruff check --fix .
 
 lint:
 	cd frontend && npm run lint
-	cd backend && python3 -m ruff check .
-	cd backend && python3 -m mypy
+	cd backend && $(BACKEND_PYTHON) -m ruff check .
+	cd backend && $(BACKEND_PYTHON) -m mypy
 
 test:
 	cd frontend && npm test --if-present
-	cd backend && .venv/bin/python -m pytest
+	cd backend && $(BACKEND_PYTHON) -m pytest
 
 check: format-check lint test check-api

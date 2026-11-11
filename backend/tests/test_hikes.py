@@ -111,6 +111,45 @@ def test_hike_create_queues_translations_and_returns_typed_cards(client: TestCli
     assert {job["target_locale"] for job in _get_jobs(client)} == {"sv", "cs"}
 
 
+@pytest.mark.parametrize("locale", ["en", "sv", "cs"])
+def test_hikes_are_ordered_by_start_date_before_pagination(client: TestClient, locale: str) -> None:
+    earlier = datetime(2026, 5, 1, tzinfo=UTC)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
+    db = _db_session(client)
+    for index, (planned, actual) in enumerate(
+        [(later, earlier), (earlier, later), (later, None), (earlier, None), (None, None)],
+        start=1,
+    ):
+        hike = Hike(id=UUID(int=index), planned_start_at=planned, actual_start_at=actual)
+        db.add(hike)
+        db.flush()
+        db.add(
+            HikeTranslation(
+                hike_id=hike.id,
+                locale_code=locale,
+                title=f"Hike {index}",
+                summary_markdown="Summary",
+                slug=f"hike-{index}",
+                created_at=earlier + timedelta(days=index),
+            )
+        )
+    db.commit()
+    db.close()
+
+    response = client.get("/api/hikes", params={"locale": locale})
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [
+        str(UUID(int=index)) for index in [2, 3, 1, 4, 5]
+    ]
+
+    page = client.get("/api/hikes", params={"locale": locale, "limit": 2, "offset": 1})
+    assert page.status_code == 200
+    assert page.json()["total"] == 5
+    assert [item["id"] for item in page.json()["items"]] == [
+        str(UUID(int=index)) for index in [3, 1]
+    ]
+
+
 def test_missing_translation_is_not_fallback_and_outdated_translation_is_served(
     client: TestClient,
 ) -> None:

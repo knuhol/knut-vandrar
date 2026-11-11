@@ -66,8 +66,8 @@ export default async function HikePage({ params }: Props) {
           aria-label={t('hikes')}
         >
           <Link href={{ pathname: '/', hash: 'hikes' }}>{t('hikes')}</Link>
-          <span>/</span>
-          <span>{hike.translation.title}</span>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{hike.translation.title}</span>
         </nav>
         <div className="mb-6">
           <HikeStatus status={hike.status} />
@@ -96,23 +96,25 @@ export default async function HikePage({ params }: Props) {
             />
           </div>
         )}
-        <div className="pt-7.5">
+        <div className="max-w-reading pt-7.5 leading-relaxed text-forest tablet:pt-10">
           <Markdown variant="lead">{hike.translation.summary_markdown}</Markdown>
         </div>
-        <div className="my-7.5 grid grid-cols-1 gap-6.25 tablet:my-11.25 tablet:grid-cols-2 tablet:gap-5 desktop:grid-cols-3">
-          <article className="min-w-0 desktop:col-span-2">
-            <div className="mb-4">
+        <div className="my-7.5 grid grid-cols-1 items-start gap-8 tablet:my-10 desktop:grid-cols-3 desktop:gap-12">
+          <article className="min-w-0 max-w-reading desktop:col-span-2">
+            <div className="mb-6">
               <Heading as="h2">{t('about')}</Heading>
             </div>
             {hike.translation.description_markdown && (
               <Markdown>{hike.translation.description_markdown}</Markdown>
             )}
           </article>
-          <HikeFacts hike={hike} locale={locale} />
+          <div className="order-first grid min-w-0 gap-4 desktop:order-none">
+            <HikeFacts hike={hike} locale={locale} />
+            <InfoCards cards={hike.cards} />
+          </div>
         </div>
-        <InfoCards cards={hike.cards} />
         <Link
-          className="mt-10 inline-flex items-center gap-2.5 font-semibold text-forest"
+          className="inline-flex items-center gap-2.5 font-semibold text-forest"
           href={{ pathname: '/', hash: 'hikes' }}
         >
           <ArrowLeft className="size-4.5 shrink-0" aria-hidden="true" />
