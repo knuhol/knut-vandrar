@@ -2,7 +2,6 @@ import 'server-only'
 
 import { createClient, type NormalizeOAS } from 'fets'
 
-import { cacheRevalidateSeconds } from '@/config/cache'
 import { serverConfig } from '@/config/server'
 import type { openapi } from '@/generated/openapi'
 import type { Locale } from '@/i18n/routing'
@@ -10,7 +9,7 @@ import type { Locale } from '@/i18n/routing'
 const client = createClient<NormalizeOAS<typeof openapi>>({
   endpoint: serverConfig.apiBaseUrl,
   globalParams: {
-    next: { revalidate: cacheRevalidateSeconds },
+    cache: 'no-store',
   },
 })
 

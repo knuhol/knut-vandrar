@@ -146,10 +146,9 @@ Unprefixed URLs select a language from the saved preference or browser settings;
 explicit language URLs always win. The language menu keeps the same hike where
 that translation is available.
 
-The frontend uses Next.js to cache typed backend responses with a 24-hour
-revalidation interval. Content changes become visible after Next.js revalidates
-the cached responses; backend writes do not trigger an immediate refresh. Currently
-open browser tabs do not receive live updates.
+The frontend fetches typed backend responses on each server request without
+persisting them in the Next.js data cache. Content changes are available on the
+next server request; currently open browser tabs do not receive live updates.
 
 Visual assets in `frontend/public/brand` are optimized web copies of the supplied
 forest artwork and individually extracted hiking icons. Source files are preserved.

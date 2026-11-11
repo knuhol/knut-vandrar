@@ -62,10 +62,10 @@ Back up each database independently with the [database backup scripts](database-
 
 ### Frontend content caching and languages
 
-The public site uses Next.js server rendering with a 24-hour API data cache
-revalidation interval. Content changes, including translations and direct SQL edits,
-become visible after Next.js revalidates the cached responses. The backend and
-translation worker do not send cache invalidation notifications.
+The public site uses Next.js server rendering and fetches API data on each
+server request with caching disabled. Content changes, including translations
+and direct SQL edits, are available on the next server request. Currently open
+browser tabs do not receive live updates.
 
 `INTERNAL_API_URL` is supplied by Compose using the backend service address. Its
 `.env` equivalent is only for running the frontend on the host. Recreate services
