@@ -35,7 +35,3 @@ test:
 	cd backend && .venv/bin/python -m pytest
 
 check: format-check lint test check-api
-
-.PHONY: cache-refresh
-cache-refresh:
-	./scripts/refresh-cache.sh

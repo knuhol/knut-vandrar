@@ -62,20 +62,14 @@ Back up each database independently with the [database backup scripts](database-
 
 ### Frontend content caching and languages
 
-The public site uses Next.js server rendering with a 24-hour tagged API data cache.
-Backend content commits (including worker-published translations, trail changes and image uploads)
-notify the frontend after the transaction succeeds. This expires the shared `hikes` cache;
-the next page request loads fresh content. Failed notifications are logged and the cache
-expires automatically within 24 hours. Direct SQL changes do not send notifications.
-Run `make cache-refresh` after direct database edits (using the appropriate Compose environment
-when administering a VPS checkout).
+The public site uses Next.js server rendering with a 24-hour API data cache
+revalidation interval. Content changes, including translations and direct SQL edits,
+become visible after Next.js revalidates the cached responses. The backend and
+translation worker do not send cache invalidation notifications.
 
-Set `CACHE_REVALIDATION_SECRET` to a long random value in each deployment's private `.env`.
-Compose supplies the same value to the frontend, backend and translation worker. Use a
-separate value for development and production. Do not expose it with `NEXT_PUBLIC_`.
-Recreate the services after changing environment variables; a restart alone does not inject
-new values. `INTERNAL_API_URL` and `FRONTEND_REVALIDATION_URL` are supplied by Compose using
-service addresses. Their `.env` equivalents are only for running processes on the host.
+`INTERNAL_API_URL` is supplied by Compose using the backend service address. Its
+`.env` equivalent is only for running the frontend on the host. Recreate services
+after changing environment variables; a restart alone does not inject new values.
 
 Pages have explicit `/sv`, `/en` and `/cs` prefixes and localized hike paths/slugs.
 Unprefixed requests use the saved locale cookie, then browser language preferences,

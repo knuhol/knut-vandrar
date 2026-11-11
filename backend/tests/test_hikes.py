@@ -1,7 +1,6 @@
 """API and queue tests for hiking content."""
 
 from collections.abc import Generator, Iterator
-from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -14,7 +13,6 @@ from PIL import Image
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from knut_vandrar_backend import cache_invalidation
 from knut_vandrar_backend.api.hikes import _duration_days
 from knut_vandrar_backend.api.schemas.hike import RouteCard, YouTubeVideoCard
 from knut_vandrar_backend.database.base import Base
@@ -24,19 +22,13 @@ from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike, HikeTranslation
 from knut_vandrar_backend.models.reference import InfoCardType, Language
 from knut_vandrar_backend.models.translation import TranslationJob, TranslationProfile
-from knut_vandrar_backend.settings import settings as validated_settings
 from knut_vandrar_backend.translations.cli import queue_outdated_translations
 from knut_vandrar_backend.translations.core import profile_fingerprint
 from knut_vandrar_backend.translations.openai_provider import TranslationResult
 
 
 @pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setattr(
-        cache_invalidation,
-        "settings",
-        replace(validated_settings, frontend_revalidation_url=None),
-    )
+def client(tmp_path: Path) -> Iterator[TestClient]:
     engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
     Base.metadata.create_all(bind=engine)
     testing_session_local = sessionmaker[Session](bind=engine, autoflush=False)
