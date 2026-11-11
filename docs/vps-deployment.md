@@ -67,9 +67,16 @@ server request with caching disabled. Content changes, including translations
 and direct SQL edits, are available on the next server request. Currently open
 browser tabs do not receive live updates.
 
-`INTERNAL_API_URL` is supplied by Compose using the backend service address. Its
-`.env` equivalent is only for running the frontend on the host. Recreate services
-after changing environment variables; a restart alone does not inject new values.
+`INTERNAL_API_URL` is supplied by Compose as `http://backend-internal:${API_PORT}`.
+The `backend-internal` alias exists only on each deployment's private default
+network, which the frontend also joins. This keeps server-side API requests within
+the correct environment. Both deployments share the Traefik network for public
+routing, so the generic `backend` hostname on that network can resolve to either
+environment and must not be used for internal API requests.
+
+The `.env` equivalent of `INTERNAL_API_URL` is only for running the frontend on the
+host. Recreate services after changing environment variables or network membership;
+a restart alone does not apply those changes.
 
 Pages have explicit `/sv`, `/en` and `/cs` prefixes and localized hike paths/slugs.
 Unprefixed requests use the saved locale cookie, then browser language preferences,

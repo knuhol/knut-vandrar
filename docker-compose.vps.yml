@@ -37,8 +37,10 @@ services:
       API_PORT: ${API_PORT:?Set API_PORT}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS}
     networks:
-      - default
-      - traefik
+      default:
+        aliases:
+          - backend-internal
+      traefik: {}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT}/health', timeout=3)"]
       interval: 10s
@@ -88,10 +90,11 @@ services:
         FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
     restart: unless-stopped
     environment:
-      INTERNAL_API_URL: http://backend:${API_PORT}
+      INTERNAL_API_URL: http://backend-internal:${API_PORT}
       PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT}
       FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
     networks:
+      - default
       - traefik
     healthcheck:
       test:
