@@ -32,7 +32,7 @@ lint:
 
 test:
 	cd frontend && npm test --if-present
-	cd backend && python3 -m pytest
+	cd backend && .venv/bin/python -m pytest
 
 check: format-check lint test check-api
 

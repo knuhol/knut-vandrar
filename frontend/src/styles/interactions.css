@@ -31,7 +31,7 @@ a[data-link-kind='card'] [data-link-label] {
 }
 
 /* Text links share their active appearance regardless of their resting styles. */
-a[href]:not([data-link-kind]):is(:hover, :focus-visible),
+a[href]:not([data-link-kind]):not([aria-current]):is(:hover, :focus-visible),
 a[data-link-kind='card']:is(:hover, :focus-visible) [data-link-label] {
   @apply link-interaction;
 }

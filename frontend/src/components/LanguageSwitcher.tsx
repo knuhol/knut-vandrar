@@ -17,7 +17,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className="ml-auto flex cursor-pointer items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm hover:bg-beige active:bg-forest active:text-cream focus:outline-none tablet:ml-0 tablet:gap-2.25 tablet:px-3"
+        className="ml-auto flex cursor-pointer items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm hover:bg-beige active:bg-beige data-[state=open]:bg-beige focus:outline-none tablet:ml-0 tablet:gap-2.25 tablet:px-3"
         aria-label={t('language')}
       >
         <Globe className="size-4 shrink-0" aria-hidden="true" />

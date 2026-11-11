@@ -57,9 +57,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
   const pathname = usePathname()
   const homeRouteActive = pathname === `/${locale}` || pathname === `/${locale}/`
   const localizedHikeRoute = routing.pathnames['/hikes/[slug]'][locale]
-  const hikeActive = pathname.startsWith(
-    `/${locale}${localizedHikeRoute.replace('[slug]', '')}`,
-  )
+  const hikeActive = pathname.startsWith(`/${locale}${localizedHikeRoute.replace('[slug]', '')}`)
   const atHikesOnPage = useSyncExternalStore(subscribe, isAtHikes, () => false)
   const atHikes = homeRouteActive && atHikesOnPage
   const hikesActive = hikeActive || atHikes
@@ -94,7 +92,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       </nav>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger
-          className="order-3 inline-flex cursor-pointer items-center justify-center rounded-sm border border-beige bg-transparent p-2 text-forest hover:bg-beige active:bg-forest active:text-cream focus:outline-none tablet:hidden"
+          className="order-3 inline-flex cursor-pointer items-center justify-center rounded-sm border border-beige bg-transparent p-2 text-forest hover:bg-beige active:bg-beige data-[state=open]:bg-beige focus:outline-none tablet:hidden"
           aria-label={t('navigation')}
         >
           <IconMenu2 className="size-5.5 shrink-0" aria-hidden="true" />
