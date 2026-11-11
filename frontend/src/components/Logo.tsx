@@ -2,11 +2,14 @@ import { useTranslations } from 'next-intl'
 
 import type { SVGProps } from 'react'
 
-type LogoProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
+import type { UIComponentProps } from './uiComponentProps'
+
+type LogoProps = UIComponentProps<Omit<SVGProps<SVGSVGElement>, 'children'>> & {
   variant?: 'standard' | 'light' | 'monochromatic'
+  size?: 'default' | 'compact'
 }
 
-export function Logo({ variant = 'standard', ...props }: LogoProps) {
+export function Logo({ variant = 'standard', size = 'default', ...props }: LogoProps) {
   const t = useTranslations('Site')
   const colors = {
     standard: {
@@ -16,11 +19,12 @@ export function Logo({ variant = 'standard', ...props }: LogoProps) {
     },
     light: {
       forest: 'var(--color-sage)',
-      sage: 'var(--color-sage-light)',
+      sage: 'var(--color-cream)',
       accent: 'var(--color-orange)',
     },
     monochromatic: { forest: 'currentColor', sage: 'currentColor', accent: 'currentColor' },
   }[variant]
+
   return (
     <svg
       viewBox="0 0 654.23364 72.620659"
@@ -29,6 +33,7 @@ export function Logo({ variant = 'standard', ...props }: LogoProps) {
       role="img"
       aria-label={t('brand')}
       {...props}
+      className={`block h-auto ${size === 'compact' ? 'w-48 max-w-full tablet:w-64' : 'w-full max-w-47.5 tablet:w-80 tablet:max-w-none'}`}
     >
       <polygon
         points="-18.9019,-23.042 -18.9019,23.042 -9.541,23.042 -9.541,7.3784 18.9019,-23.042 8.1006,-23.042 -9.541,-4.0283 -9.541,-23.042 "

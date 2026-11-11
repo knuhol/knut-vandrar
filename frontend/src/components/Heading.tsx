@@ -1,26 +1,26 @@
 import type { ComponentProps } from 'react'
 
-const sizes = {
-  display: 'text-display',
-  section: 'text-section',
-  card: 'text-card',
-  hero: 'text-hero-mobile tablet:text-display',
-  detail: 'text-detail',
-  message: 'text-message',
-  info: 'text-info',
-}
-const defaults = { h1: 'display', h2: 'section', h3: 'card' } as const
+import type { UIComponentProps } from './uiComponentProps'
+
+type TextSizeClass =
+  'text-xs' | 'text-sm' | 'text-base' | 'text-lg' | 'text-xl' | 'text-3xl' | 'text-4xl' | 'text-6xl'
+
+const defaults = { h1: 'text-4xl', h2: 'text-3xl', h3: 'text-xl' } as const
 
 export function Heading({
   as: Tag = 'h1',
-  size = defaults[Tag],
-  className = '',
+  className = defaults[Tag],
+  tone = 'default',
   ...props
-}: ComponentProps<'h1'> & { as?: keyof typeof defaults; size?: keyof typeof sizes }) {
+}: Omit<UIComponentProps<ComponentProps<'h1'>>, 'className'> & {
+  as?: keyof typeof defaults
+  className?: TextSizeClass
+  tone?: 'default' | 'brand'
+}) {
   return (
     <Tag
       {...props}
-      className={`font-display leading-heading font-extrabold tracking-heading ${sizes[size]} ${className}`}
+      className={`font-display leading-tight font-bold tracking-tight ${className} ${tone === 'brand' ? 'text-forest' : ''}`}
     />
   )
 }

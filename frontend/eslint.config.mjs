@@ -91,6 +91,7 @@ export default typescriptEslint.config(
   {
     files: ['**/*.{js,jsx,cjs,mjs,ts,tsx,d.ts}'],
     rules: {
+      curly: ['error', 'all'],
       'for-direction': ['error'],
       'getter-return': ['error'],
       'no-async-promise-executor': ['error'],
@@ -180,6 +181,11 @@ export default typescriptEslint.config(
       ],
       'no-restricted-syntax': [
         'error',
+        {
+          selector: 'ForStatement[init=null][test=null][update=null]',
+          message:
+            'Avoid unbounded for (;;) loops. Prefer forEach for arrays or a loop with an explicit stopping condition.',
+        },
         {
           selector: 'JSXAttribute[name.name=/role/][value.value=/presentation/]',
           message:

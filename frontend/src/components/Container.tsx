@@ -1,9 +1,7 @@
-import type { ComponentPropsWithoutRef } from 'react'
+import type { ReactNode } from 'react'
 
-export function Container({
-  as: Tag = 'div',
-  className = '',
-  ...props
-}: ComponentPropsWithoutRef<'div'> & { as?: 'div' | 'main' }) {
-  return <Tag {...props} className={`mx-auto w-full max-w-page px-5 tablet:px-7 ${className}`} />
+import type { UIComponentProps } from './uiComponentProps'
+
+export function Container({ children }: UIComponentProps<{ children: ReactNode }>) {
+  return <div className="mx-auto w-full max-w-page px-5 tablet:px-7">{children}</div>
 }

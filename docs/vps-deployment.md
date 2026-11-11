@@ -62,11 +62,11 @@ Back up each database independently with the [database backup scripts](database-
 
 ### Frontend content caching and languages
 
-The public site uses Next.js server rendering with a five-minute tagged API data cache.
+The public site uses Next.js server rendering with a 24-hour tagged API data cache.
 Backend content commits (including worker-published translations, trail changes and image uploads)
 notify the frontend after the transaction succeeds. This expires the shared `hikes` cache;
 the next page request loads fresh content. Failed notifications are logged and the cache
-expires automatically within five minutes. Direct SQL changes do not send notifications.
+expires automatically within 24 hours. Direct SQL changes do not send notifications.
 Run `make cache-refresh` after direct database edits (using the appropriate Compose environment
 when administering a VPS checkout).
 

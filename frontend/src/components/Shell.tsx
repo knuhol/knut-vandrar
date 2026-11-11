@@ -1,39 +1,40 @@
 import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
 
-import { Navigation } from './Navigation'
+import { Navigation } from './Navigation/Navigation'
 import { SiteHeader } from './SiteHeader'
 import { Logo } from './Logo'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Container } from './Container'
+import type { UIComponentProps } from './uiComponentProps'
 
-import { routing, type Locale } from '@/i18n/routing'
+import { Link } from '@/i18n/navigation'
+import type { Locale } from '@/i18n/routing'
 
 export async function Header({
   locale,
-  links,
-}: {
-  locale: Locale
-  links?: { locale: Locale; href: string }[]
-}) {
+}: UIComponentProps<{ locale: Locale }>) {
   const t = await getTranslations('Site')
+
   return (
     <>
-      <a className="absolute -top-25 left-2.5 z-100 bg-paper p-2.5 focus:top-2.5" href="#content">
+      <a
+        className="absolute -top-25 left-2.5 z-100 bg-paper p-2.5 focus:top-2.5"
+        href="#content"
+      >
         {t('skip')}
       </a>
       <SiteHeader>
-        <div className="mx-auto flex max-w-header items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
-          <Link className="min-w-0 flex-1 tablet:flex-none" href={`/${locale}`}>
-            <Logo className="block h-auto w-full max-w-47.5 tablet:w-(--brand-width) tablet:max-w-none" />
+        <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
+          <Link
+            data-link-kind="brand"
+            className="min-w-0 flex-1 tablet:flex-none"
+            href="/"
+          >
+            <Logo />
           </Link>
           <Navigation locale={locale} />
           <LanguageSwitcher
             locale={locale}
-            links={
-              links ??
-              routing.locales.map((language) => ({ locale: language, href: `/${language}` }))
-            }
           />
         </div>
       </SiteHeader>
@@ -41,19 +42,19 @@ export async function Header({
   )
 }
 
-export async function Footer({ locale }: { locale: Locale }) {
+export async function Footer() {
   const t = await getTranslations('Site')
+
   return (
-    <footer className="bg-footer text-cream">
-      <Container className="flex flex-col items-center justify-between gap-2 py-7.5 text-center text-small tablet:flex-row tablet:gap-5 tablet:text-left">
-        <Link href={`/${locale}`}>
-          <Logo
-            className="block h-auto w-(--brand-footer-width-mobile) max-w-full tablet:w-(--brand-footer-width)"
-            variant="monochromatic"
-          />
-        </Link>
-        <p>{t('footer')}</p>
-        <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+    <footer className="bg-forest text-cream">
+      <Container>
+        <div className="flex flex-col items-center justify-between gap-2 py-7.5 text-center text-sm tablet:flex-row tablet:gap-5 tablet:text-left">
+          <Link data-link-kind="brand" href="/" className="mb-1.5 md:mb-0">
+            <Logo size="compact" variant="monochromatic" />
+          </Link>
+          <p>{t('footer')}</p>
+          <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+        </div>
       </Container>
     </footer>
   )

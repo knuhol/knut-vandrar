@@ -9,5 +9,6 @@ import { routing } from './routing'
 export default getRequestConfig(async ({ locale: override }) => {
   const requested = override ?? (await rootLocale())
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale
+
   return { locale, messages: messages[locale], timeZone: 'Europe/Stockholm' }
 })

@@ -1,9 +1,0 @@
-@reference '../app/globals.css';
-
-.links a:hover {
-  @apply text-forest underline underline-offset-8;
-}
-
-.links a[aria-current] {
-  @apply underline decoration-orange decoration-3 underline-offset-8;
-}

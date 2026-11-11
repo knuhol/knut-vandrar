@@ -19,29 +19,36 @@ export function InfoCard({
   message?: string
   inactive?: boolean
 }) {
+  const interactive = Boolean(href && !inactive && !message)
+  const Tag = interactive ? 'a' : 'article'
+
   return (
-    <article
-      className={`grid min-h-36 grid-cols-[var(--info-icon-size)_minmax(0,1fr)] content-center gap-3 rounded-panel border border-line p-6 [&>svg]:col-start-1 [&>svg]:row-start-1 [&>svg]:text-forest ${inactive ? 'bg-inactive text-muted' : 'bg-cream'}`}
+    <Tag
+      href={interactive ? href : undefined}
+      target={interactive ? '_blank' : undefined}
+      rel={interactive ? 'noopener noreferrer' : undefined}
+      data-link-kind={interactive ? 'card' : undefined}
+      className={`grid min-h-36 grid-cols-[calc(var(--spacing)*6)_minmax(0,1fr)] content-center gap-3 rounded-lg border border-beige bg-cream p-6 [&>svg]:col-start-1 [&>svg]:row-start-1 [&>svg]:text-forest ${interactive ? 'card-interactive cursor-pointer' : ''} ${inactive ? 'text-muted' : ''}`}
     >
       {icon}
-      <Heading as="h3" size="info" className="col-start-2">
-        {title}
-      </Heading>
+      <div className="col-start-2">
+        <Heading as="h3" tone="brand">
+          {title}
+        </Heading>
+      </div>
       {message ? (
-        <p className="col-start-2 text-action">{message}</p>
+        <p className="col-start-2 text-base">{message}</p>
       ) : (
-        href && (
-          <a
+        interactive && (
+          <span
+            data-link-label
             className="col-start-2 inline-flex items-center gap-2.5 font-semibold text-forest"
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             {action}
             <IconExternalLink className="size-4 shrink-0" aria-hidden="true" />
-          </a>
+          </span>
         )
       )}
-    </article>
+    </Tag>
   )
 }

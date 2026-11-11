@@ -1,4 +1,4 @@
-@reference '../../globals.css';
+@reference '../../../globals.css';
 
 .background::before,
 .background::after {
@@ -7,9 +7,9 @@
 }
 
 .background::before {
-  background: url('/brand/poster.svg') center / cover no-repeat;
+  background: url('/brand/forest.svg') center / cover no-repeat;
 }
 
 .background::after {
-  background: var(--message-overlay);
+  @apply bg-cream/30;
 }

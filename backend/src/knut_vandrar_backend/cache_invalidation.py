@@ -49,7 +49,7 @@ def invalidate_content(session: Session) -> None:
             pass
     except (URLError, TimeoutError, OSError):
         logger.warning(
-            "Frontend cache notification failed; the five-minute cache expiry will refresh content"
+            "Frontend cache notification failed; the 24-hour cache expiry will refresh content"
         )
 
 

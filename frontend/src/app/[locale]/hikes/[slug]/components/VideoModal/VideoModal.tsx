@@ -13,26 +13,38 @@ export function VideoModal({ videoId, onClose }: { videoId: string; onClose: () 
 
   useEffect(() => {
     const element = dialog.current
-    if (!element) return
+
+    if (!element) {
+      return
+    }
+
     const overflow = document.body.style.overflow
     const padding = document.body.style.paddingRight
     const scrollbar = window.innerWidth - document.documentElement.clientWidth
     const currentPadding = Number.parseFloat(getComputedStyle(document.body).paddingRight)
     document.body.style.overflow = 'hidden'
     document.body.style.paddingRight = `${String(currentPadding + scrollbar)}px`
+
     const closeOnBackdrop = (event: MouseEvent) => {
-      if (event.target !== element) return
+      if (event.target !== element) {
+        return
+      }
+
       const bounds = element.getBoundingClientRect()
+
       if (
         event.clientX < bounds.left ||
         event.clientX > bounds.right ||
         event.clientY < bounds.top ||
         event.clientY > bounds.bottom
-      )
+      ) {
         element.close()
+      }
     }
+
     element.addEventListener('click', closeOnBackdrop)
     element.showModal()
+
     return () => {
       element.removeEventListener('click', closeOnBackdrop)
       document.body.style.overflow = overflow
@@ -43,14 +55,14 @@ export function VideoModal({ videoId, onClose }: { videoId: string; onClose: () 
   return (
     <dialog
       ref={dialog}
-      className={`m-auto max-h-(--modal-max-height) w-(--modal-width) max-w-none overflow-auto rounded-panel border border-(--modal-border) bg-forest p-0 text-cream shadow-modal ${styles.dialog}`}
+      className={`m-auto max-w-none overflow-auto rounded-lg border border-cream/20 bg-forest p-0 text-cream shadow-lg ${styles.dialog}`}
       aria-label={t('youtube_video')}
       onClose={onClose}
     >
       <div className="flex items-center justify-between gap-4 px-4 py-3">
         <span>{t('youtube_video')}</span>
         <button
-          className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-action bg-(--modal-close-background) hover:bg-(--modal-close-hover)"
+          className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-sm bg-cream/10 hover:bg-cream/20"
           type="button"
           aria-label={t('closeVideo')}
           onClick={() => {

@@ -5,12 +5,13 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import '../globals.css'
+import { Footer, Header } from '@/components/Shell'
 import { routing } from '@/i18n/routing'
 
 const heading = Montserrat({
   subsets: ['latin', 'latin-ext'],
   variable: '--font-heading',
-  weight: ['600', '700', '800'],
+  weight: ['700'],
   display: 'swap',
 })
 const body = Source_Sans_3({
@@ -31,15 +32,20 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  if (!hasLocale(routing.locales, locale)) return {}
+
+  if (!hasLocale(routing.locales, locale)) {
+    return {}
+  }
+
   const t = await getTranslations({ locale, namespace: 'Site' })
+
   return {
     title: { default: t('metadataTitle'), template: t('metadataTitleTemplate') },
     description: t('metadataDescription'),
     manifest: '/brand/site.webmanifest',
     icons: {
       icon: [
-        { url: '/favicon.ico' },
+        { url: '/brand/favicon.ico' },
         { url: '/brand/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
         { url: '/brand/favicon-96x96.png', type: 'image/png', sizes: '96x96' },
       ],
@@ -56,13 +62,23 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  if (!hasLocale(routing.locales, locale)) notFound()
+
+  if (!hasLocale(routing.locales, locale)) {
+    notFound()
+  }
+
   return (
     <html lang={locale}>
       <body
-        className={`${heading.variable} ${body.variable} ${numbers.variable} bg-paper font-sans text-body-mobile leading-body text-ink tablet:text-body`}
+        className={`${heading.variable} ${body.variable} ${numbers.variable} flex min-h-svh flex-col bg-paper font-sans text-lg leading-relaxed text-ink`}
       >
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <Header locale={locale} />
+          <main id="content" className="flex min-w-0 flex-1 flex-col">
+            {children}
+          </main>
+          <Footer />
+        </NextIntlClientProvider>
       </body>
     </html>
   )

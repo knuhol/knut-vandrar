@@ -4,15 +4,16 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 
 import type { ComponentProps } from 'react'
 
+import type { UIComponentProps } from './uiComponentProps'
+
 export function DropdownSurface({
-  className = '',
   ...props
-}: ComponentProps<typeof DropdownMenu.Content>) {
+}: UIComponentProps<ComponentProps<typeof DropdownMenu.Content>>) {
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.Content
         {...props}
-        className={`z-50 min-w-40 rounded-menu border border-line bg-paper p-1.75 shadow-menu [&_a]:block [&_a]:rounded-item [&_a]:px-3.5 [&_a]:py-2 [&_a]:text-copy [&_a[data-highlighted]]:bg-cream [&_a[data-highlighted]]:outline-none [&_a[aria-current]]:font-bold [&_a[aria-current]]:text-forest ${className}`}
+        className="z-50 min-w-40 rounded-lg border border-beige bg-paper p-1.75 shadow-lg [&_a]:block [&_a]:rounded-sm [&_a]:px-3.5 [&_a]:py-2 [&_a]:text-base [&_a:focus]:outline-none [&_a[aria-current]]:font-bold [&_a[aria-current]]:text-forest [&_a[aria-current]]:underline [&_a[aria-current]]:decoration-orange [&_a[aria-current]]:decoration-3"
       />
     </DropdownMenu.Portal>
   )

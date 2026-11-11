@@ -4,7 +4,7 @@ export function Eyebrow({ className = '', ...props }: ComponentProps<'p'>) {
   return (
     <p
       {...props}
-      className={`text-eyebrow font-bold tracking-eyebrow text-forest uppercase ${className}`}
+      className={`font-statistic text-xs font-bold tracking-widest text-forest uppercase ${className}`}
     />
   )
 }
