@@ -14,6 +14,7 @@ const client = createClient<NormalizeOAS<typeof openapi>>({
 })
 
 const pageSize = 6
+
 export async function getHikes(locale: Locale, offset = 0) {
   const response = await client['/api/hikes'].get({ query: { locale, limit: pageSize, offset } })
   if (!response.ok) {
@@ -22,7 +23,7 @@ export async function getHikes(locale: Locale, offset = 0) {
   return response.json()
 }
 
-async function getApiHike(locale: Locale, slug: string) {
+export async function getHike(locale: Locale, slug: string) {
   const response = await client['/api/hikes/{locale}/{slug}'].get({ params: { locale, slug } })
 
   if (response.status === 404) {
@@ -33,10 +34,6 @@ async function getApiHike(locale: Locale, slug: string) {
   }
 
   return response.json()
-}
-
-export async function getHike(locale: Locale, slug: string) {
-  return getApiHike(locale, slug)
 }
 
 export async function getHikeAlternative(locale: Locale, id: string) {
@@ -54,6 +51,7 @@ export async function getHikeAlternative(locale: Locale, id: string) {
 
   return response.json()
 }
-export type Hike = NonNullable<Awaited<ReturnType<typeof getApiHike>>>
+
+export type Hike = NonNullable<Awaited<ReturnType<typeof getHike>>>
 export type HikesPage = Awaited<ReturnType<typeof getHikes>>
 export type HikeSummary = HikesPage['items'][number]
