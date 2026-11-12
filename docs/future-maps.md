@@ -6,14 +6,9 @@ Status: deferred. Do not implement until explicitly requested.
 
 Store start and finish as optional latitude/longitude pairs associated with a hike.
 Keep readable place names and link them to coordinate-based Google Maps searches.
-Prototype coordinates live in `frontend/src/mocks/hike-endpoints.json`; they are
-illustrative locations, not verified trailhead positions. No API or database changes
-have been made. Existing API hikes without coordinates continue showing plain names.
-
-When backend work is authorized, add optional, independently nullable start and end
-coordinate pairs to hike storage and API contracts. Validate latitude in [-90, 90]
-and longitude in [-180, 180], and require both numbers for each provided pair.
-Preserve the existing names. Regenerate and verify the checked-in API schema.
+Start and finish coordinates are now optional persisted hike fields. Place names
+link to Google Maps when coordinates are available. Coordinate pairs are validated
+by the API and database. Static map generation and live tracking remain deferred.
 
 ## Static map concept
 

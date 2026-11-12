@@ -1,9 +1,11 @@
 """Validated, centralized backend settings."""
 
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
+from pydantic import SecretStr
 from sqlalchemy.engine import URL, make_url
 
 # Root .env supplies host development values; Compose-injected variables win.
@@ -38,6 +40,17 @@ def _openai_timeout() -> int:
     return value
 
 
+def _write_token() -> SecretStr | None:
+    value = os.getenv("API_WRITE_TOKEN", "").strip()
+    if not value:
+        return None
+    if re.fullmatch(r"[A-Za-z0-9_-]{43,128}", value) is None:
+        raise RuntimeError(
+            "API_WRITE_TOKEN must be a randomly generated URL-safe token of 43–128 characters"
+        )
+    return SecretStr(value)
+
+
 def _database_url() -> URL:
     """Use the local URL on the host; derive the service URL in Compose."""
     database_url = os.getenv("DATABASE_URL", "").strip()
@@ -67,6 +80,7 @@ class Settings:
     api_port: int
     openai_api_key: str | None
     openai_request_timeout_seconds: int
+    api_write_token: SecretStr | None = field(repr=False)
 
 
 def load_settings() -> Settings:
@@ -82,6 +96,7 @@ def load_settings() -> Settings:
         api_port=_port("API_PORT"),
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip() or None,
         openai_request_timeout_seconds=_openai_timeout(),
+        api_write_token=_write_token(),
     )
 
 

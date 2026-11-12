@@ -18,10 +18,8 @@ import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname, Link } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
 import { getHike } from '@/api/hikes'
-import { getTrailRatings } from '@/mocks/trailRatings'
-import { getTrailTags } from '@/mocks/trailTags'
-import { getHikeEndpoints } from '@/mocks/hikeEndpoints'
-import { getHikeDetails, getTrailDetails } from '@/mocks/details'
+
+import { hikePresentation, locationPresentation } from '@/hiking/presentation'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -62,7 +60,8 @@ export default async function HikePage({ params }: Props) {
   }
 
   const t = await getTranslations('Site')
-  const trailRatings = hike.trail && getTrailRatings(hike.trail.id)
+  const presentation = hikePresentation(hike)
+  const locationData = hike.location && locationPresentation(hike.location)
   const isActive = hike.status === 'planned' || hike.status === 'ongoing'
 
   return (
@@ -88,8 +87,8 @@ export default async function HikePage({ params }: Props) {
         <section className="mb-7.5 grid gap-4" aria-label={t('hikeFacts')}>
           <HikeFacts
             hike={hike}
-            endpoints={getHikeEndpoints(hike.id)}
-            details={getHikeDetails(hike.id)}
+            endpoints={presentation.endpoints}
+            details={presentation.details}
           />
           {isActive && hike.cards.length > 0 && (
             <section>
@@ -123,7 +122,7 @@ export default async function HikePage({ params }: Props) {
             <div className="mb-6">
               <Heading as="h2">{t('about')}</Heading>
             </div>
-            {locale !== 'en' && (
+            {locale !== 'en' && hike.translation.review_status !== 'manual' && (
               <div className="mb-6">
                 <TranslationNotice />
               </div>
@@ -132,13 +131,13 @@ export default async function HikePage({ params }: Props) {
               <Markdown>{hike.translation.description_markdown}</Markdown>
             )}
           </article>
-          {hike.trail && (
+          {hike.location && locationData && (
             <TrailFacts
-              location={hike.trail}
+              location={hike.location}
               locale={locale}
-              tags={getTrailTags(hike.trail.id)}
-              ratings={trailRatings ?? undefined}
-              details={getTrailDetails(hike.trail.id)}
+              tags={locationData.tags}
+              ratings={locationData.ratings}
+              details={locationData.details}
             />
           )}
         </div>

@@ -2,8 +2,9 @@
 
 import hashlib
 from datetime import UTC, datetime
+from decimal import Decimal
 from math import ceil
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -12,13 +13,16 @@ from pydantic import TypeAdapter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from knut_vandrar_backend.api.authored import read_authored
 from knut_vandrar_backend.api.image_uploads import (
     IMAGE_RESPONSES,
     ImageBody,
     image_response,
     optimize_image,
 )
+from knut_vandrar_backend.api.locations import read_location
 from knut_vandrar_backend.api.schemas.hike import (
+    HikeEnglishContent,
     HikeLocalizedRead,
     HikeRead,
     HikeSummaryRead,
@@ -26,8 +30,8 @@ from knut_vandrar_backend.api.schemas.hike import (
     InfoCard,
     TranslationReviewWrite,
 )
+from knut_vandrar_backend.api.schemas.location import AchievementRead
 from knut_vandrar_backend.api.schemas.pagination import Limit, Offset, Page
-from knut_vandrar_backend.api.schemas.trail import TrailRead
 from knut_vandrar_backend.database.dependencies import get_db
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
 from knut_vandrar_backend.models.hike import (
@@ -37,8 +41,8 @@ from knut_vandrar_backend.models.hike import (
     HikeSlugAlias,
     HikeTranslation,
 )
+from knut_vandrar_backend.models.location import HikeAchievement, HikeOvernight, HikingLocation
 from knut_vandrar_backend.models.reference import InfoCardType
-from knut_vandrar_backend.models.trail import Trail
 from knut_vandrar_backend.models.translation import TranslationJob
 from knut_vandrar_backend.translations.core import (
     SOURCE_LOCALE,
@@ -83,9 +87,9 @@ def list_hikes(
 
 @router.post("", response_model=HikeRead, status_code=status.HTTP_201_CREATED)
 def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> HikeRead:
-    _validate_trail(db, payload.trail_id)
+    _validate_location(db, payload.location_id)
     hike = Hike(
-        trail_id=payload.trail_id,
+        location_id=payload.location_id,
         status=payload.status,
         planned_start_at=payload.planned_start_at,
         planned_end_at=payload.planned_end_at,
@@ -110,6 +114,7 @@ def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> Hi
         review_status=TranslationReviewStatus.SOURCE,
     )
     db.add(english)
+    _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
     for locale in TARGET_LOCALES:
         enqueue_translation(db, hike, locale, "source_changed")
@@ -196,7 +201,7 @@ def replace_hike(
     hike = db.get(Hike, hike_id)
     if hike is None:
         raise HTTPException(status_code=404, detail="Hike not found")
-    _validate_trail(db, payload.trail_id)
+    _validate_location(db, payload.location_id)
     english = _translation(db, hike.id, SOURCE_LOCALE)
     if english is None:
         raise HTTPException(status_code=409, detail="English source translation is missing")
@@ -206,13 +211,15 @@ def replace_hike(
         or english.summary_markdown != payload.english.summary_markdown
         or english.description_markdown != payload.english.description_markdown
     )
-    hike.trail_id = payload.trail_id
+    hike.location_id = payload.location_id
     hike.status = payload.status
     hike.planned_start_at = payload.planned_start_at
     hike.planned_end_at = payload.planned_end_at
     hike.actual_start_at = payload.actual_start_at
     hike.actual_end_at = payload.actual_end_at
-    hike.distance_km = payload.distance_km
+    hike.distance_km = (
+        Decimal(str(payload.distance_km)) if payload.distance_km is not None else None
+    )
     hike.ascent_m = payload.ascent_m
     hike.start_point = payload.start_point
     hike.end_point = payload.end_point
@@ -224,6 +231,7 @@ def replace_hike(
         english.review_status = TranslationReviewStatus.SOURCE
         for locale in TARGET_LOCALES:
             enqueue_translation(db, hike, locale, "source_changed")
+    _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
     db.commit()
     db.refresh(hike)
@@ -297,6 +305,7 @@ def update_translation_review(
         raise HTTPException(status_code=422, detail="The English source is not a translation")
     if locale not in TARGET_LOCALES:
         raise HTTPException(status_code=404, detail="Language not found")
+    db.execute(select(Hike.id).where(Hike.id == hike_id).with_for_update()).all()
     translation = _translation(db, hike_id, locale)
     if translation is None:
         raise HTTPException(status_code=404, detail="Hike translation not found")
@@ -314,8 +323,8 @@ def _require_locale(db: Session, locale: str) -> None:
         raise HTTPException(status_code=404, detail="Language not found")
 
 
-def _validate_trail(db: Session, trail_id: UUID | None) -> None:
-    if trail_id is not None and db.get(Trail, trail_id) is None:
+def _validate_location(db: Session, location_id: UUID | None) -> None:
+    if location_id is not None and db.get(HikingLocation, location_id) is None:
         raise HTTPException(status_code=422, detail="Trail not found")
 
 
@@ -333,13 +342,15 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
     cards = [card_adapter.validate_python(item.data) for item in hike.cards]
     return HikeRead(
         id=hike.id,
-        trail=_trail_read(hike.trail, request),
+        location=read_location(db, hike.location, request, translation.locale_code)
+        if hike.location
+        else None,
         status=hike.status,
         planned_start_at=hike.planned_start_at,
         planned_end_at=hike.planned_end_at,
         actual_start_at=hike.actual_start_at,
         actual_end_at=hike.actual_end_at,
-        distance_km=hike.distance_km,
+        distance_km=float(hike.distance_km) if hike.distance_km is not None else None,
         ascent_m=hike.ascent_m,
         start_point=hike.start_point,
         end_point=hike.end_point,
@@ -351,6 +362,17 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
         ),
         translation=_localized(db, translation),
         cards=cards,
+        achievements=[
+            AchievementRead.model_validate(
+                read_authored(db, "achievement", item, translation.locale_code)
+            )
+            for item in db.scalars(
+                select(HikeAchievement)
+                .where(HikeAchievement.hike_id == hike.id)
+                .order_by(HikeAchievement.sort_order, HikeAchievement.id)
+            )
+        ],
+        **_extra_read(db, hike),
         created_at=hike.created_at,
         updated_at=hike.updated_at,
     )
@@ -361,13 +383,15 @@ def _summary(
 ) -> HikeSummaryRead:
     return HikeSummaryRead(
         id=hike.id,
-        trail=_trail_read(hike.trail, request),
+        location=read_location(db, hike.location, request, translation.locale_code)
+        if hike.location
+        else None,
         status=hike.status,
         planned_start_at=hike.planned_start_at,
         planned_end_at=hike.planned_end_at,
         actual_start_at=hike.actual_start_at,
         actual_end_at=hike.actual_end_at,
-        distance_km=hike.distance_km,
+        distance_km=float(hike.distance_km) if hike.distance_km is not None else None,
         ascent_m=hike.ascent_m,
         start_point=hike.start_point,
         end_point=hike.end_point,
@@ -378,23 +402,6 @@ def _summary(
             else None
         ),
         translation=_localized(db, translation),
-    )
-
-
-def _trail_read(trail: Trail | None, request: Request) -> TrailRead | None:
-    if trail is None:
-        return None
-    return TrailRead(
-        id=trail.id,
-        name=trail.name,
-        type=trail.type,
-        country_codes=sorted(country.country_code for country in trail.countries),
-        official_url=trail.official_url,
-        logo_url=(
-            str(request.url_for("get_trail_logo", trail_id=str(trail.id)))
-            if trail.logo is not None
-            else None
-        ),
     )
 
 
@@ -506,3 +513,67 @@ def _replace_cards(db: Session, hike: Hike, payload: HikeWrite) -> None:
                 data=data,
             )
         )
+
+
+EXTRA_FIELDS = (
+    "start_latitude",
+    "start_longitude",
+    "end_latitude",
+    "end_longitude",
+    "direction",
+    "route_scope",
+    "start_stage",
+    "end_stage",
+    "overnights_recorded_at",
+)
+
+
+def _replace_extra(db: Session, hike: Hike, payload: HikeWrite) -> None:
+    from sqlalchemy import delete
+
+    for key in EXTRA_FIELDS:
+        setattr(hike, key, getattr(payload, key))
+    db.execute(delete(HikeOvernight).where(HikeOvernight.hike_id == hike.id))
+    for overnight in payload.overnights:
+        db.add(HikeOvernight(hike_id=hike.id, **overnight.model_dump()))
+
+
+def _extra_read(db: Session, hike: Hike) -> dict[str, Any]:
+    values = {key: getattr(hike, key) for key in EXTRA_FIELDS}
+    recorded = hike.overnights_recorded_at
+    if recorded is not None and recorded.tzinfo is None:
+        values["overnights_recorded_at"] = recorded.replace(tzinfo=UTC)
+    values["overnights"] = [
+        {"accommodation_type": row.accommodation_type, "night_count": row.night_count}
+        for row in db.scalars(select(HikeOvernight).where(HikeOvernight.hike_id == hike.id))
+    ]
+    return values
+
+
+@router.put("/{hike_id}/translations/{locale}", response_model=HikeLocalizedRead)
+def override_hike_translation(
+    hike_id: UUID, locale: str, payload: HikeEnglishContent, db: DatabaseSession
+) -> HikeLocalizedRead:
+    _require_locale(db, locale)
+    if locale == SOURCE_LOCALE:
+        raise HTTPException(422, "Edit English through the source endpoint")
+    hike = db.scalar(select(Hike).where(Hike.id == hike_id).with_for_update())
+    if hike is None:
+        raise HTTPException(404, "Hike not found")
+    db.execute(select(Hike.id).where(Hike.id == hike_id).with_for_update()).all()
+    translation = _translation(db, hike_id, locale)
+    if translation is None:
+        translation = HikeTranslation(
+            hike_id=hike_id,
+            locale_code=locale,
+            slug=unique_slug(db, locale, payload.title, hike_id),
+        )
+        db.add(translation)
+    for key, value in payload.model_dump().items():
+        setattr(translation, key, value)
+    _set_generated_slug(db, translation, payload.title)
+    translation.review_status = TranslationReviewStatus.MANUAL
+    translation.source_revision = hike.source_revision
+    translation.profile_fingerprint = profile_fingerprint(db, "hike", locale)[1]
+    db.commit()
+    return _localized(db, translation)

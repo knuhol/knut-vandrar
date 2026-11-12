@@ -7,7 +7,7 @@ import { HikeJourney } from './HikeJourney'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { Heading } from '@/components/Heading'
 import type { Hike } from '@/api/hikes'
-import type { HikeEndpoints } from '@/mocks/hikeEndpoints'
+import type { HikeEndpoints } from '@/hiking/presentation'
 import type { HikeDetails } from '@/hiking/details'
 
 export function HikeFacts({

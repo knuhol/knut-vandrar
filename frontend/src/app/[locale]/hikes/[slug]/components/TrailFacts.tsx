@@ -10,15 +10,11 @@ import { Heading } from '@/components/Heading'
 import type { Locale } from '@/i18n/routing'
 import { imageUrl } from '@/api/images'
 import type { Hike } from '@/api/hikes'
-import type { TrailTag } from '@/mocks/trailTags'
-import type { TrailRatings as Ratings } from '@/mocks/trailRatings'
+import type { TrailTag, TrailRatings as Ratings } from '@/hiking/presentation'
 import type { TrailDetails } from '@/hiking/details'
 
 // Shared geographic facts support either a named trail or a hiking area.
-type HikingLocation = Pick<
-  NonNullable<Hike['trail']>,
-  'name' | 'type' | 'country_codes' | 'official_url' | 'logo_url'
->
+type HikingLocation = NonNullable<Hike['location']>
 
 function countryFlag(code: string) {
   return /^[A-Z]{2}$/.test(code)
@@ -41,7 +37,7 @@ export function TrailFacts({
 }) {
   const t = useTranslations('Site')
   const countries = new Intl.DisplayNames([locale], { type: 'region' })
-  const locationTags = [...new Set([location.type, ...tags])]
+  const locationTags = [...new Set(tags)]
 
   return (
     <section className="min-w-0 rounded-lg border border-beige bg-cream p-5">
@@ -92,7 +88,10 @@ export function TrailFacts({
           <div>
             <dt className="sr-only">{t('trailTags.label')}</dt>
             <dd>
-              <TrailTags tags={locationTags} />
+              <TrailTags
+                tags={locationTags}
+                regions={location.regions.map((region) => region.name)}
+              />
             </dd>
           </div>
         )}

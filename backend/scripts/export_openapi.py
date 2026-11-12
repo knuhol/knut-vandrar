@@ -4,6 +4,7 @@ import argparse
 import importlib
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -19,6 +20,12 @@ def generated_schema() -> str:
     app = importlib.import_module("knut_vandrar_backend.main").app
     schema = _normalize_numbers(app.openapi())
     serialized_schema = json.dumps(schema, ensure_ascii=False, indent=2)
+    # The output is TypeScript: keep generated numeric literals compatible with ESLint.
+    serialized_schema = re.sub(
+        r"(?m)(:\s)(-?\d{5,})(\.\d+)?(?=[,\n])",
+        lambda match: match[1] + f"{int(match[2]):_}" + (match[3] or ""),
+        serialized_schema,
+    )
     return (
         "/* Generated from FastAPI by backend/scripts/export_openapi.py. */\n"
         f"export const openapi = {serialized_schema} as const\n"

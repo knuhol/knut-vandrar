@@ -93,3 +93,30 @@ class TranslationJob(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+class ContentTranslationVersion(Base):
+    """Immutable translation snapshots; entity identifiers intentionally survive deletion."""
+
+    __tablename__ = "content_translation_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "entity_type",
+            "entity_id",
+            "target_locale",
+            "version",
+            name="uq_content_translation_version",
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    entity_type: Mapped[str] = mapped_column(String(60))
+    entity_id: Mapped[UUID] = mapped_column()
+    target_locale: Mapped[str] = mapped_column(ForeignKey("languages.code", ondelete="RESTRICT"))
+    version: Mapped[int] = mapped_column(Integer)
+    fields: Mapped[dict[str, Any]] = mapped_column(JsonType)
+    source_revision: Mapped[int] = mapped_column(Integer)
+    review_status: Mapped[str] = mapped_column(String(30))
+    profile_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    provider: Mapped[str | None] = mapped_column(String(60))
+    model: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

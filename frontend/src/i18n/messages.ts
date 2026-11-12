@@ -4,9 +4,6 @@ export const messages = {
       achievements: {
         title: 'Milstolpar',
         goals: 'Mål för den här vandringen',
-        thruHike: 'Hela leden · Thru-hike',
-        distance: '{count, number} km till fots',
-        arcticCircle: 'Norr om polcirkeln',
       },
       accommodation: {
         tent: 'Tält',
@@ -16,6 +13,11 @@ export const messages = {
       },
       journey: {
         route: 'Riktning och etapper',
+        scope: {
+          full_trail: 'Hela leden',
+          trail_section: 'Del av leden',
+          custom_route: 'Egenplanerad rutt',
+        },
         northbound: 'NOBO · Norrut',
         southbound: 'SOBO · Söderut',
         eastbound: 'EBO · Österut',
@@ -173,9 +175,6 @@ export const messages = {
       achievements: {
         title: 'Achievements',
         goals: 'Goals for this hike',
-        thruHike: 'Full trail · Thru-hike',
-        distance: '{count, number} km on foot',
-        arcticCircle: 'Above the Arctic Circle',
       },
       accommodation: {
         tent: 'Tent',
@@ -185,6 +184,11 @@ export const messages = {
       },
       journey: {
         route: 'Direction and stages',
+        scope: {
+          full_trail: 'Full trail',
+          trail_section: 'Trail section',
+          custom_route: 'Self-planned route',
+        },
         northbound: 'NOBO · Northbound',
         southbound: 'SOBO · Southbound',
         eastbound: 'EBO · Eastbound',
@@ -342,9 +346,6 @@ export const messages = {
       achievements: {
         title: 'Milníky',
         goals: 'Cíle pro tento hike',
-        thruHike: 'Celý trail · Thru-hike',
-        distance: '{count, number} km pěšky',
-        arcticCircle: 'Za polárním kruhem',
       },
       accommodation: {
         tent: 'Stan',
@@ -354,6 +355,11 @@ export const messages = {
       },
       journey: {
         route: 'Směr a etapy',
+        scope: {
+          full_trail: 'Celý trail',
+          trail_section: 'Část trailu',
+          custom_route: 'Vlastní trasa',
+        },
         northbound: 'NOBO · Na sever',
         southbound: 'SOBO · Na jih',
         eastbound: 'EBO · Na východ',

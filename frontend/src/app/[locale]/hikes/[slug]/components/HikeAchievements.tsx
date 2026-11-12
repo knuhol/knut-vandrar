@@ -1,4 +1,11 @@
-import { IconTrophy, IconFootsteps, IconWorldLatitude } from '@tabler/icons-react'
+import {
+  IconTrophy,
+  IconFootsteps,
+  IconWorldLatitude,
+  IconMountain,
+  IconCompass,
+  IconTent,
+} from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
 import { Heading } from '@/components/Heading'
@@ -14,20 +21,20 @@ export function HikeAchievements({
 }) {
   const t = useTranslations('Site.achievements')
   const isActive = status === 'planned' || status === 'ongoing'
-  const items = [
-    ...(details.thruHike && status !== 'aborted'
-      ? [{ id: 'thruHike', label: t('thruHike'), Icon: IconTrophy }]
-      : []),
-    ...details.achievements.map((achievement) =>
-      achievement.type === 'distance'
-        ? {
-            id: `distance-${String(achievement.kilometers)}`,
-            label: t('distance', { count: achievement.kilometers }),
-            Icon: IconFootsteps,
-          }
-        : { id: 'arcticCircle', label: t('arcticCircle'), Icon: IconWorldLatitude },
-    ),
-  ]
+  const icons = {
+    trophy: IconTrophy,
+    distance: IconFootsteps,
+    arctic: IconWorldLatitude,
+    mountain: IconMountain,
+    compass: IconCompass,
+    tent: IconTent,
+  }
+  const items = details.achievements.map((item) => ({
+    id: item.id,
+    label: item.title,
+    description: item.description,
+    Icon: icons[item.icon],
+  }))
 
   if (items.length === 0) {
     return null
@@ -42,7 +49,7 @@ export function HikeAchievements({
         {isActive && <p className="mt-1 text-sm text-muted">{t('goals')}</p>}
       </div>
       <ul className="grid grid-cols-1 gap-3 tablet:grid-cols-3">
-        {items.map(({ id, label, Icon }) => (
+        {items.map(({ id, label, description, Icon }) => (
           <li
             key={id}
             className="flex min-w-0 items-center gap-3 rounded-lg border border-orange/30 bg-paper p-3"
@@ -50,7 +57,10 @@ export function HikeAchievements({
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange/15 text-orange-dark">
               <Icon className="size-6" aria-hidden="true" />
             </span>
-            <span className="text-sm font-semibold text-forest">{label}</span>
+            <span>
+              <span className="block text-sm font-semibold text-forest">{label}</span>
+              {description && <span className="mt-1 block text-xs text-muted">{description}</span>}
+            </span>
           </li>
         ))}
       </ul>

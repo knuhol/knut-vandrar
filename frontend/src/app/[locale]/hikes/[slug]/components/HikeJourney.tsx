@@ -25,9 +25,11 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
   const t = useTranslations('Site.journey')
   const DirectionIcon = details.direction && directions[details.direction]
   const overnights = details.overnights.filter((stay) => stay.count > 0)
-  const hasAchievements =
-    details.achievements.length > 0 || (details.thruHike && status !== 'aborted')
+  const hasAchievements = details.achievements.length > 0
   const routeItems = [
+    ...(details.scope
+      ? [{ id: 'scope', label: t(`scope.${details.scope}`), icon: <IconRoute /> }]
+      : []),
     ...(DirectionIcon && details.direction
       ? [{ id: 'direction', label: t(details.direction), icon: <DirectionIcon /> }]
       : []),

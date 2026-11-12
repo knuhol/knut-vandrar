@@ -36,6 +36,7 @@ services:
       API_HOST: ${API_HOST:?Set API_HOST}
       API_PORT: ${API_PORT:?Set API_PORT}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS}
+      API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
     networks:
       default:
         aliases:

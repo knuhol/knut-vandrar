@@ -98,8 +98,11 @@ def _process(job_id: UUID, translate: Callable[..., TranslationResult]) -> None:
         if job is None:
             return
         if job.entity_type != "hike":
-            raise RuntimeError(f"Unsupported translation entity type: {job.entity_type}")
-        hike = db.get(Hike, job.entity_id)
+            from knut_vandrar_backend.translations.content_worker import process_content
+
+            process_content(job_id, translate)
+            return
+        hike = db.scalar(select(Hike).where(Hike.id == job.entity_id).with_for_update())
         if hike is None:
             job.status = "superseded"
             db.commit()
@@ -120,6 +123,15 @@ def _process(job_id: UUID, translate: Callable[..., TranslationResult]) -> None:
         )
         if profile is None:
             raise RuntimeError("Translation profile is missing")
+        protected = db.scalar(
+            select(HikeTranslation).where(
+                HikeTranslation.hike_id == hike.id, HikeTranslation.locale_code == job.target_locale
+            )
+        )
+        if protected is not None and protected.review_status == TranslationReviewStatus.MANUAL:
+            job.status = "superseded"
+            db.commit()
+            return
         _, current_fingerprint = profile_fingerprint(db, "hike", job.target_locale)
         if (
             job.source_revision != hike.source_revision
@@ -153,9 +165,18 @@ def _publish_result(job_id: UUID, result: TranslationResult) -> None:
         job = db.get(TranslationJob, job_id)
         if job is None:
             return
-        hike = db.get(Hike, job.entity_id)
+        hike = db.scalar(select(Hike).where(Hike.id == job.entity_id).with_for_update())
         if hike is None:
             job.status = "superseded"
+            return
+        protected = db.scalar(
+            select(HikeTranslation).where(
+                HikeTranslation.hike_id == hike.id, HikeTranslation.locale_code == job.target_locale
+            )
+        )
+        if protected is not None and protected.review_status == TranslationReviewStatus.MANUAL:
+            job.status = "superseded"
+            db.commit()
             return
         _, current_fingerprint = profile_fingerprint(db, "hike", job.target_locale)
         if (

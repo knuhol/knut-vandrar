@@ -7,6 +7,12 @@ import { FactItems } from './FactItems'
 import type { TrailDetails } from '@/hiking/details'
 import type { Locale } from '@/i18n/routing'
 
+const noteLines = (text: string | null) =>
+  text
+    ?.split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean) ?? []
+
 const waterIcons = { tap: IconFountain, shop: IconBuildingStore, natural: IconRipple }
 
 export function TrailPracticalities({
@@ -24,13 +30,20 @@ export function TrailPracticalities({
     details.hikingMonths.length === 0 &&
     details.waterSources.length === 0 &&
     details.overnightOptions.length === 0 &&
-    details.overnightRestrictions.length === 0
+    details.overnightRestrictions.length === 0 &&
+    !details.seasonNote &&
+    !details.overnightNote
   ) {
     return null
   }
 
   return (
     <div className="mt-5 grid gap-5 border-t border-beige pt-5">
+      {noteLines(details.seasonNote).map((note) => (
+        <p key={note} className="text-sm leading-relaxed text-muted">
+          {note}
+        </p>
+      ))}
       {details.hikingMonths.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-forest">{t('season')}</h3>
@@ -73,6 +86,11 @@ export function TrailPracticalities({
           <AccommodationOptions options={details.overnightOptions.map((type) => ({ type }))} />
         </section>
       )}
+      {noteLines(details.overnightNote).map((note) => (
+        <p key={note} className="text-sm leading-relaxed text-muted">
+          {note}
+        </p>
+      ))}
       {details.overnightRestrictions.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-forest">{t('restrictionsLabel')}</h3>
