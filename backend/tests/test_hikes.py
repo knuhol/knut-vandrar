@@ -125,14 +125,16 @@ def _planned_payload(**overrides: object) -> dict[str, object]:
     return payload
 
 
-def test_hike_create_queues_translations_and_returns_typed_cards(client: TestClient) -> None:
+def test_hike_create_does_not_queue_translations_and_returns_typed_cards(
+    client: TestClient,
+) -> None:
     response = client.post("/api/hikes", json=_planned_payload())
     assert response.status_code == 201
     hike = response.json()
     assert hike["duration_days"] == 14
     assert hike["translation"]["slug"] == "hike-through-the-highlands"
     assert hike["cards"] == [{"type": "route", "url": "https://example.com/route.gpx"}]
-    assert {job["target_locale"] for job in _get_jobs(client)} == {"sv", "cs"}
+    assert _get_jobs(client) == []
 
 
 @pytest.mark.parametrize("locale", ["en", "sv", "cs"])
@@ -464,6 +466,7 @@ def test_translation_worker_publishes_localized_copy_and_history(
     from knut_vandrar_backend.translations import worker
 
     response = client.post("/api/hikes", json=_planned_payload())
+    _request_translations(client, "hike", response.json()["id"])
     hike_id = UUID(response.json()["id"])
     factory = cast(sessionmaker[Session], app.state.testing_session_local)
     monkeypatch.setattr(worker, "SessionLocal", factory)
@@ -507,12 +510,13 @@ def test_translation_worker_publishes_localized_copy_and_history(
         db.close()
 
 
-def test_worker_replaces_stale_job_once(
+def test_worker_discards_stale_job_without_replacement(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from knut_vandrar_backend.translations import worker
 
-    client.post("/api/hikes", json=_planned_payload())
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    _request_translations(client, "hike", hike["id"])
     factory = cast(sessionmaker[Session], app.state.testing_session_local)
     monkeypatch.setattr(worker, "SessionLocal", factory)
     with factory.begin() as db:
@@ -536,8 +540,7 @@ def test_worker_replaces_stale_job_once(
                 TranslationJob.status.in_(("queued", "running")),
             )
         ).all()
-        assert len(active) == 1
-        assert active[0].profile_fingerprint == profile_fingerprint(db, "hike", locale)[1]
+        assert len(active) == 0
 
 
 def test_worker_sends_profile_model_and_effort_in_http_request(
@@ -551,7 +554,8 @@ def test_worker_sends_profile_model_and_effort_in_http_request(
         for profile in db.scalars(select(TranslationProfile)).all():
             profile.model = "gpt-6.1-terra"
             profile.reasoning_effort = "medium"
-    client.post("/api/hikes", json=_planned_payload())
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    _request_translations(client, "hike", hike["id"])
     requests: list[dict[str, object]] = []
 
     def capture_request(request: Request, timeout: int) -> BytesIO:
@@ -738,6 +742,7 @@ def test_authored_manual_translation_survives_inflight_result(
     created = client.post(path, json=payload)
     assert created.status_code == 201, created.text
     entity_id = created.json()["id"]
+    _request_translations(client, kind, entity_id)
     manual = {
         key: ("Manual text" if key in ("name", "title") else value)
         for key, value in english.items()
@@ -783,6 +788,8 @@ def test_region_automatic_translation_publishes_history(
     monkeypatch.setattr(content_worker, "SessionLocal", factory)
     region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
 
+    _request_translations(client, "region", region["id"])
+
     def translate(**arguments: object) -> TranslationResult:
         assert arguments["source_fields"] == {"name": "Lapland"}
         return TranslationResult(
@@ -806,6 +813,7 @@ def test_hike_manual_override_survives_inflight_result(
     factory = cast(sessionmaker[Session], app.state.testing_session_local)
     monkeypatch.setattr(worker, "SessionLocal", factory)
     hike = client.post("/api/hikes", json=_planned_payload()).json()
+    _request_translations(client, "hike", hike["id"])
     fields = {
         "title": "Manual Swedish",
         "tagline": None,
@@ -977,3 +985,220 @@ def test_translation_requeue_api_is_idempotent_and_preserves_manual(client: Test
         active = db.scalars(select(TranslationJob).where(TranslationJob.status == "queued")).all()
         assert len(active) == 2
         assert all(job.target_locale == "sv" for job in active)
+
+
+def _request_translations(client: TestClient, kind: str, entity_id: str) -> None:
+    response = client.post(
+        "/api/translations/requeue",
+        json={
+            "include_outdated": True,
+            "entity_type": kind,
+            "entity_id": entity_id,
+            "locale": "sv",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["queued"] == 1
+
+
+@pytest.mark.parametrize(
+    "kind,path,english",
+    [
+        (
+            "location",
+            "/api/locations",
+            {"name": "Original", "season_note": None, "overnight_restrictions_note": None},
+        ),
+        ("region", "/api/regions", {"name": "Original"}),
+        ("achievement", "/api/achievements", {"title": "Original", "description": None}),
+    ],
+)
+def test_source_edits_and_review_changes_never_queue(
+    client: TestClient, kind: str, path: str, english: dict[str, str | None]
+) -> None:
+    payload: dict[str, object] = {"english": english}
+    if kind == "location":
+        payload["country_codes"] = ["SE"]
+    if kind == "achievement":
+        payload.update(
+            hike_id=client.post("/api/hikes", json=_planned_payload()).json()["id"], icon="trophy"
+        )
+    created = client.post(path, json=payload)
+    assert created.status_code == 201, created.text
+    entity_id = created.json()["id"]
+    assert _get_jobs(client) == []
+    assert client.put(f"{path}/{entity_id}/translations/sv", json=english).status_code == 200
+    changed = {**english, "name" if "name" in english else "title": "Changed source"}
+    assert (
+        client.put(f"{path}/{entity_id}", json={**payload, "english": changed}).status_code == 200
+    )
+    assert client.get(f"{path}/{entity_id}?locale=sv").json()["translation"]["is_outdated"] is True
+    assert _get_jobs(client) == []
+    assert (
+        client.put(
+            f"{path}/{entity_id}/translations/sv/review",
+            json={"review_status": "needs_retranslation"},
+        ).status_code
+        == 200
+    )
+    assert _get_jobs(client) == []
+    _request_translations(client, kind, entity_id)
+
+
+def test_hike_edits_only_mark_outdated_and_explicit_selection_queues(client: TestClient) -> None:
+    payload = _planned_payload()
+    hike = client.post("/api/hikes", json=payload).json()
+    manual = {
+        "title": "Swedish",
+        "summary_markdown": "Summary",
+        "tagline": None,
+        "description_markdown": None,
+    }
+    assert client.put(f"/api/hikes/{hike['id']}/translations/sv", json=manual).status_code == 200
+    changed = _planned_payload(
+        english={"title": "Edited title", "summary_markdown": "Edited summary"}
+    )
+    assert client.put(f"/api/hikes/{hike['id']}", json=changed).status_code == 200
+    assert _get_jobs(client) == []
+    assert (
+        client.get(f"/api/hikes/{hike['id']}?locale=sv").json()["translation"]["is_outdated"]
+        is True
+    )
+    # Even an explicit broader request cannot replace manual content.
+    response = client.post(
+        "/api/translations/requeue",
+        json={
+            "include_outdated": True,
+            "entity_type": "hike",
+            "entity_id": hike["id"],
+            "locale": "sv",
+        },
+    )
+    assert response.json() == {"queued": 0, "skipped": 0}
+    assert (
+        client.put(
+            f"/api/hikes/{hike['id']}/translations/sv/review",
+            json={"review_status": "needs_retranslation"},
+        ).status_code
+        == 200
+    )
+    assert _get_jobs(client) == []
+    _request_translations(client, "hike", hike["id"])
+
+
+@pytest.mark.parametrize("kind", ["hike", "region"])
+@pytest.mark.parametrize("during_request", [False, True])
+def test_stale_jobs_do_not_create_replacement_or_publish(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, kind: str, during_request: bool
+) -> None:
+    from knut_vandrar_backend.translations import content_worker, worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    monkeypatch.setattr(content_worker, "SessionLocal", factory)
+    path = "/api/hikes" if kind == "hike" else "/api/regions"
+    payload = _planned_payload() if kind == "hike" else {"english": {"name": "Original"}}
+    entity_id = client.post(path, json=payload).json()["id"]
+    _request_translations(client, kind, entity_id)
+    update = (
+        _planned_payload(english={"title": "New English", "summary_markdown": "New English"})
+        if kind == "hike"
+        else {"english": {"name": "New English"}}
+    )
+    if not during_request:
+        assert client.put(f"{path}/{entity_id}", json=update).status_code == 200
+
+    def translate(**arguments: object) -> TranslationResult:
+        if not during_request:
+            pytest.fail("Already-obsolete jobs must not call the provider")
+        assert client.put(f"{path}/{entity_id}", json=update).status_code == 200
+        return TranslationResult(
+            fields=cast(dict[str, str | None], arguments["source_fields"]),
+            model="test",
+            input_tokens=1,
+            output_tokens=1,
+        )
+
+    assert worker.run_once(translate)
+    assert not worker.run_once(translate)
+    with factory() as db:
+        jobs = db.scalars(select(TranslationJob)).all()
+        assert len(jobs) == 1 and jobs[0].status == "superseded"
+    _request_translations(client, kind, entity_id)
+
+
+def test_worker_refuses_legacy_automatic_jobs(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.translations import worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    with factory.begin() as db:
+        for reason in ["source_changed", "superseded", "initial_migration"]:
+            db.add(
+                TranslationJob(
+                    entity_type="hike",
+                    entity_id=UUID(hike["id"]),
+                    target_locale="sv",
+                    source_revision=1,
+                    profile_fingerprint="old",
+                    reason=reason,
+                    status="queued",
+                )
+            )
+
+    def unexpected(**_: object) -> TranslationResult:
+        pytest.fail("Legacy automatic work must not call the provider")
+
+    for _ in range(3):
+        assert worker.run_once(unexpected)
+    with factory() as db:
+        assert all(job.status == "superseded" for job in db.scalars(select(TranslationJob)))
+
+
+def test_requeue_defaults_to_flagged_and_validates_selection(client: TestClient) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    assert client.post("/api/translations/requeue").json() == {"queued": 0, "skipped": 0}
+    for body in [{"entity_id": hike["id"]}, {"locale": "en"}, {"entity_type": "wrong"}]:
+        assert client.post("/api/translations/requeue", json=body).status_code == 422
+    assert _get_jobs(client) == []
+
+
+def test_worker_recovery_cannot_reset_cost_limit(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.translations import worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    old = datetime.now(UTC) - timedelta(days=1)
+    with factory.begin() as db:
+        for reason, attempts in [
+            ("explicit_request", 5),
+            ("explicit_request", 2),
+            ("source_changed", 1),
+        ]:
+            db.add(
+                TranslationJob(
+                    entity_type="hike",
+                    entity_id=UUID(hike["id"]),
+                    target_locale="sv",
+                    source_revision=1,
+                    profile_fingerprint="old",
+                    reason=reason,
+                    status="running",
+                    attempts=attempts,
+                    updated_at=old,
+                )
+            )
+    worker._recover_abandoned_jobs()
+    with factory() as db:
+        jobs = db.scalars(select(TranslationJob)).all()
+        assert {(job.reason, job.attempts, job.status) for job in jobs} == {
+            ("explicit_request", 5, "failed"),
+            ("explicit_request", 2, "queued"),
+            ("source_changed", 1, "superseded"),
+        }

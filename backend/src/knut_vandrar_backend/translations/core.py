@@ -15,6 +15,7 @@ from knut_vandrar_backend.models.translation import (
     TranslationJob,
     TranslationProfile,
 )
+from knut_vandrar_backend.translations.policy import EXPLICIT_REASONS
 
 TARGET_LOCALES = ("sv", "cs")
 SOURCE_LOCALE = "en"
@@ -64,6 +65,8 @@ def enqueue_translation(
     fingerprint: str | None = None,
 ) -> bool:
     # Serialize producers for this hike; flush because sessions disable autoflush.
+    if reason not in EXPLICIT_REASONS:
+        raise ValueError("Translation jobs require an explicit request")
     db.flush()
     db.execute(select(Hike.id).where(Hike.id == hike.id).with_for_update()).all()
     target = db.scalar(
@@ -83,6 +86,10 @@ def enqueue_translation(
             TranslationJob.status.in_(("queued", "running")),
         )
     ).all()
+    for job in active_jobs:
+        if job.reason not in EXPLICIT_REASONS:
+            job.status = "superseded"
+    active_jobs = [job for job in active_jobs if job.reason in EXPLICIT_REASONS]
     if any(
         job.source_revision == hike.source_revision and job.profile_fingerprint == fingerprint
         for job in active_jobs

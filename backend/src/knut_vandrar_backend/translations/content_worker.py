@@ -13,17 +13,21 @@ from knut_vandrar_backend.models.translation import TranslationGlossaryEntry, Tr
 from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.translations.content import (
     CONTENT,
-    enqueue_content,
     snapshot,
     translation_for,
 )
 from knut_vandrar_backend.translations.core import profile_fingerprint
+from knut_vandrar_backend.translations.policy import EXPLICIT_REASONS
 
 
 def process_content(job_id: UUID, translate: Any) -> None:
     with SessionLocal() as db:
         job = db.get(TranslationJob, job_id)
         if job is None:
+            return
+        if job.reason not in EXPLICIT_REASONS:
+            job.status = "superseded"
+            db.commit()
             return
         spec = CONTENT[job.entity_type]
         entity = db.get(spec.entity, job.entity_id)
@@ -35,7 +39,6 @@ def process_content(job_id: UUID, translate: Any) -> None:
         profile, fingerprint = profile_fingerprint(db, job.entity_type, job.target_locale)
         if entity.source_revision != job.source_revision or fingerprint != job.profile_fingerprint:
             job.status = "superseded"
-            enqueue_content(db, job.entity_type, entity, job.target_locale, "superseded")
             db.commit()
             return
         source = translation_for(db, job.entity_type, entity.id, "en")
@@ -71,7 +74,6 @@ def process_content(job_id: UUID, translate: Any) -> None:
         _, fingerprint = profile_fingerprint(db, job.entity_type, job.target_locale)
         if entity.source_revision != job.source_revision or fingerprint != job.profile_fingerprint:
             job.status = "superseded"
-            enqueue_content(db, job.entity_type, entity, job.target_locale, "superseded")
             return
         from knut_vandrar_backend.api.schemas.location import (
             AchievementEnglish,

@@ -7,7 +7,6 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from knut_vandrar_backend.database.session import SessionLocal
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
@@ -24,12 +23,12 @@ from knut_vandrar_backend.models.translation import (
 )
 from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.translations.core import (
-    enqueue_translation,
     profile_fingerprint,
     source_fields,
     unique_slug,
 )
 from knut_vandrar_backend.translations.openai_provider import TranslationResult, translate_hike
+from knut_vandrar_backend.translations.policy import EXPLICIT_REASONS
 
 logger = logging.getLogger(__name__)
 MAX_ATTEMPTS = 5
@@ -64,6 +63,7 @@ def _claim_job() -> UUID | None:
             select(TranslationJob)
             .where(
                 TranslationJob.status == "queued",
+                TranslationJob.attempts < MAX_ATTEMPTS,
                 TranslationJob.available_at <= now,
             )
             .order_by(TranslationJob.created_at)
@@ -89,13 +89,22 @@ def _recover_abandoned_jobs() -> None:
             )
         ).all()
         for job in jobs:
-            job.status = "queued"
+            if job.reason not in EXPLICIT_REASONS:
+                job.status = "superseded"
+            elif job.attempts >= MAX_ATTEMPTS:
+                job.status = "failed"
+            else:
+                job.status = "queued"
 
 
 def _process(job_id: UUID, translate: Callable[..., TranslationResult]) -> None:
     with SessionLocal() as db:
         job = db.get(TranslationJob, job_id)
         if job is None:
+            return
+        if job.reason not in EXPLICIT_REASONS:
+            job.status = "superseded"
+            db.commit()
             return
         if job.entity_type != "hike":
             from knut_vandrar_backend.translations.content_worker import process_content
@@ -138,7 +147,6 @@ def _process(job_id: UUID, translate: Callable[..., TranslationResult]) -> None:
             or job.profile_fingerprint != current_fingerprint
         ):
             job.status = "superseded"
-            _queue_if_needed(db, hike, job.target_locale, current_fingerprint, "superseded")
             db.commit()
             return
         source = source_fields(english)
@@ -184,7 +192,6 @@ def _publish_result(job_id: UUID, result: TranslationResult) -> None:
             or job.profile_fingerprint != current_fingerprint
         ):
             job.status = "superseded"
-            _queue_if_needed(db, hike, job.target_locale, current_fingerprint, "superseded")
             return
         translation = db.scalar(
             select(HikeTranslation).where(
@@ -267,10 +274,6 @@ def _record_failure(job_id: UUID, error: Exception) -> None:
         else:
             job.status = "queued"
             job.available_at = datetime.now(UTC) + timedelta(seconds=2**job.attempts * 15)
-
-
-def _queue_if_needed(db: Session, hike: Hike, locale: str, fingerprint: str, reason: str) -> None:
-    enqueue_translation(db, hike, locale, reason, fingerprint)
 
 
 if __name__ == "__main__":

@@ -18,7 +18,13 @@ curl --fail-with-body --request PUT "$API_URL/api/hikes/$HIKE_ID/cover-image" \
   --data-binary @hike-cover.webp
 ```
 
-The translation worker uses `OPENAI_API_KEY` and the translation profiles and glossary stored in the database. It queues translations on English content changes, preserves earlier translation versions, and serves outdated localized content while replacements are generated. To enqueue only translations explicitly marked `needs_retranslation`, run `npm run translations:retranslate` from the repository root or `make translations-retranslate`; the backend container must be running. Repeated calls skip queued or running jobs. Missing translations and English content changes are queued automatically. After changing worker code, restart the translation-worker service so it uses the same profile fingerprint and request settings as the backend.
+The translation worker uses `OPENAI_API_KEY` and stored translation profiles/glossaries.
+English source creation/edits and all review-state changes never enqueue work. Existing
+translations become outdated through source revision/profile comparison. Explicitly queue
+flagged entries with the API or CLI; missing/outdated entries require an additional opt-in.
+The worker processes explicitly requested jobs automatically, with at most five attempts.
+Obsolete jobs are superseded without a replacement or another provider request. Manual
+translations remain protected before requests and when results return.
 
 Create and activate a virtual environment, then install the development extras for Ruff, mypy, and pytest:
 
@@ -61,13 +67,13 @@ awarded. Hikes support paired coordinates, decimal kilometres, stage ranges in
 either direction, route scope, and one set of overnight counts. Set
 `overnights_recorded_at` when recording counts, including an explicitly empty set.
 
-All authored content uses English source text and queues Swedish/Czech translations.
+All authored content uses English source text; Swedish/Czech translations are explicitly requested.
 `PUT /api/{locations|regions|achievements}/{id}/translations/{locale}` accepts the
 same text fields as that entity's `english` object and protects them in `manual`
 state. Hikes use `PUT /api/hikes/{id}/translations/{locale}` similarly. To release a
 manual override, explicitly change its state through the corresponding `/review`
-endpoint; use `needs_retranslation` to request a replacement (hikes also support
-the existing retranslation CLI). Manual content can become outdated but cannot be
+endpoint. Setting `needs_retranslation` only marks it; separately call the requeue API
+or CLI to authorize translation work. Manual content can become outdated but cannot be
 overwritten by queued or in-flight automatic jobs. Authored translation versions
 are retained, and untranslated reusable content falls back to English with metadata
 identifying the returned language.
@@ -101,10 +107,42 @@ configuration. Each environment should have a different token. This is a single 
 administrator credential, with no browser login, sessions, user roles or ACLs yet.
 The future admin server can hold it privately while authenticating browsers separately.
 
-`POST /api/translations/requeue` requires the same Bearer token and no request body.
-It calls the same service as the retranslation CLI and returns `{"queued": N,
-"skipped": N}` after committing the queued jobs. Only entries explicitly marked
-`needs_retranslation` are considered; `skipped` counts entries already queued/running
-for the current source/profile. Manual overrides and merely outdated content are not
-selected. Translation requests are performed by the existing worker, not this endpoint.
-CLI usage is unchanged and does not require an HTTP token.
+`POST /api/translations/requeue` requires the same Bearer token. With no body (or `{}`),
+it selects only `needs_retranslation` entries across hikes, locations, regions and
+achievements. Optional request fields:
+
+- `include_outdated: true`: also include missing/outdated translations.
+- `entity_type`: `hike`, `location`, `region`, or `achievement`.
+- `entity_id`: one entity, requiring `entity_type`.
+- `locale`: `sv` or `cs`.
+
+For example, to explicitly request a missing Swedish region translation, send:
+
+```json
+{"include_outdated": true, "entity_type": "region", "entity_id": "<region UUID>", "locale": "sv"}
+```
+
+The endpoint commits jobs and returns `{"queued": N, "skipped": N}`. Skipped counts
+eligible entries already queued/running for the current source/profile. Manual entries
+are excluded, even with `include_outdated`. The endpoint never calls the AI provider;
+the worker performs requested work asynchronously. Calling it is explicit spending
+authorization for the selected translations. Without filters it applies to all eligible
+content, so prefer filters when translating individual admin edits.
+
+The CLI shares the exact policy:
+
+```sh
+npm run translations:retranslate
+npm run translations:retranslate -- --include-outdated --entity-type region --entity-id <region-uuid> --locale sv
+```
+
+Or run `python -m knut_vandrar_backend.translations.cli` with the same options.
+Profile/glossary edits, public reads, and changing review status do not queue jobs.
+An explicitly requested job that becomes obsolete stops; another explicit request is
+required. Failures retain the existing bounded backoff retries, including across worker
+restarts.
+
+Deploy revision 005 with the old worker stopped, then start the updated worker. It
+cancels pending legacy automatic jobs; the new worker independently refuses automatic
+job reasons. An already-issued remote request cannot be recalled. Explicitly requested
+pending jobs are preserved by the migration. No translation content is deleted.

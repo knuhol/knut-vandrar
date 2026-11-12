@@ -1,9 +1,14 @@
-"""Shared, idempotent retranslation queue service for CLI and HTTP callers."""
+"""Explicit, idempotent translation requests shared by HTTP and CLI callers."""
+
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from knut_vandrar_backend.models.enums import TranslationReviewStatus
 from knut_vandrar_backend.models.hike import Hike, HikeTranslation
+from knut_vandrar_backend.translations.content import CONTENT, enqueue_content, translation_for
 from knut_vandrar_backend.translations.core import (
     TARGET_LOCALES,
     enqueue_translation,
@@ -11,41 +16,76 @@ from knut_vandrar_backend.translations.core import (
 )
 
 
-def queue_outdated_translations(db: Session) -> tuple[int, int]:
-    queued = 0
-    unchanged = 0
-    flagged = db.scalars(
-        select(HikeTranslation)
-        .where(
-            HikeTranslation.locale_code.in_(TARGET_LOCALES),
-            HikeTranslation.review_status == "needs_retranslation",
-        )
-        .order_by(HikeTranslation.hike_id, HikeTranslation.locale_code)
-    ).all()
-    for translation in flagged:
-        hike = db.get(Hike, translation.hike_id)
-        if hike is None:
+def queue_outdated_translations(
+    db: Session,
+    *,
+    include_outdated: bool = False,
+    entity_type: str | None = None,
+    entity_id: UUID | None = None,
+    locale: str | None = None,
+) -> tuple[int, int]:
+    """Default to flagged entries; broader missing/outdated work requires opt-in."""
+    queued = skipped = 0
+    for kind in ("hike", *CONTENT):
+        if entity_type is not None and kind != entity_type:
             continue
-        _, fingerprint = profile_fingerprint(db, "hike", translation.locale_code)
-        if enqueue_translation(
-            db, hike, translation.locale_code, "needs_retranslation", fingerprint
-        ):
-            queued += 1
-        else:
-            unchanged += 1
-    from knut_vandrar_backend.translations.content import CONTENT, enqueue_content
-
-    for kind, spec in CONTENT.items():
-        translations = db.scalars(
-            select(spec.translation).where(spec.translation.review_status == "needs_retranslation")
-        ).all()
-        for translation in translations:
-            entity = db.get(spec.entity, getattr(translation, spec.owner_key))
-            if entity is not None:
-                if enqueue_content(
-                    db, kind, entity, translation.locale_code, "needs_retranslation"
-                ):
+        model = Hike if kind == "hike" else CONTENT[kind].entity
+        query = select(model).order_by(model.id)
+        if not include_outdated:
+            translation_model = HikeTranslation if kind == "hike" else CONTENT[kind].translation
+            owner = (
+                translation_model.hike_id
+                if kind == "hike"
+                else getattr(translation_model, CONTENT[kind].owner_key)
+            )
+            query = (
+                query.join(translation_model, owner == model.id)
+                .where(
+                    translation_model.review_status == TranslationReviewStatus.NEEDS_RETRANSLATION,
+                    translation_model.locale_code.in_(
+                        (locale,) if locale is not None else TARGET_LOCALES
+                    ),
+                )
+                .distinct()
+            )
+        if entity_id is not None:
+            query = query.where(model.id == entity_id)
+        for entity in db.scalars(query.execution_options(yield_per=100)):
+            for target_locale in (locale,) if locale is not None else TARGET_LOCALES:
+                target: Any = (
+                    db.scalar(
+                        select(HikeTranslation).where(
+                            HikeTranslation.hike_id == entity.id,
+                            HikeTranslation.locale_code == target_locale,
+                        )
+                    )
+                    if kind == "hike"
+                    else translation_for(db, kind, entity.id, target_locale)
+                )
+                if target is not None and target.review_status == TranslationReviewStatus.MANUAL:
+                    continue
+                flagged = (
+                    target is not None
+                    and target.review_status == TranslationReviewStatus.NEEDS_RETRANSLATION
+                )
+                if not flagged and not include_outdated:
+                    continue
+                fingerprint = profile_fingerprint(db, kind, target_locale)[1]
+                outdated = (
+                    target is None
+                    or target.source_revision != entity.source_revision
+                    or target.profile_fingerprint != fingerprint
+                )
+                if not flagged and not outdated:
+                    continue
+                reason = "needs_retranslation" if flagged else "explicit_request"
+                added = (
+                    enqueue_translation(db, entity, target_locale, reason, fingerprint)
+                    if kind == "hike"
+                    else enqueue_content(db, kind, entity, target_locale, reason)
+                )
+                if added:
                     queued += 1
                 else:
-                    unchanged += 1
-    return queued, unchanged
+                    skipped += 1
+    return queued, skipped

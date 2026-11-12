@@ -17,7 +17,8 @@ from knut_vandrar_backend.models.location import (
     RegionTranslation,
 )
 from knut_vandrar_backend.models.translation import TranslationJob
-from knut_vandrar_backend.translations.core import TARGET_LOCALES, profile_fingerprint
+from knut_vandrar_backend.translations.core import profile_fingerprint
+from knut_vandrar_backend.translations.policy import EXPLICIT_REASONS
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,8 @@ def translation_for(db: Session, kind: str, entity_id: UUID, locale: str) -> Any
 
 def enqueue_content(db: Session, kind: str, entity: Any, locale: str, reason: str) -> bool:
     spec = CONTENT[kind]
+    if reason not in EXPLICIT_REASONS:
+        raise ValueError("Translation jobs require an explicit request")
     db.flush()
     db.execute(select(spec.entity.id).where(spec.entity.id == entity.id).with_for_update()).all()
     target = translation_for(db, kind, entity.id, locale)
@@ -63,6 +66,10 @@ def enqueue_content(db: Session, kind: str, entity: Any, locale: str, reason: st
             TranslationJob.status.in_(("queued", "running")),
         )
     ).all()
+    for job in jobs:
+        if job.reason not in EXPLICIT_REASONS:
+            job.status = "superseded"
+    jobs = [job for job in jobs if job.reason in EXPLICIT_REASONS]
     if any(
         job.source_revision == entity.source_revision and job.profile_fingerprint == fingerprint
         for job in jobs
@@ -103,9 +110,6 @@ def set_source(db: Session, kind: str, entity: Any, fields: dict[str, Any]) -> N
             setattr(source, key, value)
     source.source_revision = entity.source_revision
     db.flush()
-    if changed:
-        for locale in TARGET_LOCALES:
-            enqueue_content(db, kind, entity, locale, "source_changed")
 
 
 def localized(db: Session, kind: str, entity: Any, locale: str) -> tuple[Any, dict[str, Any]]:

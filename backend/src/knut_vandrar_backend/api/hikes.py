@@ -47,7 +47,6 @@ from knut_vandrar_backend.models.translation import TranslationJob
 from knut_vandrar_backend.translations.core import (
     SOURCE_LOCALE,
     TARGET_LOCALES,
-    enqueue_translation,
     profile_fingerprint,
     unique_slug,
 )
@@ -116,8 +115,6 @@ def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> Hi
     db.add(english)
     _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
-    for locale in TARGET_LOCALES:
-        enqueue_translation(db, hike, locale, "source_changed")
     db.commit()
     db.refresh(hike)
     return _detail(db, hike, english, request)
@@ -229,8 +226,6 @@ def replace_hike(
         _set_generated_slug(db, english, payload.english.title)
         english.source_revision = hike.source_revision
         english.review_status = TranslationReviewStatus.SOURCE
-        for locale in TARGET_LOCALES:
-            enqueue_translation(db, hike, locale, "source_changed")
     _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
     db.commit()
