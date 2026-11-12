@@ -24,6 +24,7 @@ from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike, HikeTranslation
 from knut_vandrar_backend.models.reference import InfoCardType, Language
 from knut_vandrar_backend.models.translation import TranslationJob, TranslationProfile
+from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.translations.cli import queue_outdated_translations
 from knut_vandrar_backend.translations.core import profile_fingerprint
 from knut_vandrar_backend.translations.openai_provider import TranslationResult
@@ -533,10 +534,10 @@ def test_worker_sends_profile_model_and_effort_in_http_request(
     requests: list[dict[str, object]] = []
 
     def capture_request(request: Request, timeout: int) -> BytesIO:
-        assert timeout == worker.settings.openai_request_timeout_seconds
+        assert timeout == settings.openai_request_timeout_seconds
         assert request.full_url == "https://api.openai.com/v1/responses"
         assert request.method == "POST"
-        assert request.data is not None
+        assert isinstance(request.data, bytes)
         payload = json.loads(request.data)
         requests.append(payload)
         assert payload["model"] == "gpt-6.1-terra"
