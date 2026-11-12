@@ -2210,8 +2210,25 @@ export const openapi = {
           "translations"
         ],
         "summary": "Requeue Translations",
-        "description": "Queue only needs_retranslation entries; skip active duplicate jobs.\n\nManual translations are never selected. This endpoint does not call the\ntranslation provider and does not automatically retranslate outdated content.",
+        "description": "Explicitly request flagged translations, or opt in to missing/outdated text.\n\nOptional entity and locale filters restrict the request. Manual overrides are\nalways protected. The worker processes the jobs; this endpoint never calls AI.",
         "operationId": "requeue_translations_api_translations_requeue_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RequeueWrite"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2219,6 +2236,16 @@ export const openapi = {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RequeueRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -4091,6 +4118,62 @@ export const openapi = {
           "skipped"
         ],
         "title": "RequeueRead"
+      },
+      "RequeueWrite": {
+        "properties": {
+          "include_outdated": {
+            "type": "boolean",
+            "title": "Include Outdated",
+            "default": false
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "hike",
+                  "location",
+                  "region",
+                  "achievement"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sv",
+                  "cs"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RequeueWrite"
       },
       "RestrictionType": {
         "type": "string",

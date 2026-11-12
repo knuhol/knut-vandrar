@@ -25,7 +25,6 @@ from knut_vandrar_backend.models.hike import Hike
 from knut_vandrar_backend.models.reference import Language
 from knut_vandrar_backend.translations.content import (
     CONTENT,
-    enqueue_content,
     localized,
     set_source,
     snapshot,
@@ -182,15 +181,13 @@ def translation_router(kind: str, path: str) -> APIRouter:
 
     @router.put("/{entity_id}/translations/{locale}/review", response_model=ReviewWrite)
     def review(entity_id: UUID, locale: str, payload: ReviewWrite, db: DatabaseSession) -> Any:
-        entity = require(db, entity_id, locale)
+        require(db, entity_id, locale)
         target = translation_for(db, kind, entity_id, locale)
         if target is None:
             raise HTTPException(404, "Translation not found")
         if payload.review_status == TranslationReviewStatus.SOURCE:
             raise HTTPException(422, "Only English is source content")
         target.review_status = payload.review_status
-        if payload.review_status == TranslationReviewStatus.NEEDS_RETRANSLATION:
-            enqueue_content(db, kind, entity, locale, "needs_retranslation")
         db.commit()
         return {"review_status": target.review_status}
 
