@@ -64,7 +64,10 @@ def list_hikes(
     query = select(HikeTranslation).join(Hike).where(HikeTranslation.locale_code == locale)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     translations = db.scalars(
-        query.order_by(HikeTranslation.created_at.desc(), HikeTranslation.id)
+        query.order_by(
+            func.coalesce(Hike.actual_start_at, Hike.planned_start_at).desc().nulls_last(),
+            Hike.id,
+        )
         .limit(limit)
         .offset(offset)
     ).all()

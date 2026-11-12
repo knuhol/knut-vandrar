@@ -2,8 +2,6 @@ import { IconExternalLink } from '@tabler/icons-react'
 
 import type { ReactNode } from 'react'
 
-import { Heading } from '@/components/Heading'
-
 export function InfoCard({
   icon,
   title,
@@ -11,6 +9,9 @@ export function InfoCard({
   action,
   message,
   inactive = false,
+  onClick,
+  expanded,
+  variant = 'default',
 }: {
   icon: ReactNode
   title: string
@@ -18,36 +19,43 @@ export function InfoCard({
   action?: string
   message?: string
   inactive?: boolean
+  onClick?: () => void
+  expanded?: boolean
+  variant?: 'default' | 'video'
 }) {
-  const interactive = Boolean(href && !inactive && !message)
-  const Tag = interactive ? 'a' : 'article'
+  const interactive = Boolean((href || onClick) && !inactive && !message)
+  const Tag = interactive ? (onClick ? 'button' : 'a') : 'article'
 
   return (
     <Tag
-      href={interactive ? href : undefined}
-      target={interactive ? '_blank' : undefined}
-      rel={interactive ? 'noopener noreferrer' : undefined}
+      href={interactive && !onClick ? href : undefined}
+      target={interactive && !onClick ? '_blank' : undefined}
+      rel={interactive && !onClick ? 'noopener noreferrer' : undefined}
+      type={onClick ? 'button' : undefined}
+      onClick={interactive ? onClick : undefined}
+      aria-expanded={onClick ? expanded : undefined}
+      aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`grid min-h-36 grid-cols-[calc(var(--spacing)*6)_minmax(0,1fr)] content-center gap-3 rounded-lg border border-beige bg-cream p-6 [&>svg]:col-start-1 [&>svg]:row-start-1 [&>svg]:text-forest ${interactive ? 'card-interactive cursor-pointer' : ''} ${inactive ? 'text-muted' : ''}`}
+      className={`flex min-h-20 w-full items-center gap-3 rounded-lg border p-4 text-left ${variant === 'video' ? 'border-forest bg-forest text-cream' : 'border-beige bg-paper text-forest'} ${interactive ? 'card-interactive cursor-pointer' : ''} ${inactive ? 'text-muted' : ''}`}
     >
-      {icon}
-      <div className="col-start-2">
-        <Heading as="h3" tone="brand">
-          {title}
-        </Heading>
-      </div>
-      {message ? (
-        <p className="col-start-2 text-base">{message}</p>
-      ) : (
-        interactive && (
+      <span
+        className={`grid size-9 shrink-0 place-items-center rounded-full [&>svg]:size-5 ${variant === 'video' ? 'bg-cream/15' : 'bg-cream'}`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-base leading-tight font-bold">{title}</span>
+        {(message || action) && (
           <span
-            data-link-label
-            className="col-start-2 inline-flex items-center gap-2.5 font-semibold text-forest"
+            data-link-label={interactive ? true : undefined}
+            className={`mt-1 block text-sm ${variant === 'video' ? 'text-cream/80' : 'text-muted'}`}
           >
-            {action}
-            <IconExternalLink className="size-4 shrink-0" aria-hidden="true" />
+            {message || action}
           </span>
-        )
+        )}
+      </span>
+      {interactive && !onClick && (
+        <IconExternalLink className="size-4 shrink-0" aria-hidden="true" />
       )}
     </Tag>
   )

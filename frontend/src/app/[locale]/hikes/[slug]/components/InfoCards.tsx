@@ -40,9 +40,15 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
   const t = useTranslations('Site')
   const [playing, setPlaying] = useState<{ key: string; id: string }>()
 
+  if (cards.length === 0) {
+    return null
+  }
+
   return (
     <>
-      <section className="grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+      <section
+        className={`grid grid-cols-1 items-stretch gap-4 ${cards.length > 1 ? 'tablet:grid-cols-2 desktop:grid-cols-1' : ''}`}
+      >
         {cards.map((card, index) => {
           const Icon = icons[card.type]
           const key = `${card.type}-${String(index)}`
@@ -54,7 +60,7 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
               return (
                 <InfoCard
                   key={key}
-                  icon={<Play className="size-6 shrink-0" aria-hidden="true" />}
+                  icon={<Play aria-hidden="true" />}
                   title={t('youtube_video')}
                   href={card.url}
                   action={t('video')}
@@ -63,24 +69,20 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
             }
 
             return (
-              <button
+              <InfoCard
                 key={key}
-                type="button"
-                className="card-interactive grid min-h-36 w-full cursor-pointer grid-cols-[calc(var(--spacing)*9)_minmax(0,1fr)] content-center items-center gap-3 overflow-hidden rounded-lg border border-beige bg-forest p-6 text-left text-cream aria-expanded:bg-ink"
+                icon={<Play aria-hidden="true" />}
+                title={t('youtube_video')}
+                action={t('video')}
                 onClick={() => {
                   if (playing?.key === key) {
                     return
                   }
                   setPlaying({ key, id })
                 }}
-                aria-label={t('video')}
-                aria-expanded={playing?.key === key}
-                aria-haspopup="dialog"
-              >
-                <Play className="row-span-2 size-9 shrink-0" aria-hidden="true" />
-                <span className="font-display leading-tight font-bold">{t('youtube_video')}</span>
-                <small className="col-start-2 opacity-75">{t('videoProvider')}</small>
-              </button>
+                expanded={playing?.key === key}
+                variant="video"
+              />
             )
           }
 
@@ -89,7 +91,7 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
           return (
             <InfoCard
               key={key}
-              icon={<Icon className="size-6 shrink-0" aria-hidden="true" />}
+              icon={<Icon aria-hidden="true" />}
               title={t(card.type)}
               inactive={inactive}
               message={inactive ? t('inactive') : undefined}

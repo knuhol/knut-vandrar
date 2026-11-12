@@ -24,6 +24,7 @@ from knut_vandrar_backend.models.translation import (
 )
 from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.translations.core import (
+    enqueue_translation,
     profile_fingerprint,
     source_fields,
     unique_slug,
@@ -78,7 +79,9 @@ def _claim_job() -> UUID | None:
 
 def _recover_abandoned_jobs() -> None:
     with SessionLocal.begin() as db:
-        abandoned_before = datetime.now(UTC) - timedelta(minutes=10)
+        abandoned_before = datetime.now(UTC) - timedelta(
+            seconds=settings.openai_request_timeout_seconds + 300
+        )
         jobs = db.scalars(
             select(TranslationJob).where(
                 TranslationJob.status == "running",
@@ -135,6 +138,7 @@ def _process(job_id: UUID, translate: Callable[..., TranslationResult]) -> None:
         job_data = {
             "api_key": settings.openai_api_key or "",
             "model": profile.model,
+            "reasoning_effort": profile.reasoning_effort,
             "target_locale": job.target_locale,
             "instructions": profile.instructions,
             "glossary_entries": entries,
@@ -245,26 +249,7 @@ def _record_failure(job_id: UUID, error: Exception) -> None:
 
 
 def _queue_if_needed(db: Session, hike: Hike, locale: str, fingerprint: str, reason: str) -> None:
-    active = db.scalar(
-        select(TranslationJob).where(
-            TranslationJob.entity_type == "hike",
-            TranslationJob.entity_id == hike.id,
-            TranslationJob.target_locale == locale,
-            TranslationJob.status.in_(("queued", "running")),
-        )
-    )
-    if active is None:
-        db.add(
-            TranslationJob(
-                entity_type="hike",
-                entity_id=hike.id,
-                target_locale=locale,
-                source_revision=hike.source_revision,
-                profile_fingerprint=fingerprint,
-                reason=reason,
-                status="queued",
-            )
-        )
+    enqueue_translation(db, hike, locale, reason, fingerprint)
 
 
 if __name__ == "__main__":

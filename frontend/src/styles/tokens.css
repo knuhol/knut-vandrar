@@ -13,6 +13,7 @@
 
   --spacing: 4px;
   --container-page: 1240px;
+  --container-reading: 68ch;
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
   --breakpoint-wide: 1500px;

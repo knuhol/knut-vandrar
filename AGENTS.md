@@ -1,5 +1,6 @@
 # Project instructions
 
+- Non-scalable solutions are not acceptable. Assume the project will grow significantly when introducing any solution. Keep shared behavior extensible, centralize routing and configuration, and avoid page-specific special cases in generic components while keeping the architecture simple.
 - Keep the Docker-first Next.js/React/TypeScript/Tailwind frontend and FastAPI/SQLAlchemy/Alembic backend architecture simple.
 - Pin every direct npm and Python dependency to an exact stable version. Never introduce caret, tilde, wildcard, or dependency version ranges. Update both npm lockfiles with manifest changes. Pin Python transitive dependencies in `backend/constraints.txt` and use it for all installs. Python runtime compatibility constraints are not dependency pins.
 - `.nvmrc` is the only source of the Node runtime version. `.python-version` is the only source of the Python runtime version. Docker and CI must read those files; do not duplicate runtime versions elsewhere.

@@ -7,6 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from knut_vandrar_backend.models.translation import TranslationGlossaryEntry
+from knut_vandrar_backend.settings import settings
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,7 @@ def translate_hike(
     *,
     api_key: str,
     model: str,
+    reasoning_effort: str,
     target_locale: str,
     instructions: str,
     glossary_entries: list[TranslationGlossaryEntry],
@@ -52,6 +54,7 @@ def translate_hike(
     }
     body = {
         "model": model,
+        "reasoning": {"effort": reasoning_effort},
         "input": [
             {"role": "developer", "content": developer_instructions},
             {
@@ -78,7 +81,7 @@ def translate_hike(
         method="POST",
     )
     try:
-        with urlopen(request, timeout=90) as response:
+        with urlopen(request, timeout=settings.openai_request_timeout_seconds) as response:
             response_data = json.load(response)
     except HTTPError as exc:
         error_code = "unknown_error"
@@ -89,8 +92,17 @@ def translate_hike(
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
         raise RuntimeError(f"OpenAI API returned HTTP {exc.code} ({error_code})") from exc
-    except (TimeoutError, URLError) as exc:
-        raise RuntimeError("Could not reach the OpenAI API") from exc
+    except TimeoutError as exc:
+        raise RuntimeError(
+            f"OpenAI API request timed out after {settings.openai_request_timeout_seconds} "
+            "seconds without network progress"
+        ) from exc
+    except URLError as exc:
+        if isinstance(exc.reason, TimeoutError):
+            raise RuntimeError(
+                f"OpenAI API connection timed out after {settings.openai_request_timeout_seconds} seconds"
+            ) from exc
+        raise RuntimeError("Could not connect to the OpenAI API") from exc
     except json.JSONDecodeError as exc:
         raise RuntimeError("OpenAI API returned invalid JSON") from exc
 

@@ -1,10 +1,12 @@
 """API and queue tests for hiking content."""
 
+import json
 from collections.abc import Generator, Iterator
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from typing import cast
+from urllib.request import Request
 from uuid import UUID
 
 import pytest
@@ -22,6 +24,7 @@ from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike, HikeTranslation
 from knut_vandrar_backend.models.reference import InfoCardType, Language
 from knut_vandrar_backend.models.translation import TranslationJob, TranslationProfile
+from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.translations.cli import queue_outdated_translations
 from knut_vandrar_backend.translations.core import profile_fingerprint
 from knut_vandrar_backend.translations.openai_provider import TranslationResult
@@ -109,6 +112,45 @@ def test_hike_create_queues_translations_and_returns_typed_cards(client: TestCli
     assert hike["translation"]["slug"] == "hike-through-the-highlands"
     assert hike["cards"] == [{"type": "route", "url": "https://example.com/route.gpx"}]
     assert {job["target_locale"] for job in _get_jobs(client)} == {"sv", "cs"}
+
+
+@pytest.mark.parametrize("locale", ["en", "sv", "cs"])
+def test_hikes_are_ordered_by_start_date_before_pagination(client: TestClient, locale: str) -> None:
+    earlier = datetime(2026, 5, 1, tzinfo=UTC)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
+    db = _db_session(client)
+    for index, (planned, actual) in enumerate(
+        [(later, earlier), (earlier, later), (later, None), (earlier, None), (None, None)],
+        start=1,
+    ):
+        hike = Hike(id=UUID(int=index), planned_start_at=planned, actual_start_at=actual)
+        db.add(hike)
+        db.flush()
+        db.add(
+            HikeTranslation(
+                hike_id=hike.id,
+                locale_code=locale,
+                title=f"Hike {index}",
+                summary_markdown="Summary",
+                slug=f"hike-{index}",
+                created_at=earlier + timedelta(days=index),
+            )
+        )
+    db.commit()
+    db.close()
+
+    response = client.get("/api/hikes", params={"locale": locale})
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [
+        str(UUID(int=index)) for index in [2, 3, 1, 4, 5]
+    ]
+
+    page = client.get("/api/hikes", params={"locale": locale, "limit": 2, "offset": 1})
+    assert page.status_code == 200
+    assert page.json()["total"] == 5
+    assert [item["id"] for item in page.json()["items"]] == [
+        str(UUID(int=index)) for index in [3, 1]
+    ]
 
 
 def test_missing_translation_is_not_fallback_and_outdated_translation_is_served(
@@ -320,7 +362,7 @@ def test_duration_uses_actual_timestamps_and_rounds_up() -> None:
     assert _duration_days(hike) == 15
 
 
-def test_retranslation_command_queues_missing_outdated_and_flagged_rows(client: TestClient) -> None:
+def test_retranslation_command_only_queues_flagged_rows_once(client: TestClient) -> None:
     db = _db_session(client)
     hikes: list[Hike] = []
     for index in range(3):
@@ -380,12 +422,18 @@ def test_retranslation_command_queues_missing_outdated_and_flagged_rows(client: 
     queued, _ = queue_outdated_translations(db)
     db.flush()
     jobs = db.scalars(select(TranslationJob).order_by(TranslationJob.created_at)).all()
-    assert (
-        queued == 5
-    )  # Missing sv/cs for hike 0; stale cs for hike 1; stale cs and flagged sv for hike 2.
-    reasons = {(job.entity_id, job.target_locale): job.reason for job in jobs}
-    assert reasons[(hikes[2].id, "sv")] == "needs_retranslation"
-    assert len(jobs) == 5
+    assert queued == 1
+    assert len(jobs) == 1
+    assert jobs[0].entity_id == hikes[2].id
+    assert jobs[0].target_locale == "sv"
+    assert jobs[0].reason == "needs_retranslation"
+    # Repeat in the same transaction and again after commit, as separate CLI calls do.
+    assert queue_outdated_translations(db) == (0, 1)
+    db.commit()
+    assert queue_outdated_translations(db) == (0, 1)
+    jobs[0].status = "running"
+    db.commit()
+    assert queue_outdated_translations(db) == (0, 1)
     db.close()
 
 
@@ -399,7 +447,8 @@ def test_translation_worker_publishes_localized_copy_and_history(
     factory = cast(sessionmaker[Session], app.state.testing_session_local)
     monkeypatch.setattr(worker, "SessionLocal", factory)
 
-    def translate(**_: object) -> TranslationResult:
+    def translate(**kwargs: object) -> TranslationResult:
+        assert kwargs["reasoning_effort"] == "medium"
         return TranslationResult(
             fields={
                 "title": "Vandring genom högländerna",
@@ -435,6 +484,99 @@ def test_translation_worker_publishes_localized_copy_and_history(
         assert job.status == "succeeded"
     finally:
         db.close()
+
+
+def test_worker_replaces_stale_job_once(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.translations import worker
+
+    client.post("/api/hikes", json=_planned_payload())
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    with factory.begin() as db:
+        job = db.scalars(select(TranslationJob).order_by(TranslationJob.created_at)).first()
+        assert job is not None
+        job_id = job.id
+        locale = job.target_locale
+        job.profile_fingerprint = "old-worker-fingerprint"
+
+    def unexpected_translate(**_: object) -> TranslationResult:
+        pytest.fail("A stale job must be replaced before calling the provider")
+
+    assert worker.run_once(unexpected_translate)
+    with factory() as db:
+        original = db.get(TranslationJob, job_id)
+        assert original is not None
+        assert original.status == "superseded"
+        active = db.scalars(
+            select(TranslationJob).where(
+                TranslationJob.target_locale == locale,
+                TranslationJob.status.in_(("queued", "running")),
+            )
+        ).all()
+        assert len(active) == 1
+        assert active[0].profile_fingerprint == profile_fingerprint(db, "hike", locale)[1]
+
+
+def test_worker_sends_profile_model_and_effort_in_http_request(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.translations import openai_provider, worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    with factory.begin() as db:
+        for profile in db.scalars(select(TranslationProfile)).all():
+            profile.model = "gpt-6.1-terra"
+            profile.reasoning_effort = "medium"
+    client.post("/api/hikes", json=_planned_payload())
+    requests: list[dict[str, object]] = []
+
+    def capture_request(request: Request, timeout: int) -> BytesIO:
+        assert timeout == settings.openai_request_timeout_seconds
+        assert request.full_url == "https://api.openai.com/v1/responses"
+        assert request.method == "POST"
+        assert isinstance(request.data, bytes)
+        payload = json.loads(request.data)
+        requests.append(payload)
+        assert payload["model"] == "gpt-6.1-terra"
+        assert payload["reasoning"] == {"effort": "medium"}
+        return BytesIO(
+            json.dumps(
+                {
+                    "model": "gpt-6.1-terra",
+                    "output": [
+                        {
+                            "type": "message",
+                            "content": [
+                                {
+                                    "type": "output_text",
+                                    "text": json.dumps(
+                                        {
+                                            "title": "Translated title",
+                                            "tagline": None,
+                                            "summary_markdown": "Translated summary",
+                                            "description_markdown": None,
+                                        }
+                                    ),
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ).encode()
+        )
+
+    monkeypatch.setattr(openai_provider, "urlopen", capture_request)
+    # Exercise the actual default provider, rather than injecting a fake translator.
+    assert worker.run_once()
+    assert len(requests) == 1
+    with factory() as db:
+        assert (
+            db.scalar(select(TranslationJob.status).where(TranslationJob.status == "succeeded"))
+            == "succeeded"
+        )
 
 
 def test_slug_generation_keeps_non_latin_letters() -> None:

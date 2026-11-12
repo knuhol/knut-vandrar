@@ -116,6 +116,8 @@ Review generated migrations before committing them.
 
 Prettier formats the frontend. Ruff formats and lints the backend, and mypy checks its types. Run these commands from the repository root:
 
+Local Make targets use `backend/.venv/bin/python`, so activating the virtual environment is not required. Create it and install the backend development dependencies as shown above first. To use another environment, set `BACKEND_PYTHON` to its absolute Python executable path, for example `make format-check BACKEND_PYTHON=/path/to/venv/bin/python`.
+
 ```sh
 make format-check # check both applications without modifying files
 make format-fix   # apply formatting to both applications

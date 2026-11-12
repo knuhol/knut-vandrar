@@ -74,6 +74,7 @@ services:
       API_PORT: ${API_PORT:?Set API_PORT in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_REQUEST_TIMEOUT_SECONDS: ${OPENAI_REQUEST_TIMEOUT_SECONDS:-600}
     volumes:
       - ./backend:/app
     command: ["python", "-m", "knut_vandrar_backend.translations.worker"]

@@ -27,6 +27,17 @@ def _port(name: str) -> int:
     return value
 
 
+def _openai_timeout() -> int:
+    name = "OPENAI_REQUEST_TIMEOUT_SECONDS"
+    try:
+        value = int(os.getenv(name, "600"))
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be a positive integer") from exc
+    if value <= 0:
+        raise RuntimeError(f"{name} must be a positive integer")
+    return value
+
+
 def _database_url() -> URL:
     """Use the local URL on the host; derive the service URL in Compose."""
     database_url = os.getenv("DATABASE_URL", "").strip()
@@ -55,6 +66,7 @@ class Settings:
     api_host: str
     api_port: int
     openai_api_key: str | None
+    openai_request_timeout_seconds: int
 
 
 def load_settings() -> Settings:
@@ -69,6 +81,7 @@ def load_settings() -> Settings:
         api_host=_required("API_HOST"),
         api_port=_port("API_PORT"),
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip() or None,
+        openai_request_timeout_seconds=_openai_timeout(),
     )
 
 
