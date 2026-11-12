@@ -38,6 +38,7 @@ def profile_fingerprint(
     value = {
         "instructions": profile.instructions,
         "model": profile.model,
+        "reasoning_effort": profile.reasoning_effort,
         "glossary": [
             {
                 "source": entry.source_term,
@@ -61,24 +62,27 @@ def enqueue_translation(
     reason: str,
     fingerprint: str | None = None,
 ) -> bool:
+    # Serialize producers for this hike; flush because sessions disable autoflush.
+    db.flush()
+    db.execute(select(Hike.id).where(Hike.id == hike.id).with_for_update()).all()
     if fingerprint is None:
         _, fingerprint = profile_fingerprint(db, "hike", locale)
-    active_job = db.scalar(
+    active_jobs = db.scalars(
         select(TranslationJob).where(
             TranslationJob.entity_type == "hike",
             TranslationJob.entity_id == hike.id,
             TranslationJob.target_locale == locale,
             TranslationJob.status.in_(("queued", "running")),
         )
-    )
-    if active_job is not None:
-        if (
-            active_job.source_revision == hike.source_revision
-            and active_job.profile_fingerprint == fingerprint
-        ):
-            return False
-        if active_job.status == "queued":
-            active_job.status = "superseded"
+    ).all()
+    if any(
+        job.source_revision == hike.source_revision and job.profile_fingerprint == fingerprint
+        for job in active_jobs
+    ):
+        return False
+    for job in active_jobs:
+        if job.status == "queued":
+            job.status = "superseded"
     db.add(
         TranslationJob(
             entity_type="hike",
@@ -90,6 +94,7 @@ def enqueue_translation(
             status="queued",
         )
     )
+    db.flush()
     return True
 
 

@@ -18,7 +18,7 @@ curl --fail-with-body --request PUT "$API_URL/api/hikes/$HIKE_ID/cover-image" \
   --data-binary @hike-cover.webp
 ```
 
-The translation worker uses `OPENAI_API_KEY` and the translation profiles and glossary stored in the database. It queues translations on English content changes, preserves earlier translation versions, and serves outdated localized content while replacements are generated. To enqueue missing, outdated, or `needs_retranslation` translations, run `npm run translations:retranslate` from the repository root or `make translations-retranslate`; the backend container must be running.
+The translation worker uses `OPENAI_API_KEY` and the translation profiles and glossary stored in the database. It queues translations on English content changes, preserves earlier translation versions, and serves outdated localized content while replacements are generated. To enqueue only translations explicitly marked `needs_retranslation`, run `npm run translations:retranslate` from the repository root or `make translations-retranslate`; the backend container must be running. Repeated calls skip queued or running jobs. Missing translations and English content changes are queued automatically. After changing worker code, restart the translation-worker service so it uses the same profile fingerprint and request settings as the backend.
 
 Create and activate a virtual environment, then install the development extras for Ruff, mypy, and pytest:
 
@@ -42,3 +42,5 @@ python -m pytest
 Tests use in-memory SQLite and do not need PostgreSQL.
 
 Migrations are applied automatically at container startup. While the schema is being refined, the current schema is maintained as a single Alembic baseline for fresh databases. Existing databases that recorded the previous migration revisions must be recreated before using this baseline. Create future revisions from this directory with `alembic revision --autogenerate -m "describe the change"` and review them before use.
+
+Translation requests use `OPENAI_REQUEST_TIMEOUT_SECONDS` from the root `.env` (default: 600 seconds). This is a network inactivity timeout, not a strict total generation deadline. Increase it for slower high-effort translations. Recreate the translation-worker service after changing its environment settings.

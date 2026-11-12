@@ -6,6 +6,7 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import { IconArrowLeft as ArrowLeft } from '@tabler/icons-react'
 
 import { HikeFacts } from './components/HikeFacts'
+import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
 
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
@@ -104,6 +105,11 @@ export default async function HikePage({ params }: Props) {
             <div className="mb-6">
               <Heading as="h2">{t('about')}</Heading>
             </div>
+            {locale !== 'en' && (
+              <div className="mb-6">
+                <TranslationNotice />
+              </div>
+            )}
             {hike.translation.description_markdown && (
               <Markdown>{hike.translation.description_markdown}</Markdown>
             )}
