@@ -6,8 +6,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
-from knut_vandrar_backend.api.schemas.trail import TrailRead
-from knut_vandrar_backend.models.enums import HikeStatus, TranslationReviewStatus
+from knut_vandrar_backend.api.schemas.location import AchievementRead, LocationRead
+from knut_vandrar_backend.models.enums import (
+    AccommodationType,
+    Direction,
+    HikeStatus,
+    RouteScope,
+    TranslationReviewStatus,
+)
 
 
 class StrictCardModel(BaseModel):
@@ -65,14 +71,49 @@ class HikeEnglishContent(BaseModel):
     description_markdown: str | None = None
 
 
-class HikeWrite(BaseModel):
-    trail_id: UUID | None = None
+class OvernightWrite(BaseModel):
+    accommodation_type: AccommodationType
+    night_count: int = Field(gt=0)
+
+
+class HikeExtra(BaseModel):
+    start_latitude: float | None = Field(default=None, ge=-90, le=90)
+    start_longitude: float | None = Field(default=None, ge=-180, le=180)
+    end_latitude: float | None = Field(default=None, ge=-90, le=90)
+    end_longitude: float | None = Field(default=None, ge=-180, le=180)
+    direction: Direction | None = None
+    route_scope: RouteScope | None = None
+    start_stage: int | None = Field(default=None, gt=0)
+    end_stage: int | None = Field(default=None, gt=0)
+    overnights_recorded_at: datetime | None = None
+    overnights: list[OvernightWrite] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_pairs(self) -> "HikeExtra":
+        for left, right in [
+            (self.start_latitude, self.start_longitude),
+            (self.end_latitude, self.end_longitude),
+            (self.start_stage, self.end_stage),
+        ]:
+            if (left is None) != (right is None):
+                raise ValueError("Coordinates and stage ranges must be supplied as pairs")
+        if len({night.accommodation_type for night in self.overnights}) != len(self.overnights):
+            raise ValueError("Overnight types must be unique")
+        if self.overnights and self.overnights_recorded_at is None:
+            raise ValueError("Recorded overnight counts require overnights_recorded_at")
+        if self.overnights_recorded_at is not None and self.overnights_recorded_at.tzinfo is None:
+            raise ValueError("Overnight recording timestamp must include timezone")
+        return self
+
+
+class HikeWrite(HikeExtra):
+    location_id: UUID | None = None
     status: HikeStatus = HikeStatus.PLANNED
     planned_start_at: datetime | None = None
     planned_end_at: datetime | None = None
     actual_start_at: datetime | None = None
     actual_end_at: datetime | None = None
-    distance_km: int | None = Field(default=None, ge=0)
+    distance_km: float | None = Field(default=None, ge=0, le=999999.99)
     ascent_m: int | None = Field(default=None, ge=0)
     start_point: str | None = Field(default=None, max_length=300)
     end_point: str | None = Field(default=None, max_length=300)
@@ -116,15 +157,15 @@ class HikeLocalizedRead(BaseModel):
     is_outdated: bool
 
 
-class HikeRead(BaseModel):
+class HikeRead(HikeExtra):
     id: UUID
-    trail: TrailRead | None
+    location: LocationRead | None
     status: HikeStatus
     planned_start_at: datetime | None
     planned_end_at: datetime | None
     actual_start_at: datetime | None
     actual_end_at: datetime | None
-    distance_km: int | None
+    distance_km: float | None
     ascent_m: int | None
     start_point: str | None
     end_point: str | None
@@ -132,19 +173,20 @@ class HikeRead(BaseModel):
     cover_image_url: str | None
     translation: HikeLocalizedRead
     cards: list[InfoCard]
+    achievements: list[AchievementRead]
     created_at: datetime
     updated_at: datetime
 
 
 class HikeSummaryRead(BaseModel):
     id: UUID
-    trail: TrailRead | None
+    location: LocationRead | None
     status: HikeStatus
     planned_start_at: datetime | None
     planned_end_at: datetime | None
     actual_start_at: datetime | None
     actual_end_at: datetime | None
-    distance_km: int | None
+    distance_km: float | None
     ascent_m: int | None
     start_point: str | None
     end_point: str | None
@@ -159,4 +201,4 @@ class HikeSlugRead(BaseModel):
 
 
 class TranslationReviewWrite(BaseModel):
-    review_status: Literal["unreviewed", "approved", "needs_retranslation"]
+    review_status: Literal["unreviewed", "approved", "needs_retranslation", "manual"]

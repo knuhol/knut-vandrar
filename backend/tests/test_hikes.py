@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Generator, Iterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -12,9 +13,11 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
+from pydantic import SecretStr
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from knut_vandrar_backend.api import auth
 from knut_vandrar_backend.api.hikes import _duration_days
 from knut_vandrar_backend.api.schemas.hike import RouteCard, YouTubeVideoCard
 from knut_vandrar_backend.database.base import Base
@@ -29,9 +32,14 @@ from knut_vandrar_backend.translations.cli import queue_outdated_translations
 from knut_vandrar_backend.translations.core import profile_fingerprint
 from knut_vandrar_backend.translations.openai_provider import TranslationResult
 
+TEST_WRITE_TOKEN = "test-write-token-" + "a" * 32
+
 
 @pytest.fixture()
-def client(tmp_path: Path) -> Iterator[TestClient]:
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+    monkeypatch.setattr(
+        auth, "settings", replace(settings, api_write_token=SecretStr(TEST_WRITE_TOKEN))
+    )
     engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
     Base.metadata.create_all(bind=engine)
     testing_session_local = sessionmaker[Session](bind=engine, autoflush=False)
@@ -65,6 +73,18 @@ def client(tmp_path: Path) -> Iterator[TestClient]:
             ]
         )
 
+    with testing_session_local.begin() as db:
+        for kind in ("location", "region", "achievement"):
+            for locale in ("sv", "cs"):
+                db.add(
+                    TranslationProfile(
+                        content_type=kind,
+                        target_locale=locale,
+                        instructions="Translate naturally.",
+                        model="gpt-6-luna",
+                    )
+                )
+
     def override_get_db() -> Generator[Session, None, None]:
         db = testing_session_local()
         try:
@@ -74,6 +94,7 @@ def client(tmp_path: Path) -> Iterator[TestClient]:
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
+        test_client.headers["Authorization"] = f"Bearer {TEST_WRITE_TOKEN}"
         yield test_client
     app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=engine)
@@ -229,34 +250,34 @@ def test_changing_a_title_keeps_the_old_localized_slug_as_redirect(client: TestC
 
 def test_trail_supports_multiple_countries_and_enum_type(client: TestClient) -> None:
     response = client.post(
-        "/api/trails",
+        "/api/locations",
         json={
-            "name": "The Border Trail",
-            "type": "lowlands",
+            "english": {"name": "The Border Trail"},
+            "terrains": ["lowlands"],
             "country_codes": ["se", "no"],
             "official_url": "https://example.com/trail",
         },
     )
     assert response.status_code == 201
-    assert response.json()["type"] == "lowlands"
+    assert response.json()["terrains"] == ["lowlands"]
     assert response.json()["country_codes"] == ["NO", "SE"]
 
 
 def test_trail_logo_is_stored_and_served_from_backend(client: TestClient) -> None:
     trail = client.post(
-        "/api/trails",
-        json={"name": "Test Trail", "type": "lowlands", "country_codes": ["se"]},
+        "/api/locations",
+        json={"english": {"name": "Test Trail"}, "terrains": ["lowlands"], "country_codes": ["se"]},
     ).json()
     assert trail["logo_url"] is None
 
     logo_bytes = _png_image((1024, 512))
     uploaded = client.put(
-        f"/api/trails/{trail['id']}/logo",
+        f"/api/locations/{trail['id']}/logo",
         content=logo_bytes,
         headers={"Content-Type": "application/octet-stream"},
     )
     assert uploaded.status_code == 200
-    assert uploaded.json()["logo_url"].endswith(f"/api/trails/{trail['id']}/logo")
+    assert uploaded.json()["logo_url"].endswith(f"/api/locations/{trail['id']}/logo")
 
     served = client.get(uploaded.json()["logo_url"])
     assert served.status_code == 200
@@ -270,18 +291,18 @@ def test_trail_logo_is_stored_and_served_from_backend(client: TestClient) -> Non
     )
     assert cached.status_code == 304
 
-    deleted = client.delete(f"/api/trails/{trail['id']}/logo")
+    deleted = client.delete(f"/api/locations/{trail['id']}/logo")
     assert deleted.status_code == 204
-    assert client.get(f"/api/trails/{trail['id']}/logo").status_code == 404
+    assert client.get(f"/api/locations/{trail['id']}/logo").status_code == 404
 
 
 def test_trail_logo_upload_rejects_unsupported_content(client: TestClient) -> None:
     trail = client.post(
-        "/api/trails",
-        json={"name": "Test Trail", "type": "lowlands", "country_codes": ["se"]},
+        "/api/locations",
+        json={"english": {"name": "Test Trail"}, "terrains": ["lowlands"], "country_codes": ["se"]},
     ).json()
     response = client.put(
-        f"/api/trails/{trail['id']}/logo",
+        f"/api/locations/{trail['id']}/logo",
         content=b"not an image",
         headers={"Content-Type": "application/octet-stream"},
     )
@@ -290,11 +311,11 @@ def test_trail_logo_upload_rejects_unsupported_content(client: TestClient) -> No
 
 def test_trail_logo_upload_rejects_oversized_body(client: TestClient) -> None:
     trail = client.post(
-        "/api/trails",
-        json={"name": "Test Trail", "type": "lowlands", "country_codes": ["se"]},
+        "/api/locations",
+        json={"english": {"name": "Test Trail"}, "terrains": ["lowlands"], "country_codes": ["se"]},
     ).json()
     response = client.put(
-        f"/api/trails/{trail['id']}/logo",
+        f"/api/locations/{trail['id']}/logo",
         content=b"x" * (5 * 1024 * 1024 + 1),
         headers={"Content-Type": "application/octet-stream"},
     )
@@ -597,3 +618,362 @@ def _get_jobs(client: TestClient) -> list[dict[str, object]]:
     result: list[dict[str, object]] = [{"target_locale": job.target_locale} for job in jobs]
     db.close()
     return result
+
+
+def test_location_details_regions_ratings_and_validation(client: TestClient) -> None:
+    region = client.post("/api/regions", json={"english": {"name": "Lapland"}})
+    assert region.status_code == 201, region.text
+    payload = {
+        "kind": "area",
+        "english": {"name": "Sarek", "season_note": "First note\nSecond note"},
+        "country_codes": ["se"],
+        "terrains": ["mountains", "coastal"],
+        "region_ids": [region.json()["id"]],
+        "hiking_months": [7, 8, 9],
+        "water_sources_status": "known",
+        "water_sources": ["natural"],
+        "overnight_options_status": "known",
+        "overnight_options": ["tent"],
+        "overnight_restrictions_status": "known",
+        "overnight_restrictions": [],
+        "ratings": {"facilities": 0, "difficulty": 7},
+    }
+    response = client.post("/api/locations", json=payload)
+    assert response.status_code == 201, response.text
+    location = response.json()
+    assert location["regions"][0]["name"] == "Lapland"
+    assert location["ratings"]["difficulty"] == 7
+    assert location["season_note"] == "First note\nSecond note"
+    assert location["translation"]["locale"] == "en"
+    assert client.get(f"/api/locations/{location['id']}?locale=sv").json()["name"] == "Sarek"
+    assert client.delete(f"/api/regions/{region.json()['id']}").status_code == 409
+    changes_to_check: list[dict[str, object]] = [
+        {"hiking_months": [0]},
+        {"hiking_months": []},
+        {"is_loop": False},
+        {"water_sources_status": "unknown"},
+        {"country_codes": ["SE", "se"]},
+        {"ratings": {"difficulty": 11}},
+    ]
+    for changes in changes_to_check:
+        assert client.post("/api/locations", json={**payload, **changes}).status_code == 422
+
+
+def test_hike_new_details_and_manual_achievement(client: TestClient) -> None:
+    payload = _planned_payload(
+        distance_km=105.25,
+        start_latitude=68.358,
+        start_longitude=18.783,
+        direction="southbound",
+        route_scope="trail_section",
+        start_stage=17,
+        end_stage=1,
+        overnights_recorded_at=datetime.now(UTC).isoformat(),
+        overnights=[{"accommodation_type": "tent", "night_count": 10}],
+    )
+    response = client.post("/api/hikes", json=payload)
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["distance_km"] == 105.25
+    assert hike["start_latitude"] == 68.358
+    assert hike["start_stage"] == 17
+    assert hike["overnights"][0]["night_count"] == 10
+    changes_to_check: list[dict[str, object]] = [
+        {"end_latitude": 1},
+        {"start_stage": 0},
+        {"end_longitude": 181},
+        {"overnights_recorded_at": None},
+    ]
+    for changes in changes_to_check:
+        assert client.post("/api/hikes", json={**payload, **changes}).status_code == 422
+    achievement = client.post(
+        "/api/achievements",
+        json={
+            "hike_id": hike["id"],
+            "icon": "trophy",
+            "sort_order": 2,
+            "english": {"title": "My own milestone", "description": "Entirely manual"},
+        },
+    )
+    assert achievement.status_code == 201, achievement.text
+    detail = client.get(f"/api/hikes/{hike['id']}").json()
+    assert detail["achievements"][0]["title"] == "My own milestone"
+    assert "thruHike" not in detail
+
+
+@pytest.mark.parametrize(
+    "kind,path,english",
+    [
+        (
+            "location",
+            "/api/locations",
+            {"name": "Original", "season_note": None, "overnight_restrictions_note": None},
+        ),
+        ("region", "/api/regions", {"name": "Original"}),
+        ("achievement", "/api/achievements", {"title": "Original", "description": None}),
+    ],
+)
+def test_authored_manual_translation_survives_inflight_result(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+    path: str,
+    english: dict[str, str | None],
+) -> None:
+    from knut_vandrar_backend.translations import content_worker, worker
+    from knut_vandrar_backend.translations.content import translation_for
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    monkeypatch.setattr(content_worker, "SessionLocal", factory)
+    payload: dict[str, object] = {"english": english}
+    if kind == "location":
+        payload["country_codes"] = ["SE"]
+    if kind == "achievement":
+        hike = client.post("/api/hikes", json=_planned_payload()).json()
+        payload.update(hike_id=hike["id"], icon="trophy")
+        with factory.begin() as db:
+            for job in db.scalars(select(TranslationJob)):
+                job.status = "superseded"
+    created = client.post(path, json=payload)
+    assert created.status_code == 201, created.text
+    entity_id = created.json()["id"]
+    manual = {
+        key: ("Manual text" if key in ("name", "title") else value)
+        for key, value in english.items()
+    }
+
+    def translate(**arguments: object) -> TranslationResult:
+        locale = str(arguments["target_locale"])
+        result = client.put(f"{path}/{entity_id}/translations/{locale}", json=manual)
+        assert result.status_code == 200, result.text
+        return TranslationResult(fields=english, model="test", input_tokens=1, output_tokens=1)
+
+    assert worker.run_once(translate)
+    with factory() as db:
+        target = translation_for(db, kind, UUID(entity_id), "sv")
+        assert target is not None
+        assert target.review_status == "manual"
+        assert getattr(target, "name", getattr(target, "title", None)) == "Manual text"
+    changed = {**english, "name" if "name" in english else "title": "New English"}
+    assert (
+        client.put(f"{path}/{entity_id}", json={**payload, "english": changed}).status_code == 200
+    )
+    result = client.get(f"{path}/{entity_id}?locale=sv").json()
+    assert result["translation"]["review_status"] == "manual"
+    assert result["translation"]["is_outdated"] is True
+    assert (
+        client.put(
+            f"{path}/{entity_id}/translations/sv/review",
+            json={"review_status": "needs_retranslation"},
+        ).status_code
+        == 200
+    )
+
+
+def test_region_automatic_translation_publishes_history(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.models.location import RegionTranslation
+    from knut_vandrar_backend.models.translation import ContentTranslationVersion
+    from knut_vandrar_backend.translations import content_worker, worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    monkeypatch.setattr(content_worker, "SessionLocal", factory)
+    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
+
+    def translate(**arguments: object) -> TranslationResult:
+        assert arguments["source_fields"] == {"name": "Lapland"}
+        return TranslationResult(
+            fields={"name": "Lappland"}, model="test", input_tokens=1, output_tokens=1
+        )
+
+    assert worker.run_once(translate)
+    with factory() as db:
+        target = db.get(RegionTranslation, (UUID(region["id"]), "sv"))
+        assert target is not None and target.name == "Lappland"
+        assert target.review_status == "unreviewed"
+        snapshot = db.scalar(select(ContentTranslationVersion))
+        assert snapshot is not None and snapshot.fields == {"name": "Lappland"}
+
+
+def test_hike_manual_override_survives_inflight_result(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.translations import worker
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    fields = {
+        "title": "Manual Swedish",
+        "tagline": None,
+        "summary_markdown": "Manual summary",
+        "description_markdown": None,
+    }
+
+    def translate(**arguments: object) -> TranslationResult:
+        locale = str(arguments["target_locale"])
+        response = client.put(f"/api/hikes/{hike['id']}/translations/{locale}", json=fields)
+        assert response.status_code == 200, response.text
+        assert response.json()["review_status"] == "manual"
+        return TranslationResult(
+            fields={**fields, "title": "Automatic overwrite"},
+            model="test",
+            input_tokens=1,
+            output_tokens=1,
+        )
+
+    assert worker.run_once(translate)
+    with factory() as db:
+        target = db.scalar(
+            select(HikeTranslation).where(
+                HikeTranslation.hike_id == UUID(hike["id"]), HikeTranslation.locale_code == "sv"
+            )
+        )
+        assert target is not None and target.title == "Manual Swedish"
+        assert target.review_status == "manual"
+
+
+@pytest.mark.parametrize(
+    "authorization",
+    [None, "", "Basic anything", "Bearer wrong-token", "Bearer", "Bearer wrong token"],
+)
+def test_write_auth_rejects_missing_or_invalid_credentials(
+    client: TestClient, authorization: str | None
+) -> None:
+    client.headers.pop("Authorization", None)
+    headers = {"Authorization": authorization} if authorization is not None else {}
+    for method, path in [
+        ("POST", "/api/hikes"),
+        ("PUT", "/api/locations/00000000-0000-0000-0000-000000000001"),
+        ("DELETE", "/api/regions/00000000-0000-0000-0000-000000000001"),
+        ("POST", "/api/translations/requeue"),
+    ]:
+        response = client.request(method, path, headers=headers, json={})
+        assert response.status_code == 401, response.text
+        assert response.headers["www-authenticate"] == "Bearer"
+        assert TEST_WRITE_TOKEN not in response.text
+
+
+def test_reads_and_cors_preflight_are_public(client: TestClient) -> None:
+    client.headers.pop("Authorization", None)
+    for path in [
+        "/health",
+        "/api/hikes",
+        "/api/locations",
+        "/api/regions",
+        "/api/achievements",
+        "/openapi.json",
+    ]:
+        assert client.get(path).status_code == 200
+    response = client.options(
+        "/api/hikes",
+        headers={
+            "Origin": settings.cors_origins[0],
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == settings.cors_origins[0]
+    assert client.get("/health", headers={"Authorization": "Bearer wrong"}).status_code == 200
+
+
+def test_writes_fail_closed_without_configuration(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(auth, "settings", replace(settings, api_write_token=None))
+    assert client.post("/api/translations/requeue").status_code == 503
+    assert client.get("/api/hikes").status_code == 200
+
+
+def test_new_write_routes_inherit_authentication(client: TestClient) -> None:
+    def future_write() -> dict[str, bool]:
+        return {"ok": True}
+
+    app.add_api_route("/_test/future-write", future_write, methods=["PATCH"])
+    route = app.router.routes[-1]
+    try:
+        assert (
+            client.patch(
+                "/_test/future-write", headers={"Authorization": "Bearer wrong"}
+            ).status_code
+            == 401
+        )
+        assert client.patch("/_test/future-write").json() == {"ok": True}
+    finally:
+        app.router.routes.remove(route)
+
+
+def test_openapi_documents_write_auth_but_not_public_reads(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+    assert schema["components"]["securitySchemes"]["AdminBearer"]["scheme"] == "bearer"
+    for path in schema["paths"].values():
+        for method, operation in path.items():
+            if method in {"get", "head", "options"}:
+                assert not operation.get("security")
+            elif method in {"post", "put", "patch", "delete"}:
+                assert {"AdminBearer": []} in operation["security"]
+                assert "401" in operation["responses"]
+    assert TEST_WRITE_TOKEN not in json.dumps(schema)
+
+
+def test_token_configuration_validation_and_redaction(monkeypatch: pytest.MonkeyPatch) -> None:
+    from knut_vandrar_backend.settings import _write_token
+
+    monkeypatch.delenv("API_WRITE_TOKEN", raising=False)
+    assert _write_token() is None
+    for value in ["", "   "]:
+        monkeypatch.setenv("API_WRITE_TOKEN", value)
+        assert _write_token() is None
+    for value in ["short", "a" * 129, "x " * 32]:
+        monkeypatch.setenv("API_WRITE_TOKEN", value)
+        with pytest.raises(RuntimeError, match="API_WRITE_TOKEN"):
+            _write_token()
+    monkeypatch.setenv("API_WRITE_TOKEN", TEST_WRITE_TOKEN)
+    token = _write_token()
+    assert token is not None and token.get_secret_value() == TEST_WRITE_TOKEN
+    assert TEST_WRITE_TOKEN not in repr(token)
+    assert TEST_WRITE_TOKEN not in repr(replace(settings, api_write_token=token))
+
+
+def test_translation_requeue_api_is_idempotent_and_preserves_manual(client: TestClient) -> None:
+    from knut_vandrar_backend.models.location import RegionTranslation
+
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
+    with _db_session(client) as db:
+        for job in db.scalars(select(TranslationJob)):
+            job.status = "superseded"
+        for locale, review in [("sv", "needs_retranslation"), ("cs", "manual")]:
+            db.add(
+                HikeTranslation(
+                    hike_id=UUID(hike["id"]),
+                    locale_code=locale,
+                    title="Text",
+                    summary_markdown="Text",
+                    slug=f"text-{locale}",
+                    review_status=review,
+                )
+            )
+            db.add(
+                RegionTranslation(
+                    region_id=UUID(region["id"]),
+                    locale_code=locale,
+                    name="Text",
+                    review_status=review,
+                )
+            )
+        db.commit()
+    first = client.post("/api/translations/requeue")
+    assert first.status_code == 200, first.text
+    assert first.json() == {"queued": 2, "skipped": 0}
+    assert client.post("/api/translations/requeue").json() == {"queued": 0, "skipped": 2}
+    with _db_session(client) as db:
+        manual = db.get(RegionTranslation, (UUID(region["id"]), "cs"))
+        assert manual is not None and manual.review_status == "manual"
+        active = db.scalars(select(TranslationJob).where(TranslationJob.status == "queued")).all()
+        assert len(active) == 2
+        assert all(job.target_locale == "sv" for job in active)

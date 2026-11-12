@@ -2,23 +2,9 @@
 
 from sqlalchemy import engine_from_config, pool
 
+import knut_vandrar_backend.models  # noqa: F401 - register model metadata
 from alembic import context
 from knut_vandrar_backend.database.base import Base
-from knut_vandrar_backend.models.hike import (  # noqa: F401 - register model metadata
-    Hike,
-    HikeCoverImage,
-    HikeInfoCard,
-    HikeSlugAlias,
-    HikeTranslation,
-    HikeTranslationVersion,
-)
-from knut_vandrar_backend.models.reference import InfoCardType, Language  # noqa: F401
-from knut_vandrar_backend.models.trail import Trail, TrailCountry, TrailLogo  # noqa: F401
-from knut_vandrar_backend.models.translation import (  # noqa: F401
-    TranslationGlossaryEntry,
-    TranslationJob,
-    TranslationProfile,
-)
 from knut_vandrar_backend.settings import settings
 
 config = context.config

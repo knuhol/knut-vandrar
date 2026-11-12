@@ -81,6 +81,11 @@ export const openapi = {
         ],
         "summary": "Create Hike",
         "operationId": "create_hike_api_hikes_post",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -111,6 +116,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
@@ -176,6 +187,11 @@ export const openapi = {
         ],
         "summary": "Replace Hike",
         "operationId": "replace_hike_api_hikes__hike_id__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "hike_id",
@@ -218,6 +234,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       },
@@ -227,6 +249,11 @@ export const openapi = {
         ],
         "summary": "Delete Hike",
         "operationId": "delete_hike_api_hikes__hike_id__delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "hike_id",
@@ -252,6 +279,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
@@ -304,6 +337,11 @@ export const openapi = {
         ],
         "summary": "Upload Hike Cover Image",
         "operationId": "upload_hike_cover_image_api_hikes__hike_id__cover_image_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "hike_id",
@@ -336,6 +374,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         },
         "requestBody": {
@@ -356,6 +400,11 @@ export const openapi = {
         ],
         "summary": "Delete Hike Cover Image",
         "operationId": "delete_hike_cover_image_api_hikes__hike_id__cover_image_delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "hike_id",
@@ -381,6 +430,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
@@ -449,6 +504,11 @@ export const openapi = {
         ],
         "summary": "Update Translation Review",
         "operationId": "update_translation_review_api_hikes__hike_id__translations__locale__review_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "hike_id",
@@ -500,18 +560,107 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
     },
-    "/api/trails": {
+    "/api/hikes/{hike_id}/translations/{locale}": {
+      "put": {
+        "tags": [
+          "hikes"
+        ],
+        "summary": "Override Hike Translation",
+        "operationId": "override_hike_translation_api_hikes__hike_id__translations__locale__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HikeEnglishContent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HikeLocalizedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/locations": {
       "get": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "List Trails",
-        "operationId": "list_trails_api_trails_get",
+        "summary": "List Locations",
+        "operationId": "list_locations_api_locations_get",
         "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          },
           {
             "name": "limit",
             "in": "query",
@@ -546,7 +695,7 @@ export const openapi = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_TrailRead_"
+                  "$ref": "#/components/schemas/Page_LocationRead_"
                 }
               }
             }
@@ -565,16 +714,21 @@ export const openapi = {
       },
       "post": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Create Trail",
-        "operationId": "create_trail_api_trails_post",
+        "summary": "Create Location",
+        "operationId": "create_location_api_locations_post",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TrailWrite"
+                "$ref": "#/components/schemas/LocationWrite"
               }
             }
           }
@@ -585,7 +739,7 @@ export const openapi = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrailRead"
+                  "$ref": "#/components/schemas/LocationRead"
                 }
               }
             }
@@ -599,26 +753,42 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
     },
-    "/api/trails/{trail_id}": {
+    "/api/locations/{location_id}": {
       "get": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Get Trail",
-        "operationId": "get_trail_api_trails__trail_id__get",
+        "summary": "Get Location",
+        "operationId": "get_location_api_locations__location_id__get",
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
             }
           }
         ],
@@ -628,7 +798,7 @@ export const openapi = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrailRead"
+                  "$ref": "#/components/schemas/LocationRead"
                 }
               }
             }
@@ -647,19 +817,24 @@ export const openapi = {
       },
       "put": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Update Trail",
-        "operationId": "update_trail_api_trails__trail_id__put",
+        "summary": "Update Location",
+        "operationId": "update_location_api_locations__location_id__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
             }
           }
         ],
@@ -668,7 +843,7 @@ export const openapi = {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TrailWrite"
+                "$ref": "#/components/schemas/LocationWrite"
               }
             }
           }
@@ -679,7 +854,7 @@ export const openapi = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrailRead"
+                  "$ref": "#/components/schemas/LocationRead"
                 }
               }
             }
@@ -693,24 +868,35 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       },
       "delete": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Delete Trail",
-        "operationId": "delete_trail_api_trails__trail_id__delete",
+        "summary": "Delete Location",
+        "operationId": "delete_location_api_locations__location_id__delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
             }
           }
         ],
@@ -727,27 +913,37 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
     },
-    "/api/trails/{trail_id}/logo": {
+    "/api/locations/{location_id}/logo": {
       "put": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Upload Trail Logo",
-        "description": "Store a PNG, JPEG, WebP, GIF, or SVG logo and return its backend URL.",
-        "operationId": "upload_trail_logo_api_trails__trail_id__logo_put",
+        "summary": "Upload Location Logo",
+        "operationId": "upload_location_logo_api_locations__location_id__logo_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
             }
           }
         ],
@@ -757,7 +953,7 @@ export const openapi = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrailRead"
+                  "$ref": "#/components/schemas/LocationRead"
                 }
               }
             }
@@ -771,6 +967,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         },
         "requestBody": {
@@ -787,19 +989,19 @@ export const openapi = {
       },
       "get": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Get Trail Logo",
-        "operationId": "get_trail_logo_api_trails__trail_id__logo_get",
+        "summary": "Get Location Logo",
+        "operationId": "get_location_logo_api_locations__location_id__logo_get",
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
             }
           }
         ],
@@ -828,19 +1030,24 @@ export const openapi = {
       },
       "delete": {
         "tags": [
-          "trails"
+          "locations"
         ],
-        "summary": "Delete Trail Logo",
-        "operationId": "delete_trail_logo_api_trails__trail_id__logo_delete",
+        "summary": "Delete Location Logo",
+        "operationId": "delete_location_logo_api_locations__location_id__logo_delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
         "parameters": [
           {
-            "name": "trail_id",
+            "name": "location_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Trail Id"
+              "title": "Location Id"
             }
           }
         ],
@@ -857,6 +1064,12 @@ export const openapi = {
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
           }
         }
       }
@@ -958,10 +1171,1221 @@ export const openapi = {
           }
         }
       }
+    },
+    "/api/regions": {
+      "post": {
+        "tags": [
+          "region"
+        ],
+        "summary": "Create Region",
+        "operationId": "create_region_api_regions_post",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "region"
+        ],
+        "summary": "List Region",
+        "operationId": "list_region_api_regions_get",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Maximum entries to return",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "Maximum entries to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of entries to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of entries to skip"
+          },
+          {
+            "name": "hike_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RegionRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/regions/{entity_id}": {
+      "get": {
+        "tags": [
+          "region"
+        ],
+        "summary": "Get Region",
+        "operationId": "get_region_api_regions__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "region"
+        ],
+        "summary": "Update Region",
+        "operationId": "update_region_api_regions__entity_id__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "region"
+        ],
+        "summary": "Delete Region",
+        "operationId": "delete_region_api_regions__entity_id__delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/achievements": {
+      "post": {
+        "tags": [
+          "achievement"
+        ],
+        "summary": "Create Achievement",
+        "operationId": "create_achievement_api_achievements_post",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AchievementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "achievement"
+        ],
+        "summary": "List Achievement",
+        "operationId": "list_achievement_api_achievements_get",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Maximum entries to return",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "Maximum entries to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of entries to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of entries to skip"
+          },
+          {
+            "name": "hike_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AchievementRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/achievements/{entity_id}": {
+      "get": {
+        "tags": [
+          "achievement"
+        ],
+        "summary": "Get Achievement",
+        "operationId": "get_achievement_api_achievements__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "achievement"
+        ],
+        "summary": "Update Achievement",
+        "operationId": "update_achievement_api_achievements__entity_id__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AchievementWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "achievement"
+        ],
+        "summary": "Delete Achievement",
+        "operationId": "delete_achievement_api_achievements__entity_id__delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/locations/{entity_id}/translations/{locale}/review": {
+      "put": {
+        "tags": [
+          "location translations"
+        ],
+        "summary": "Review",
+        "operationId": "review_api_locations__entity_id__translations__locale__review_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewWrite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/locations/{entity_id}/translations/{locale}": {
+      "put": {
+        "tags": [
+          "location translations"
+        ],
+        "summary": "Override Location Translation",
+        "operationId": "override_location_translation_api_locations__entity_id__translations__locale__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationEnglish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/regions/{entity_id}/translations/{locale}/review": {
+      "put": {
+        "tags": [
+          "region translations"
+        ],
+        "summary": "Review",
+        "operationId": "review_api_regions__entity_id__translations__locale__review_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewWrite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/regions/{entity_id}/translations/{locale}": {
+      "put": {
+        "tags": [
+          "region translations"
+        ],
+        "summary": "Override Region Translation",
+        "operationId": "override_region_translation_api_regions__entity_id__translations__locale__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionEnglish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/achievements/{entity_id}/translations/{locale}/review": {
+      "put": {
+        "tags": [
+          "achievement translations"
+        ],
+        "summary": "Review",
+        "operationId": "review_api_achievements__entity_id__translations__locale__review_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewWrite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/achievements/{entity_id}/translations/{locale}": {
+      "put": {
+        "tags": [
+          "achievement translations"
+        ],
+        "summary": "Override Achievement Translation",
+        "operationId": "override_achievement_translation_api_achievements__entity_id__translations__locale__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AchievementEnglish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/translations/requeue": {
+      "post": {
+        "tags": [
+          "translations"
+        ],
+        "summary": "Requeue Translations",
+        "description": "Queue only needs_retranslation entries; skip active duplicate jobs.\n\nManual translations are never selected. This endpoint does not call the\ntranslation provider and does not automatically retranslate outdated content.",
+        "operationId": "requeue_translations_api_translations_requeue_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequeueRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccommodationType": {
+        "type": "string",
+        "enum": [
+          "tent",
+          "free_shelter_or_hut",
+          "mountain_hut",
+          "other_paid_accommodation"
+        ],
+        "title": "AccommodationType"
+      },
+      "AchievementEnglish": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "AchievementEnglish"
+      },
+      "AchievementIcon": {
+        "type": "string",
+        "enum": [
+          "trophy",
+          "distance",
+          "mountain",
+          "compass",
+          "tent",
+          "arctic"
+        ],
+        "title": "AchievementIcon"
+      },
+      "AchievementRead": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hike_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hike Id"
+          },
+          "icon": {
+            "$ref": "#/components/schemas/AchievementIcon"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "translation": {
+            "$ref": "#/components/schemas/TranslationMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "id",
+          "hike_id",
+          "icon",
+          "sort_order",
+          "translation"
+        ],
+        "title": "AchievementRead"
+      },
+      "AchievementWrite": {
+        "properties": {
+          "hike_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hike Id"
+          },
+          "icon": {
+            "$ref": "#/components/schemas/AchievementIcon"
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Sort Order",
+            "default": 0
+          },
+          "english": {
+            "$ref": "#/components/schemas/AchievementEnglish"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hike_id",
+          "icon",
+          "english"
+        ],
+        "title": "AchievementWrite"
+      },
+      "ArcticCirclePosition": {
+        "type": "string",
+        "enum": [
+          "south",
+          "crosses",
+          "north"
+        ],
+        "title": "ArcticCirclePosition"
+      },
+      "Direction": {
+        "type": "string",
+        "enum": [
+          "northbound",
+          "southbound",
+          "eastbound",
+          "westbound"
+        ],
+        "title": "Direction"
+      },
       "EquipmentCard": {
         "properties": {
           "type": {
@@ -1121,15 +2545,130 @@ export const openapi = {
       },
       "HikeRead": {
         "properties": {
+          "start_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Latitude"
+          },
+          "start_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Longitude"
+          },
+          "end_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Latitude"
+          },
+          "end_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Longitude"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Direction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "route_scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_stage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Stage"
+          },
+          "end_stage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Stage"
+          },
+          "overnights_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overnights Recorded At"
+          },
+          "overnights": {
+            "items": {
+              "$ref": "#/components/schemas/OvernightWrite"
+            },
+            "type": "array",
+            "title": "Overnights"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
           },
-          "trail": {
+          "location": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TrailRead"
+                "$ref": "#/components/schemas/LocationRead"
               },
               {
                 "type": "null"
@@ -1190,7 +2729,7 @@ export const openapi = {
           "distance_km": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1293,6 +2832,13 @@ export const openapi = {
             "type": "array",
             "title": "Cards"
           },
+          "achievements": {
+            "items": {
+              "$ref": "#/components/schemas/AchievementRead"
+            },
+            "type": "array",
+            "title": "Achievements"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1307,7 +2853,7 @@ export const openapi = {
         "type": "object",
         "required": [
           "id",
-          "trail",
+          "location",
           "status",
           "planned_start_at",
           "planned_end_at",
@@ -1321,6 +2867,7 @@ export const openapi = {
           "cover_image_url",
           "translation",
           "cards",
+          "achievements",
           "created_at",
           "updated_at"
         ],
@@ -1343,10 +2890,10 @@ export const openapi = {
             "format": "uuid",
             "title": "Id"
           },
-          "trail": {
+          "location": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TrailRead"
+                "$ref": "#/components/schemas/LocationRead"
               },
               {
                 "type": "null"
@@ -1407,7 +2954,7 @@ export const openapi = {
           "distance_km": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1477,7 +3024,7 @@ export const openapi = {
         "type": "object",
         "required": [
           "id",
-          "trail",
+          "location",
           "status",
           "planned_start_at",
           "planned_end_at",
@@ -1495,7 +3042,122 @@ export const openapi = {
       },
       "HikeWrite": {
         "properties": {
-          "trail_id": {
+          "start_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Latitude"
+          },
+          "start_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Longitude"
+          },
+          "end_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Latitude"
+          },
+          "end_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Longitude"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Direction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "route_scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_stage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Stage"
+          },
+          "end_stage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Stage"
+          },
+          "overnights_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overnights Recorded At"
+          },
+          "overnights": {
+            "items": {
+              "$ref": "#/components/schemas/OvernightWrite"
+            },
+            "type": "array",
+            "title": "Overnights"
+          },
+          "location_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -1505,7 +3167,7 @@ export const openapi = {
                 "type": "null"
               }
             ],
-            "title": "Trail Id"
+            "title": "Location Id"
           },
           "status": {
             "$ref": "#/components/schemas/HikeStatus",
@@ -1562,7 +3224,8 @@ export const openapi = {
           "distance_km": {
             "anyOf": [
               {
-                "type": "integer",
+                "type": "number",
+                "maximum": 999_999.99,
                 "minimum": 0
               },
               {
@@ -1654,6 +3317,14 @@ export const openapi = {
         ],
         "title": "HikeWrite"
       },
+      "InformationStatus": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "known"
+        ],
+        "title": "InformationStatus"
+      },
       "LivePositionCard": {
         "properties": {
           "type": {
@@ -1694,6 +3365,462 @@ export const openapi = {
         ],
         "title": "LivePositionCard"
       },
+      "LocationEnglish": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "season_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Note"
+          },
+          "overnight_restrictions_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overnight Restrictions Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "LocationEnglish"
+      },
+      "LocationKind": {
+        "type": "string",
+        "enum": [
+          "trail",
+          "area"
+        ],
+        "title": "LocationKind"
+      },
+      "LocationRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "season_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Note"
+          },
+          "overnight_restrictions_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overnight Restrictions Note"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LocationKind"
+          },
+          "official_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Url"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "waymarking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Waymarking"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_loop": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Loop"
+          },
+          "arctic_circle_position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArcticCirclePosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "information_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Information Checked At"
+          },
+          "country_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Country Codes"
+          },
+          "terrains": {
+            "items": {
+              "$ref": "#/components/schemas/TrailType"
+            },
+            "type": "array",
+            "title": "Terrains"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/RegionRead"
+            },
+            "type": "array",
+            "title": "Regions"
+          },
+          "hiking_months": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hiking Months"
+          },
+          "water_sources_status": {
+            "$ref": "#/components/schemas/InformationStatus"
+          },
+          "water_sources": {
+            "items": {
+              "$ref": "#/components/schemas/WaterSourceType"
+            },
+            "type": "array",
+            "title": "Water Sources"
+          },
+          "overnight_options_status": {
+            "$ref": "#/components/schemas/InformationStatus"
+          },
+          "overnight_options": {
+            "items": {
+              "$ref": "#/components/schemas/AccommodationType"
+            },
+            "type": "array",
+            "title": "Overnight Options"
+          },
+          "overnight_restrictions_status": {
+            "$ref": "#/components/schemas/InformationStatus"
+          },
+          "overnight_restrictions": {
+            "items": {
+              "$ref": "#/components/schemas/RestrictionType"
+            },
+            "type": "array",
+            "title": "Overnight Restrictions"
+          },
+          "ratings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RatingWrite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "translation": {
+            "$ref": "#/components/schemas/TranslationMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "kind",
+          "official_url",
+          "logo_url",
+          "waymarking",
+          "is_loop",
+          "arctic_circle_position",
+          "information_checked_at",
+          "country_codes",
+          "terrains",
+          "regions",
+          "hiking_months",
+          "water_sources_status",
+          "water_sources",
+          "overnight_options_status",
+          "overnight_options",
+          "overnight_restrictions_status",
+          "overnight_restrictions",
+          "ratings",
+          "translation"
+        ],
+        "title": "LocationRead"
+      },
+      "LocationWrite": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LocationKind",
+            "default": "trail"
+          },
+          "english": {
+            "$ref": "#/components/schemas/LocationEnglish"
+          },
+          "official_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Url"
+          },
+          "waymarking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Waymarking"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_loop": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Loop"
+          },
+          "arctic_circle_position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArcticCirclePosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "information_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Information Checked At"
+          },
+          "country_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Country Codes"
+          },
+          "terrains": {
+            "items": {
+              "$ref": "#/components/schemas/TrailType"
+            },
+            "type": "array",
+            "title": "Terrains"
+          },
+          "region_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Region Ids"
+          },
+          "hiking_months": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hiking Months"
+          },
+          "water_sources_status": {
+            "$ref": "#/components/schemas/InformationStatus",
+            "default": "unknown"
+          },
+          "water_sources": {
+            "items": {
+              "$ref": "#/components/schemas/WaterSourceType"
+            },
+            "type": "array",
+            "title": "Water Sources"
+          },
+          "overnight_options_status": {
+            "$ref": "#/components/schemas/InformationStatus",
+            "default": "unknown"
+          },
+          "overnight_options": {
+            "items": {
+              "$ref": "#/components/schemas/AccommodationType"
+            },
+            "type": "array",
+            "title": "Overnight Options"
+          },
+          "overnight_restrictions_status": {
+            "$ref": "#/components/schemas/InformationStatus",
+            "default": "unknown"
+          },
+          "overnight_restrictions": {
+            "items": {
+              "$ref": "#/components/schemas/RestrictionType"
+            },
+            "type": "array",
+            "title": "Overnight Restrictions"
+          },
+          "ratings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RatingWrite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "english",
+          "country_codes"
+        ],
+        "title": "LocationWrite"
+      },
+      "OvernightWrite": {
+        "properties": {
+          "accommodation_type": {
+            "$ref": "#/components/schemas/AccommodationType"
+          },
+          "night_count": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Night Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accommodation_type",
+          "night_count"
+        ],
+        "title": "OvernightWrite"
+      },
+      "Page_AchievementRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AchievementRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[AchievementRead]"
+      },
       "Page_HikeSummaryRead_": {
         "properties": {
           "items": {
@@ -1725,11 +3852,11 @@ export const openapi = {
         ],
         "title": "Page[HikeSummaryRead]"
       },
-      "Page_TrailRead_": {
+      "Page_LocationRead_": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/TrailRead"
+              "$ref": "#/components/schemas/LocationRead"
             },
             "type": "array",
             "title": "Items"
@@ -1754,7 +3881,38 @@ export const openapi = {
           "limit",
           "offset"
         ],
-        "title": "Page[TrailRead]"
+        "title": "Page[LocationRead]"
+      },
+      "Page_RegionRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RegionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[RegionRead]"
       },
       "ProgressCard": {
         "properties": {
@@ -1781,6 +3939,180 @@ export const openapi = {
         ],
         "title": "ProgressCard"
       },
+      "RatingWrite": {
+        "properties": {
+          "facilities": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facilities"
+          },
+          "maintenance": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintenance"
+          },
+          "resupplies": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resupplies"
+          },
+          "public_transport": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Transport"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difficulty"
+          },
+          "assessed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessed At"
+          }
+        },
+        "type": "object",
+        "title": "RatingWrite"
+      },
+      "RegionEnglish": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RegionEnglish"
+      },
+      "RegionRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "translation": {
+            "$ref": "#/components/schemas/TranslationMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "translation"
+        ],
+        "title": "RegionRead"
+      },
+      "RegionWrite": {
+        "properties": {
+          "english": {
+            "$ref": "#/components/schemas/RegionEnglish"
+          }
+        },
+        "type": "object",
+        "required": [
+          "english"
+        ],
+        "title": "RegionWrite"
+      },
+      "RequeueRead": {
+        "properties": {
+          "queued": {
+            "type": "integer",
+            "title": "Queued"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "queued",
+          "skipped"
+        ],
+        "title": "RequeueRead"
+      },
+      "RestrictionType": {
+        "type": "string",
+        "enum": [
+          "camping_restricted",
+          "advance_booking_required",
+          "fees_apply"
+        ],
+        "title": "RestrictionType"
+      },
+      "ReviewWrite": {
+        "properties": {
+          "review_status": {
+            "$ref": "#/components/schemas/TranslationReviewStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "review_status"
+        ],
+        "title": "ReviewWrite"
+      },
       "RouteCard": {
         "properties": {
           "type": {
@@ -1805,6 +4137,15 @@ export const openapi = {
           "url"
         ],
         "title": "RouteCard"
+      },
+      "RouteScope": {
+        "type": "string",
+        "enum": [
+          "full_trail",
+          "trail_section",
+          "custom_route"
+        ],
+        "title": "RouteScope"
       },
       "SocialFeedCard": {
         "properties": {
@@ -1831,115 +4172,41 @@ export const openapi = {
         ],
         "title": "SocialFeedCard"
       },
-      "TrailRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "type": {
-            "$ref": "#/components/schemas/TrailType"
-          },
-          "country_codes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Country Codes"
-          },
-          "official_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Official Url"
-          },
-          "logo_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Logo Url",
-            "description": "Backend URL for this trail's logo, when one has been uploaded."
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "type",
-          "country_codes",
-          "official_url",
-          "logo_url"
-        ],
-        "title": "TrailRead"
-      },
       "TrailType": {
         "type": "string",
         "enum": [
           "mountains",
-          "lowlands"
+          "lowlands",
+          "coastal"
         ],
         "title": "TrailType"
       },
-      "TrailWrite": {
+      "TranslationMetadata": {
         "properties": {
-          "name": {
+          "locale": {
             "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name"
+            "title": "Locale"
           },
-          "type": {
-            "$ref": "#/components/schemas/TrailType"
+          "review_status": {
+            "$ref": "#/components/schemas/TranslationReviewStatus"
           },
-          "country_codes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Country Codes"
-          },
-          "official_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Official Url"
+          "is_outdated": {
+            "type": "boolean",
+            "title": "Is Outdated"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "type",
-          "country_codes"
+          "locale",
+          "review_status",
+          "is_outdated"
         ],
-        "title": "TrailWrite"
+        "title": "TranslationMetadata"
       },
       "TranslationReviewStatus": {
         "type": "string",
         "enum": [
+          "manual",
           "source",
           "unreviewed",
           "approved",
@@ -1954,7 +4221,8 @@ export const openapi = {
             "enum": [
               "unreviewed",
               "approved",
-              "needs_retranslation"
+              "needs_retranslation",
+              "manual"
             ],
             "title": "Review Status"
           }
@@ -2005,6 +4273,24 @@ export const openapi = {
         ],
         "title": "ValidationError"
       },
+      "WaterSourceType": {
+        "type": "string",
+        "enum": [
+          "tap",
+          "shop",
+          "natural"
+        ],
+        "title": "WaterSourceType"
+      },
+      "Waymarking": {
+        "type": "string",
+        "enum": [
+          "waymarked",
+          "partly_waymarked",
+          "unmarked"
+        ],
+        "title": "Waymarking"
+      },
       "YouTubeVideoCard": {
         "properties": {
           "type": {
@@ -2029,6 +4315,12 @@ export const openapi = {
           "url"
         ],
         "title": "YouTubeVideoCard"
+      }
+    },
+    "securitySchemes": {
+      "AdminBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

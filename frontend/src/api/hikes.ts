@@ -17,11 +17,9 @@ const pageSize = 6
 
 export async function getHikes(locale: Locale, offset = 0) {
   const response = await client['/api/hikes'].get({ query: { locale, limit: pageSize, offset } })
-
   if (!response.ok) {
     throw new Error('Could not load hikes')
   }
-
   return response.json()
 }
 
@@ -53,6 +51,7 @@ export async function getHikeAlternative(locale: Locale, id: string) {
 
   return response.json()
 }
+
 export type Hike = NonNullable<Awaited<ReturnType<typeof getHike>>>
 export type HikesPage = Awaited<ReturnType<typeof getHikes>>
 export type HikeSummary = HikesPage['items'][number]

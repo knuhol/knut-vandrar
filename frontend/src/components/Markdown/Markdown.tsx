@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import type { UIComponentProps } from '../uiComponentProps'
 
 import styles from './Markdown.module.css'
+import { collapsibleSections } from './collapsibleSections'
 
 const variants = {
   rich: styles.prose,
@@ -25,7 +26,9 @@ export function Markdown({
           {children}
         </ReactMarkdown>
       ) : (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[collapsibleSections]}>
+          {children}
+        </ReactMarkdown>
       )}
     </div>
   )

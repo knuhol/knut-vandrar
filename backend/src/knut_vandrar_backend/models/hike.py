@@ -1,6 +1,7 @@
 """Hike records, localized text, cards, and generated translation history."""
 
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -11,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     LargeBinary,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -24,10 +26,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from knut_vandrar_backend.database.base import Base
-from knut_vandrar_backend.models.enums import HikeStatus, TranslationReviewStatus
+from knut_vandrar_backend.models.enums import (
+    Direction,
+    HikeStatus,
+    RouteScope,
+    TranslationReviewStatus,
+)
 
 if TYPE_CHECKING:
-    from knut_vandrar_backend.models.trail import Trail
+    from knut_vandrar_backend.models.location import HikingLocation
 
 JsonType = JSON().with_variant(JSONB(), "postgresql")
 
@@ -35,6 +42,22 @@ JsonType = JSON().with_variant(JSONB(), "postgresql")
 class Hike(Base):
     __tablename__ = "hikes"
     __table_args__ = (
+        CheckConstraint(
+            "(start_latitude IS NULL) = (start_longitude IS NULL)", name="ck_start_coordinates_pair"
+        ),
+        CheckConstraint(
+            "start_latitude BETWEEN -90 AND 90 AND start_longitude BETWEEN -180 AND 180",
+            name="ck_start_coordinates_range",
+        ),
+        CheckConstraint(
+            "(end_latitude IS NULL) = (end_longitude IS NULL)", name="ck_end_coordinates_pair"
+        ),
+        CheckConstraint(
+            "end_latitude BETWEEN -90 AND 90 AND end_longitude BETWEEN -180 AND 180",
+            name="ck_end_coordinates_range",
+        ),
+        CheckConstraint("(start_stage IS NULL) = (end_stage IS NULL)", name="ck_stages_pair"),
+        CheckConstraint("start_stage > 0 AND end_stage > 0", name="ck_stages_positive"),
         CheckConstraint("distance_km IS NULL OR distance_km >= 0", name="ck_hike_distance"),
         CheckConstraint("ascent_m IS NULL OR ascent_m >= 0", name="ck_hike_ascent"),
         CheckConstraint(
@@ -48,8 +71,8 @@ class Hike(Base):
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    trail_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("trails.id", ondelete="SET NULL"), nullable=True
+    location_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("hiking_locations.id", ondelete="SET NULL"), nullable=True
     )
     status: Mapped[HikeStatus] = mapped_column(
         SqlEnum(
@@ -65,10 +88,27 @@ class Hike(Base):
     planned_end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     actual_start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     actual_end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    distance_km: Mapped[int | None] = mapped_column(Integer)
+    distance_km: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
     ascent_m: Mapped[int | None] = mapped_column(Integer)
     start_point: Mapped[str | None] = mapped_column(String(300))
     end_point: Mapped[str | None] = mapped_column(String(300))
+    start_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    end_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    start_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    end_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    direction: Mapped[Direction | None] = mapped_column(
+        SqlEnum(
+            Direction, name="direction", values_callable=lambda values: [v.value for v in values]
+        )
+    )
+    route_scope: Mapped[RouteScope | None] = mapped_column(
+        SqlEnum(
+            RouteScope, name="route_scope", values_callable=lambda values: [v.value for v in values]
+        )
+    )
+    start_stage: Mapped[int | None] = mapped_column(Integer)
+    end_stage: Mapped[int | None] = mapped_column(Integer)
+    overnights_recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -77,7 +117,7 @@ class Hike(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
-    trail: Mapped["Trail | None"] = relationship(back_populates="hikes")
+    location: Mapped["HikingLocation | None"] = relationship()
     translations: Mapped[list["HikeTranslation"]] = relationship(
         back_populates="hike", cascade="all, delete-orphan"
     )

@@ -40,6 +40,7 @@ services:
       API_HOST: ${API_HOST:?Set API_HOST in .env}
       API_PORT: ${API_PORT:?Set API_PORT in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
+      API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
     ports:
       - "${BACKEND_PORT:?Set BACKEND_PORT in .env}:${API_PORT:?Set API_PORT in .env}"
     volumes:

@@ -6,9 +6,9 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import { IconArrowLeft as ArrowLeft } from '@tabler/icons-react'
 
 import { HikeFacts } from './components/HikeFacts'
+import { TrailFacts } from './components/TrailFacts'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
 
-import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { Container } from '@/components/Container'
 import { Heading } from '@/components/Heading'
@@ -18,6 +18,8 @@ import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname, Link } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
 import { getHike } from '@/api/hikes'
+
+import { hikePresentation, locationPresentation } from '@/hiking/presentation'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -58,6 +60,9 @@ export default async function HikePage({ params }: Props) {
   }
 
   const t = await getTranslations('Site')
+  const presentation = hikePresentation(hike)
+  const locationData = hike.location && locationPresentation(hike.location)
+  const isActive = hike.status === 'planned' || hike.status === 'ongoing'
 
   return (
     <div className="pt-6.25 pb-15">
@@ -78,12 +83,24 @@ export default async function HikePage({ params }: Props) {
           {hike.translation.tagline && (
             <p className="text-xl text-forest italic">{hike.translation.tagline}</p>
           )}
-          <HikeStats
-            hike={hike}
-            fontSize="lg"
-            className="my-2 gap-x-5 leading-tight text-forest tablet:text-xl [&_span]:gap-1.5"
-          />
         </div>
+        <section className="mb-7.5 grid gap-4" aria-label={t('hikeFacts')}>
+          <HikeFacts
+            hike={hike}
+            endpoints={presentation.endpoints}
+            details={presentation.details}
+          />
+          {isActive && hike.cards.length > 0 && (
+            <section>
+              <div className="mb-4">
+                <Heading as="h2" className="text-xl">
+                  {t('followHike')}
+                </Heading>
+              </div>
+              <InfoCards cards={hike.cards} />
+            </section>
+          )}
+        </section>
         {hike.cover_image_url && (
           <div className="relative aspect-video max-h-90 w-full overflow-hidden rounded-lg">
             <Image
@@ -105,7 +122,7 @@ export default async function HikePage({ params }: Props) {
             <div className="mb-6">
               <Heading as="h2">{t('about')}</Heading>
             </div>
-            {locale !== 'en' && (
+            {locale !== 'en' && hike.translation.review_status !== 'manual' && (
               <div className="mb-6">
                 <TranslationNotice />
               </div>
@@ -114,11 +131,26 @@ export default async function HikePage({ params }: Props) {
               <Markdown>{hike.translation.description_markdown}</Markdown>
             )}
           </article>
-          <div className="order-first grid min-w-0 gap-4 desktop:order-none">
-            <HikeFacts hike={hike} locale={locale} />
-            <InfoCards cards={hike.cards} />
-          </div>
+          {hike.location && locationData && (
+            <TrailFacts
+              location={hike.location}
+              locale={locale}
+              tags={locationData.tags}
+              ratings={locationData.ratings}
+              details={locationData.details}
+            />
+          )}
         </div>
+        {!isActive && hike.cards.length > 0 && (
+          <section className="mb-7.5">
+            <div className="mb-4">
+              <Heading as="h2" className="text-xl">
+                {t('hikeResources')}
+              </Heading>
+            </div>
+            <InfoCards cards={hike.cards} />
+          </section>
+        )}
         <Link
           className="inline-flex items-center gap-2.5 font-semibold text-forest"
           href={{ pathname: '/', hash: 'hikes' }}

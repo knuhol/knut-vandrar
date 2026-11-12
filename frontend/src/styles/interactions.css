@@ -24,6 +24,10 @@
   text-decoration-thickness: auto;
 }
 
+@utility link-dotted {
+  @apply underline decoration-dotted hover:decoration-solid focus-visible:decoration-solid active:decoration-solid;
+}
+
 /* Keep existing underlines at the same distance in every interaction state. */
 a[href]:not([data-link-kind]),
 a[data-link-kind='card'] [data-link-label] {

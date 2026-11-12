@@ -1,0 +1,13 @@
+export type Coordinates = {
+  latitude: number
+  longitude: number
+}
+
+export function googleMapsUrl({ latitude, longitude }: Coordinates) {
+  const url = new URL('https://www.google.com/maps/search/')
+
+  url.searchParams.set('api', '1')
+  url.searchParams.set('query', `${String(latitude)},${String(longitude)}`)
+
+  return url.toString()
+}

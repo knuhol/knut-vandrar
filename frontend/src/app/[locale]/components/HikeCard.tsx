@@ -1,6 +1,9 @@
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { IconArrowUpRight as ArrowUpRight, IconMountain as Mountain } from '@tabler/icons-react'
+import {
+  IconArrowUpRight as ArrowUpRight,
+  IconPhotoQuestion as PhotoQuestion,
+} from '@tabler/icons-react'
 
 import { HikeStats } from './HikeStats'
 import { HikeStatus } from './HikeStatus'
@@ -27,8 +30,8 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
             sizes="(max-width: 640px) 100vw, (max-width: 1000px) 50vw, 33vw"
           />
         ) : (
-          <div className="grid h-full place-items-center bg-beige text-forest">
-            <Mountain className="size-12 shrink-0" aria-hidden="true" />
+          <div className="grid h-full place-items-center bg-sage/40 text-forest">
+            <PhotoQuestion className="size-12 shrink-0" aria-hidden="true" />
           </div>
         )}
         <HikeStatus status={hike.status} className="absolute top-3.75 left-3.75" />

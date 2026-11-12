@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from knut_vandrar_backend.models.enums import TranslationReviewStatus
 from knut_vandrar_backend.models.hike import Hike, HikeSlugAlias, HikeTranslation
 from knut_vandrar_backend.models.translation import (
     TranslationGlossaryEntry,
@@ -65,6 +66,13 @@ def enqueue_translation(
     # Serialize producers for this hike; flush because sessions disable autoflush.
     db.flush()
     db.execute(select(Hike.id).where(Hike.id == hike.id).with_for_update()).all()
+    target = db.scalar(
+        select(HikeTranslation).where(
+            HikeTranslation.hike_id == hike.id, HikeTranslation.locale_code == locale
+        )
+    )
+    if target is not None and target.review_status == TranslationReviewStatus.MANUAL:
+        return False
     if fingerprint is None:
         _, fingerprint = profile_fingerprint(db, "hike", locale)
     active_jobs = db.scalars(

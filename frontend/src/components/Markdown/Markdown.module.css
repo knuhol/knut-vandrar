@@ -47,3 +47,28 @@
 .prose blockquote {
   @apply border-l-3 border-sage pl-5 text-forest;
 }
+
+.prose details {
+  @apply mb-4 border-y border-beige;
+}
+
+.prose summary {
+  @apply flex cursor-pointer list-none items-center justify-between gap-3 rounded-sm py-3 text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest;
+}
+
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+
+.prose summary::after {
+  content: '+';
+  @apply shrink-0 font-sans text-xl;
+}
+
+.prose details[open] > summary::after {
+  content: '−';
+}
+
+.prose summary h2 {
+  @apply m-0 text-xl;
+}
