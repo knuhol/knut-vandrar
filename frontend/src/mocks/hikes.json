@@ -1,0 +1,125 @@
+[
+  {
+    "id": "75f1b282-1e68-4f08-8831-44c2693e8e2d",
+    "trail": {
+      "id": "a79ff259-e9d6-4cb6-9ef9-a9499f4af8f0",
+      "name": "Kungsleden",
+      "type": "mountains",
+      "country_codes": ["SE", "NO", "FI"],
+      "official_url": null,
+      "logo_url": null
+    },
+    "status": "planned",
+    "planned_start_at": "2027-08-15T08:00:00+02:00",
+    "planned_end_at": "2027-08-21T18:00:00+02:00",
+    "actual_start_at": null,
+    "actual_end_at": null,
+    "distance_km": 105,
+    "ascent_m": 2100,
+    "start_point": "Abisko",
+    "end_point": "Nikkaluokta",
+    "duration_days": 7,
+    "cover_image_url": null,
+    "cards": [
+      {
+        "type": "live_position",
+        "state": "inactive",
+        "url": null
+      }
+    ],
+    "created_at": "2026-11-12T09:00:00Z",
+    "updated_at": "2026-11-12T09:00:00Z",
+    "translation": {
+      "locale": "sv",
+      "title": "Kungsleden: Abisko till Nikkaluokta",
+      "tagline": "Sju dagar bland fjäll, sjöar och vida dalar.",
+      "slug": "kungsleden-abisko-till-nikkaluokta",
+      "summary_markdown": "Nästa sommar planerar jag att vandra från **Abisko till Nikkaluokta** längs norra Kungsleden. En vecka med tält, fjällsjöar och långa dagar på leden.",
+      "description_markdown": "# Planen\n\nVandringen börjar i Abisko och följer Kungsleden söderut genom Abisko nationalpark, förbi Alesjaure och över Tjäktjapasset. Vid Singi lämnar jag Kungsleden och fortsätter mot Nikkaluokta via Kebnekaise.\n\n# Förberedelser\n\nJag planerar sju dagar på leden med tält och mat i ryggsäcken. Dagsetapperna anpassas efter väder och ork.\n\nDatum och rutt är preliminära. Mer information kommer när avresan närmar sig.",
+      "review_status": "unreviewed",
+      "is_outdated": false
+    }
+  },
+  {
+    "id": "75f1b282-1e68-4f08-8831-44c2693e8e2d",
+    "trail": {
+      "id": "a79ff259-e9d6-4cb6-9ef9-a9499f4af8f0",
+      "name": "Kungsleden",
+      "type": "mountains",
+      "country_codes": ["SE", "NO", "FI"],
+      "official_url": null,
+      "logo_url": null
+    },
+    "status": "planned",
+    "planned_start_at": "2027-08-15T08:00:00+02:00",
+    "planned_end_at": "2027-08-21T18:00:00+02:00",
+    "actual_start_at": null,
+    "actual_end_at": null,
+    "distance_km": 105,
+    "ascent_m": 2100,
+    "start_point": "Abisko",
+    "end_point": "Nikkaluokta",
+    "duration_days": 7,
+    "cover_image_url": null,
+    "cards": [
+      {
+        "type": "live_position",
+        "state": "inactive",
+        "url": null
+      }
+    ],
+    "created_at": "2026-11-12T09:00:00Z",
+    "updated_at": "2026-11-12T09:00:00Z",
+    "translation": {
+      "locale": "en",
+      "title": "Kungsleden: Abisko to Nikkaluokta",
+      "tagline": "Seven days among mountains, lakes and open valleys.",
+      "slug": "kungsleden-abisko-to-nikkaluokta",
+      "summary_markdown": "Next summer I plan to hike from **Abisko to Nikkaluokta** along the northern Kungsleden. A week of camping, mountain lakes and long days on the trail.",
+      "description_markdown": "# The plan\n\nThe hike starts in Abisko and follows Kungsleden south through Abisko National Park, past Alesjaure and over the Tjäktja Pass. At Singi I leave Kungsleden and head towards Nikkaluokta via Kebnekaise.\n\n# Preparations\n\nI am planning seven days on the trail, carrying a tent and food. Daily distances will depend on the weather and how I feel.\n\nThe dates and route are provisional. More details will follow closer to departure.",
+      "review_status": "unreviewed",
+      "is_outdated": false
+    }
+  },
+  {
+    "id": "75f1b282-1e68-4f08-8831-44c2693e8e2d",
+    "trail": {
+      "id": "a79ff259-e9d6-4cb6-9ef9-a9499f4af8f0",
+      "name": "Kungsleden",
+      "type": "mountains",
+      "country_codes": ["SE", "NO", "FI"],
+      "official_url": null,
+      "logo_url": null
+    },
+    "status": "planned",
+    "planned_start_at": "2027-08-15T08:00:00+02:00",
+    "planned_end_at": "2027-08-21T18:00:00+02:00",
+    "actual_start_at": null,
+    "actual_end_at": null,
+    "distance_km": 105,
+    "ascent_m": 2100,
+    "start_point": "Abisko",
+    "end_point": "Nikkaluokta",
+    "duration_days": 7,
+    "cover_image_url": null,
+    "cards": [
+      {
+        "type": "live_position",
+        "state": "inactive",
+        "url": null
+      }
+    ],
+    "created_at": "2026-11-12T09:00:00Z",
+    "updated_at": "2026-11-12T09:00:00Z",
+    "translation": {
+      "locale": "cs",
+      "title": "Kungsleden: z Abiska do Nikkaluokty",
+      "tagline": "Sedm dní mezi horami, jezery a otevřenými údolími.",
+      "slug": "kungsleden-z-abiska-do-nikkaluokty",
+      "summary_markdown": "Příští léto plánuji hike z **Abiska do Nikkaluokty** po severní části Kungsledenu. Týden se stanem, horskými jezery a dlouhými dny na trailu.",
+      "description_markdown": "# Plán\n\nHike začíná v Abisku a vede po Kungsledenu na jih přes národní park Abisko, kolem Alesjaure a přes sedlo Tjäktja. U Singi opustím Kungsleden a vydám se přes Kebnekaise do Nikkaluokty.\n\n# Přípravy\n\nPlánuji sedm dní na trailu se stanem a jídlem v batohu. Denní etapy přizpůsobím počasí a silám.\n\nTermín a trasa jsou předběžné. Další podrobnosti doplním před odjezdem.",
+      "review_status": "unreviewed",
+      "is_outdated": false
+    }
+  }
+]

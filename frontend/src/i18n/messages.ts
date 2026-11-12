@@ -1,6 +1,46 @@
 export const messages = {
   sv: {
     Site: {
+      achievements: {
+        title: 'Milstolpar',
+        goals: 'Mål för den här vandringen',
+        thruHike: 'Hela leden · Thru-hike',
+        distance: '{count, number} km till fots',
+        arcticCircle: 'Norr om polcirkeln',
+      },
+      accommodation: {
+        tent: 'Tält',
+        freeShelter: 'Gratis vindskydd / stuga',
+        mountainHut: 'Fjällstuga (avgift)',
+        paidAccommodation: 'Annat betalt boende',
+      },
+      journey: {
+        route: 'Riktning och etapper',
+        northbound: 'NOBO · Norrut',
+        southbound: 'SOBO · Söderut',
+        eastbound: 'EBO · Österut',
+        westbound: 'WBO · Västerut',
+        stages: 'Etapp {from, number}–{to, number}',
+        plannedNights: 'Planerade övernattningar',
+        overnights: 'Övernattningar',
+      },
+      practicalities: {
+        season: 'Föreslagna vandringsmånader',
+        seasonNote:
+          'För vandring till fots. Vinterturer och skidåkning ingår inte. Förhållandena varierar mellan åren.',
+        inSeason: '{month}: föreslagen vandringsmånad',
+        outsideSeason: '{month}: utanför den föreslagna vandringssäsongen',
+        water: 'Typer av vattenkällor',
+        waterSources: { tap: 'Kranvatten', shop: 'Butiker', natural: 'Naturliga vattenkällor' },
+        overnights: 'Övernattningsmöjligheter',
+        restrictionsLabel: 'Att tänka på vid övernattning',
+        restrictions: {
+          campingRestrictions:
+            'Lokala tältrestriktioner kan gälla. Kontrollera reglerna där du ska övernatta.',
+          bookingRequired: 'Vissa boenden kan kräva förbokning.',
+          feesMayApply: 'Avgifter kan tillkomma för boende och faciliteter.',
+        },
+      },
       brand: 'Knut vandrar',
       author: 'Knut Holm',
       heroEyebrow: 'KNUT HOLM · LÅNGDISTANSVANDRING',
@@ -31,12 +71,69 @@ export const messages = {
       translationNoticeDescription:
         'Jag pratar svenska, men det är inte mitt modersmål. Av praktiska skäl skriver jag mina artiklar på engelska. Den här texten är därför automatiskt översatt från det engelska originalet.',
       about: 'Om vandringen',
-      trail: 'Led',
-      country: 'Land',
+      starRating: {
+        score: '{value, number} av 5 stjärnor',
+        numericScore: '{value, number} / 5',
+      },
+      trailRatings: {
+        title: 'Mina omdömen',
+        intro:
+          'Min personliga bedömning, från 0 till 5 stjärnor. Fler stjärnor betyder bättre service och underhåll, men högre svårighetsgrad.',
+        moreInfo: ' – visa förklaring',
+        difficulty: {
+          label: 'Svårighetsgrad',
+          description:
+            'En samlad bedömning av terräng, avskildhet, utsatthet för väder och hur mycket vandringserfarenhet som behövs. 0 stjärnor betyder lätt och nybörjarvänligt; 5 betyder mycket krävande, avlägset och utsatt, med behov av stor erfarenhet och god förberedelse.',
+        },
+        facilities: {
+          label: 'Faciliteter',
+          description:
+            'Tillgång till och kvalitet på stugor, vindskydd, tältplatser, toaletter och vatten längs leden. Ett högt betyg betyder bra och lättillgängliga faciliteter.',
+        },
+        maintenance: {
+          label: 'Ledunderhåll',
+          description:
+            'Skicket på stigar, ledmarkeringar, skyltar, broar och spänger. Ett högt betyg betyder en välskött led som är lätt att följa.',
+        },
+        publicTransport: {
+          label: 'Kollektivtrafik',
+          description:
+            'Hur lätt det är att ta sig till och från leden med tåg eller buss, med hänsyn till avstånd, turtäthet och byten. Ett högt betyg betyder smidiga förbindelser.',
+        },
+        resupplies: {
+          label: 'Proviantering',
+          description:
+            'Möjligheter att köpa mat och bränsle längs vägen, med hänsyn till avstånd, utbud och öppettider. Ett högt betyg betyder att det är lätt att fylla på förråden.',
+        },
+      },
+      trailTags: {
+        label: 'Ledens eller områdets karaktär',
+        mountains: 'Fjäll',
+        lowlands: 'Lågland',
+        coastal: 'Kust',
+        loop: 'Rundled',
+        lapland: 'Lappland',
+        aboveArcticCircle: 'Norr om polcirkeln',
+        crossesArcticCircle: 'Korsar polcirkeln',
+        establishedRoute: 'Etablerad rutt',
+        selfPlannedRoute: 'Egenplanerad rutt',
+        waymarked: 'Markerad led',
+        partlyWaymarked: 'Delvis markerad',
+        unmarked: 'Omarkerad',
+      },
+      trailOrArea: 'Led / vandringsområde',
+      hikeStats: 'Vandringen i siffror',
+      hikeFacts: 'Den här vandringen',
+      followHike: 'Följ vandringen',
+      hikeResources: 'Mer från vandringen',
+      name: 'Namn',
+      countries: 'Länder',
+      terrain: 'Terräng',
       mountains: 'Fjäll',
       lowlands: 'Lågland',
       start: 'Start',
       finish: 'Mål',
+      openInGoogleMaps: 'Öppna {place} i Google Maps',
       dates: 'Datum',
       back: 'Alla vandringar',
       empty: 'Inga vandringar att visa ännu.',
@@ -73,6 +170,46 @@ export const messages = {
 
   en: {
     Site: {
+      achievements: {
+        title: 'Achievements',
+        goals: 'Goals for this hike',
+        thruHike: 'Full trail · Thru-hike',
+        distance: '{count, number} km on foot',
+        arcticCircle: 'Above the Arctic Circle',
+      },
+      accommodation: {
+        tent: 'Tent',
+        freeShelter: 'Free shelter / hut',
+        mountainHut: 'Fjällstuga (paid hut)',
+        paidAccommodation: 'Other paid accommodation',
+      },
+      journey: {
+        route: 'Direction and stages',
+        northbound: 'NOBO · Northbound',
+        southbound: 'SOBO · Southbound',
+        eastbound: 'EBO · Eastbound',
+        westbound: 'WBO · Westbound',
+        stages: 'Stages {from, number}–{to, number}',
+        plannedNights: 'Planned overnights',
+        overnights: 'Overnights',
+      },
+      practicalities: {
+        season: 'Suggested hiking months',
+        seasonNote:
+          'For hiking on foot. Winter trips and skiing are not included. Conditions vary between years.',
+        inSeason: '{month}: suggested hiking month',
+        outsideSeason: '{month}: outside the suggested hiking season',
+        water: 'Water source types',
+        waterSources: { tap: 'Tap water', shop: 'Shops', natural: 'Natural water sources' },
+        overnights: 'Overnight options',
+        restrictionsLabel: 'Overnight considerations',
+        restrictions: {
+          campingRestrictions:
+            'Local camping restrictions may apply. Check the rules where you plan to stay.',
+          bookingRequired: 'Some accommodation may require advance booking.',
+          feesMayApply: 'Accommodation and facilities may have fees.',
+        },
+      },
       brand: 'Knut vandrar',
       author: 'Knut Holm',
       heroEyebrow: 'KNUT HOLM · LONG-DISTANCE HIKING',
@@ -103,12 +240,69 @@ export const messages = {
       translationNoticeDescription:
         'I write my articles in English for practical reasons. This is an automatic translation of the English original.',
       about: 'About the hike',
-      trail: 'Trail',
-      country: 'Country',
+      starRating: {
+        score: '{value, number} out of 5 stars',
+        numericScore: '{value, number} / 5',
+      },
+      trailRatings: {
+        title: 'My ratings',
+        intro:
+          'My personal assessment, from 0 to 5 stars. More stars mean better services and maintenance, but greater difficulty.',
+        moreInfo: ' – show explanation',
+        difficulty: {
+          label: 'Difficulty',
+          description:
+            'An overall assessment of terrain, remoteness, weather exposure and the hiking experience needed. 0 stars means easy and beginner-friendly; 5 means very demanding, remote and exposed, requiring substantial experience and preparation.',
+        },
+        facilities: {
+          label: 'Facilities',
+          description:
+            'Availability and quality of huts, shelters, campsites, toilets and water points along the trail. A high rating means good facilities that are easy to access.',
+        },
+        maintenance: {
+          label: 'Maintenance',
+          description:
+            'The condition of paths, waymarks, signs, bridges and boardwalks. A high rating means a well-maintained trail that is easy to follow.',
+        },
+        publicTransport: {
+          label: 'Public transport',
+          description:
+            'How easy it is to reach and leave the trail by train or bus, considering distance, frequency and connections. A high rating means convenient transport links.',
+        },
+        resupplies: {
+          label: 'Resupplies',
+          description:
+            'Opportunities to buy food and fuel along the way, considering distance, selection and opening hours. A high rating means it is easy to replenish supplies.',
+        },
+      },
+      trailTags: {
+        label: 'Trail or area characteristics',
+        mountains: 'Mountains',
+        lowlands: 'Lowlands',
+        coastal: 'Coastal',
+        loop: 'Loop',
+        lapland: 'Lapland',
+        aboveArcticCircle: 'Above the Arctic Circle',
+        crossesArcticCircle: 'Crosses the Arctic Circle',
+        establishedRoute: 'Established route',
+        selfPlannedRoute: 'Self-planned route',
+        waymarked: 'Waymarked',
+        partlyWaymarked: 'Partly waymarked',
+        unmarked: 'Unmarked',
+      },
+      trailOrArea: 'Trail / hiking area',
+      hikeStats: 'Hike statistics',
+      hikeFacts: 'This hike',
+      followHike: 'Follow the hike',
+      hikeResources: 'More from this hike',
+      name: 'Name',
+      countries: 'Countries',
+      terrain: 'Terrain',
       mountains: 'Mountains',
       lowlands: 'Lowlands',
       start: 'Start',
       finish: 'Finish',
+      openInGoogleMaps: 'Open {place} in Google Maps',
       dates: 'Dates',
       back: 'All hikes',
       empty: 'No hikes to show yet.',
@@ -145,6 +339,46 @@ export const messages = {
 
   cs: {
     Site: {
+      achievements: {
+        title: 'Milníky',
+        goals: 'Cíle pro tento hike',
+        thruHike: 'Celý trail · Thru-hike',
+        distance: '{count, number} km pěšky',
+        arcticCircle: 'Za polárním kruhem',
+      },
+      accommodation: {
+        tent: 'Stan',
+        freeShelter: 'Přístřešek / chata zdarma',
+        mountainHut: 'Fjällstuga (placená chata)',
+        paidAccommodation: 'Jiné placené ubytování',
+      },
+      journey: {
+        route: 'Směr a etapy',
+        northbound: 'NOBO · Na sever',
+        southbound: 'SOBO · Na jih',
+        eastbound: 'EBO · Na východ',
+        westbound: 'WBO · Na západ',
+        stages: 'Etapy {from, number}–{to, number}',
+        plannedNights: 'Plánované noclehy',
+        overnights: 'Noclehy',
+      },
+      practicalities: {
+        season: 'Doporučené měsíce pro hiking',
+        seasonNote:
+          'Pro pěší hiking. Zimní přechody a lyžování nejsou zahrnuty. Podmínky se rok od roku liší.',
+        inSeason: '{month}: doporučený měsíc pro hiking',
+        outsideSeason: '{month}: mimo doporučenou sezónu pro hiking',
+        water: 'Typy zdrojů vody',
+        waterSources: { tap: 'Voda z kohoutku', shop: 'Obchody', natural: 'Přírodní zdroje vody' },
+        overnights: 'Možnosti přenocování',
+        restrictionsLabel: 'Na co myslet při přenocování',
+        restrictions: {
+          campingRestrictions:
+            'Mohou platit místní omezení táboření. Ověřte si pravidla v místě noclehu.',
+          bookingRequired: 'Některá ubytování mohou vyžadovat rezervaci předem.',
+          feesMayApply: 'Ubytování a využití zázemí mohou být zpoplatněny.',
+        },
+      },
       brand: 'Knut vandrar',
       author: 'Knut Holm',
       heroEyebrow: 'KNUT HOLM · DÁLKOVÝ HIKING',
@@ -175,12 +409,69 @@ export const messages = {
       translationNoticeDescription:
         'Čeština je můj rodný jazyk, ale svoje články píšu z praktických důvodů anglicky. Tohle je automatický překlad anglického originálu.',
       about: 'O hiku',
-      trail: 'Trail',
-      country: 'Země',
+      starRating: {
+        score: '{value, number} z 5 hvězdiček',
+        numericScore: '{value, number} / 5',
+      },
+      trailRatings: {
+        title: 'Moje hodnocení',
+        intro:
+          'Moje osobní hodnocení od 0 do 5 hvězdiček. Více hvězdiček znamená lepší služby a údržbu, ale vyšší obtížnost.',
+        moreInfo: ' – zobrazit vysvětlení',
+        difficulty: {
+          label: 'Obtížnost',
+          description:
+            'Celkové posouzení terénu, odlehlosti, vystavení počasí a potřebných zkušeností s hikingem. 0 hvězdiček znamená snadný trail vhodný pro začátečníky; 5 znamená velmi náročný, odlehlý a exponovaný trail vyžadující značné zkušenosti a přípravu.',
+        },
+        facilities: {
+          label: 'Zázemí',
+          description:
+            'Dostupnost a kvalita chat, přístřešků, tábořišť, toalet a zdrojů vody podél trailu. Vysoké hodnocení znamená dobré a snadno dostupné zázemí.',
+        },
+        maintenance: {
+          label: 'Údržba',
+          description:
+            'Stav stezek, značení, rozcestníků, mostů a povalových chodníků. Vysoké hodnocení znamená dobře udržovaný trail, na kterém se snadno orientuje.',
+        },
+        publicTransport: {
+          label: 'Veřejná doprava',
+          description:
+            'Jak snadno se dá na trail a z něj dostat vlakem nebo autobusem s ohledem na vzdálenost, četnost spojů a přestupy. Vysoké hodnocení znamená pohodlné spojení.',
+        },
+        resupplies: {
+          label: 'Doplnění zásob',
+          description:
+            'Možnosti nákupu jídla a paliva po cestě s ohledem na vzdálenost, výběr a otevírací dobu. Vysoké hodnocení znamená snadné doplnění zásob.',
+        },
+      },
+      trailTags: {
+        label: 'Charakter trailu nebo oblasti',
+        mountains: 'Hory',
+        lowlands: 'Nížiny',
+        coastal: 'Pobřeží',
+        loop: 'Okruh',
+        lapland: 'Laponsko',
+        aboveArcticCircle: 'Za polárním kruhem',
+        crossesArcticCircle: 'Přes polární kruh',
+        establishedRoute: 'Zavedená trasa',
+        selfPlannedRoute: 'Vlastní trasa',
+        waymarked: 'Značená trasa',
+        partlyWaymarked: 'Částečně značená',
+        unmarked: 'Neznačená',
+      },
+      trailOrArea: 'Trail / oblast',
+      hikeStats: 'Hike v číslech',
+      hikeFacts: 'Tenhle hike',
+      followHike: 'Sledujte hike',
+      hikeResources: 'Více z tohoto hiku',
+      name: 'Název',
+      countries: 'Země',
+      terrain: 'Terén',
       mountains: 'Hory',
       lowlands: 'Nížiny',
       start: 'Start',
       finish: 'Cíl',
+      openInGoogleMaps: 'Otevřít {place} v Google Maps',
       dates: 'Datum',
       back: 'Všechny hiky',
       empty: 'Zatím tu nejsou žádné hiky.',

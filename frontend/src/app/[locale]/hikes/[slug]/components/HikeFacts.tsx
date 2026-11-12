@@ -1,97 +1,106 @@
 import { useFormatter, useTranslations } from 'next-intl'
-import Image from 'next/image'
-import { IconArrowRight as ArrowRight, IconArrowUpRight as ArrowUpRight } from '@tabler/icons-react'
+import { IconArrowRight as ArrowRight } from '@tabler/icons-react'
 
-import type { Locale } from '@/i18n/routing'
-import { imageUrl } from '@/api/images'
+import { EndpointLocation } from './EndpointLocation'
+import { HikeJourney } from './HikeJourney'
+
+import { HikeStats } from '@/app/[locale]/components/HikeStats'
+import { Heading } from '@/components/Heading'
 import type { Hike } from '@/api/hikes'
+import type { HikeEndpoints } from '@/mocks/hikeEndpoints'
+import type { HikeDetails } from '@/hiking/details'
 
-export function HikeFacts({ hike, locale }: { hike: Hike; locale: Locale }) {
+export function HikeFacts({
+  hike,
+  endpoints,
+  details,
+}: {
+  hike: Hike
+  endpoints?: HikeEndpoints
+  details?: HikeDetails
+}) {
   const t = useTranslations('Site')
   const format = useFormatter()
   const start = hike.status === 'planned' ? hike.planned_start_at : hike.actual_start_at
   const end = hike.status === 'planned' ? hike.planned_end_at : hike.actual_end_at
-  const countries = new Intl.DisplayNames([locale], { type: 'region' })
+  const hasStats =
+    hike.duration_days !== null || hike.distance_km !== null || hike.ascent_m !== null
 
   return (
-    <aside className="min-w-0 self-start rounded-lg border border-beige bg-cream p-5">
-      {hike.trail?.logo_url && (
-        <div className="mb-5.75 flex justify-center border-b border-beige pb-5">
-          <Image
-            src={imageUrl(hike.trail.logo_url)}
-            alt={hike.trail.name}
-            width={220}
-            height={90}
-            className="h-auto max-h-25 max-w-full object-contain"
-            unoptimized
-          />
-        </div>
-      )}
-      <dl className="grid grid-cols-1 gap-y-4.5 [&_dt]:font-statistic [&_dt]:text-xs [&_dt]:tracking-widest [&_dt]:text-muted [&_dt]:uppercase [&_dd]:my-0.75 [&_dd]:flex [&_dd]:flex-wrap [&_dd]:items-center [&_dd]:gap-1.75 [&_dd]:text-base [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1.5 [&_a]:underline [&_svg]:shrink-0">
-        {start && (
-          <div>
-            <dt>{t('dates')}</dt>
-            <dd>
-              <time dateTime={start}>
-                {format.dateTime(new Date(start), {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </time>
-              {end && (
+    <div className="min-w-0 rounded-lg border border-beige bg-cream p-5">
+      <div className="mb-4">
+        <Heading as="h2" className="text-xl">
+          {t('hikeFacts')}
+        </Heading>
+      </div>
+      <div className="grid gap-4.5 tablet:grid-cols-2 tablet:gap-8">
+        <dl>
+          {(hasStats || start) && (
+            <div className="grid gap-2">
+              {hasStats && (
                 <>
-                  {' '}
-                  <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />{' '}
-                  <time dateTime={end}>
-                    {format.dateTime(new Date(end), {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </time>
+                  <dt className="sr-only">{t('hikeStats')}</dt>
+                  <dd>
+                    <HikeStats
+                      hike={hike}
+                      className="gap-x-4 gap-y-3 text-forest [&_span]:gap-1.5"
+                    />
+                  </dd>
                 </>
               )}
-            </dd>
-          </div>
-        )}
-        {hike.start_point && (
-          <div>
-            <dt>{t('start')}</dt>
-            <dd>{hike.start_point}</dd>
-          </div>
-        )}
-        {hike.end_point && (
-          <div>
-            <dt>{t('finish')}</dt>
-            <dd>{hike.end_point}</dd>
-          </div>
-        )}
-        {hike.trail && (
-          <>
-            <div>
-              <dt>{t('trail')}</dt>
-              <dd>
-                {hike.trail.official_url ? (
-                  <a href={hike.trail.official_url} rel="noopener noreferrer" target="_blank">
-                    {hike.trail.name}{' '}
-                    <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
-                  </a>
-                ) : (
-                  hike.trail.name
-                )}
-              </dd>
+              {start && (
+                <>
+                  <dt className="sr-only">{t('dates')}</dt>
+                  <dd>
+                    <div className="flex flex-wrap items-center gap-1.75 text-sm text-muted">
+                      <time dateTime={start}>
+                        {format.dateTime(new Date(start), {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </time>
+                      {end && (
+                        <>
+                          <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />
+                          <time dateTime={end}>
+                            {format.dateTime(new Date(end), {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </time>
+                        </>
+                      )}
+                    </div>
+                  </dd>
+                </>
+              )}
             </div>
-            <div>
-              <dt>{t('country')}</dt>
-              <dd>
-                {hike.trail.country_codes.map((code) => countries.of(code) ?? code).join(', ')} ·{' '}
-                {t(hike.trail.type)}
-              </dd>
-            </div>
-          </>
+          )}
+        </dl>
+        {(hike.start_point || hike.end_point || endpoints?.start || endpoints?.end) && (
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 [&_dt]:text-xs [&_dt]:text-muted [&_dd]:min-w-0 [&_dd]:text-base [&_dd]:font-semibold [&_dd]:wrap-break-word [&_dd]:text-forest">
+            {(hike.start_point || endpoints?.start) && (
+              <div className="col-span-2 grid grid-cols-subgrid items-baseline">
+                <dt>{t('start')}</dt>
+                <dd>
+                  <EndpointLocation name={hike.start_point} coordinates={endpoints?.start} />
+                </dd>
+              </div>
+            )}
+            {(hike.end_point || endpoints?.end) && (
+              <div className="col-span-2 grid grid-cols-subgrid items-baseline">
+                <dt>{t('finish')}</dt>
+                <dd>
+                  <EndpointLocation name={hike.end_point} coordinates={endpoints?.end} />
+                </dd>
+              </div>
+            )}
+          </dl>
         )}
-      </dl>
-    </aside>
+      </div>
+      {details && <HikeJourney details={details} status={hike.status} />}
+    </div>
   )
 }

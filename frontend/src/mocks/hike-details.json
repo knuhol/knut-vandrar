@@ -1,0 +1,14 @@
+[
+  {
+    "hike_id": "75f1b282-1e68-4f08-8831-44c2693e8e2d",
+    "direction": "southbound",
+    "stages": { "start": 1, "end": 7 },
+    "thruHike": true,
+    "achievements": [{ "type": "distance", "kilometers": 100 }, { "type": "arcticCircle" }],
+    "overnights": [
+      { "type": "tent", "count": 4 },
+      { "type": "freeShelter", "count": 1 },
+      { "type": "mountainHut", "count": 1 }
+    ]
+  }
+]

@@ -512,7 +512,7 @@ export default typescriptEslint.config(
       'import/exports-last': ['off'],
       'import/no-duplicates': ['error'],
       'import/no-namespace': ['off'],
-      'import/extensions': ['error'],
+      'import/extensions': ['error', { json: 'always' }],
       'import/order': ['error'],
       'import/newline-after-import': ['error'],
       'import/prefer-default-export': ['off'],

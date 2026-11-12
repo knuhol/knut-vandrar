@@ -46,9 +46,7 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
 
   return (
     <>
-      <section
-        className={`grid grid-cols-1 items-stretch gap-4 ${cards.length > 1 ? 'tablet:grid-cols-2 desktop:grid-cols-1' : ''}`}
-      >
+      <section className="grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         {cards.map((card, index) => {
           const Icon = icons[card.type]
           const key = `${card.type}-${String(index)}`
