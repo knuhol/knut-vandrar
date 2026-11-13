@@ -16,6 +16,7 @@ from knut_vandrar_backend.models.location import (
     Region,
     RegionTranslation,
 )
+from knut_vandrar_backend.models.photo import Photo, PhotoTranslation
 from knut_vandrar_backend.models.translation import TranslationJob
 from knut_vandrar_backend.translations.core import profile_fingerprint
 from knut_vandrar_backend.translations.policy import EXPLICIT_REASONS
@@ -30,6 +31,7 @@ class ContentSpec:
 
 
 CONTENT = {
+    "photo": ContentSpec(Photo, PhotoTranslation, "photo_id", ("alt", "caption")),
     "location": ContentSpec(
         HikingLocation,
         LocationTranslation,

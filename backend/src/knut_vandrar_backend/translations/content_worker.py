@@ -80,8 +80,10 @@ def process_content(job_id: UUID, translate: Any) -> None:
             LocationEnglish,
             RegionEnglish,
         )
+        from knut_vandrar_backend.api.schemas.photo import PhotoEnglish
 
         schemas: dict[str, type[BaseModel]] = {
+            "photo": PhotoEnglish,
             "location": LocationEnglish,
             "region": RegionEnglish,
             "achievement": AchievementEnglish,

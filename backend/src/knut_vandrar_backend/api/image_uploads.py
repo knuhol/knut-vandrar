@@ -8,10 +8,11 @@ from typing import Annotated, Any
 from fastapi import Depends, HTTPException, Request, Response, status
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_PHOTO_BYTES = 25_000_000
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
-async def read_image_body(request: Request) -> bytes:
+async def read_image_body(request: Request, max_bytes: int = MAX_IMAGE_BYTES) -> bytes:
     """Read an image request body while enforcing the size limit during streaming."""
     content_length = request.headers.get("content-length")
     if content_length is not None:
@@ -19,19 +20,32 @@ async def read_image_body(request: Request) -> bytes:
             declared_size = int(content_length)
         except ValueError as error:
             raise HTTPException(status_code=400, detail="Invalid Content-Length") from error
-        if declared_size > MAX_IMAGE_BYTES:
-            raise HTTPException(status_code=413, detail="Image must be 5 MiB or smaller")
+        if declared_size > max_bytes:
+            raise HTTPException(
+                status_code=413, detail=f"Image must be {max_bytes} bytes or smaller"
+            )
     chunks: list[bytes] = []
     size = 0
     async for chunk in request.stream():
         size += len(chunk)
-        if size > MAX_IMAGE_BYTES:
-            raise HTTPException(status_code=413, detail="Image must be 5 MiB or smaller")
+        if size > max_bytes:
+            raise HTTPException(
+                status_code=413, detail=f"Image must be {max_bytes} bytes or smaller"
+            )
         chunks.append(chunk)
     return b"".join(chunks)
 
 
-ImageBody = Annotated[bytes, Depends(read_image_body)]
+async def read_small_image_body(request: Request) -> bytes:
+    return await read_image_body(request)
+
+
+async def read_photo_body(request: Request) -> bytes:
+    return await read_image_body(request, MAX_PHOTO_BYTES)
+
+
+ImageBody = Annotated[bytes, Depends(read_small_image_body)]
+PhotoBody = Annotated[bytes, Depends(read_photo_body)]
 IMAGE_RESPONSES: dict[int | str, dict[str, Any]] = {
     200: {
         "description": "Image bytes",
@@ -78,13 +92,20 @@ def detect_image_type(content: bytes) -> str:
 
 
 def optimize_image(
-    content: bytes, *, max_dimension: int, lossless: bool = False
+    content: bytes, *, max_dimension: int, lossless: bool = False, allow_heif: bool = False
 ) -> tuple[bytes, str]:
     """Normalize raster uploads for delivery; retain scalable SVG documents."""
     from PIL import Image, ImageOps, UnidentifiedImageError
+    from pillow_heif import is_supported, register_heif_opener
 
-    media_type = detect_image_type(content)
+    if allow_heif:
+        register_heif_opener()
+    media_type = (
+        "image/heic" if allow_heif and is_supported(content) else detect_image_type(content)
+    )
     if media_type == "image/svg+xml":
+        if allow_heif:
+            raise HTTPException(415, "Gallery photos must be raster images")
         return content, media_type
     try:
         with warnings.catch_warnings():
@@ -94,7 +115,9 @@ def optimize_image(
                     raise HTTPException(
                         status_code=413, detail="Image must be 40 megapixels or smaller"
                     )
-                if getattr(source, "is_animated", False):
+                # Multi-picture JPEGs can include auxiliary depth/gain images.
+                # Pillow marks MPO as animated; optimize its primary still image.
+                if getattr(source, "is_animated", False) and source.format != "MPO":
                     raise HTTPException(status_code=415, detail="Please upload a static image")
                 image = ImageOps.exif_transpose(source)
                 image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)

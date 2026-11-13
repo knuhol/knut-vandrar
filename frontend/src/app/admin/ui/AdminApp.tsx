@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 import { useEffect, useState } from 'react'
 import { Refine, useList } from '@refinedev/core'
 import {
@@ -17,7 +15,9 @@ import {
   Typography,
 } from '@mui/material'
 
+import { GalleryEditor } from './GalleryEditor'
 import { AdminMessage } from './AdminMessage'
+import { ImagePreview } from './ImagePreview'
 import { EditorSection } from './EditorSection'
 import { EditorSections } from './EditorSections'
 import { Fields } from './Fields'
@@ -45,7 +45,8 @@ function Content() {
   const [id, setId] = useState('')
   const [value, setValue] = useState<Json>(null)
   const [savedValue, setSavedValue] = useState<Json>(null)
-  const dirty = editing && !valuesEqual(value, savedValue)
+  const [galleryDirty, setGalleryDirty] = useState(false)
+  const dirty = editing && (!valuesEqual(value, savedValue) || galleryDirty)
   const [imageVersion, setImageVersion] = useState(0)
   const [hasImage, setHasImage] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -70,6 +71,7 @@ function Content() {
     return !dirty || window.confirm(messages.discardUnsavedChanges)
   }
   function switchResource(next: Resource) {
+    setGalleryDirty(false)
     setResource(next)
     setEditing(false)
     setPage(1)
@@ -82,6 +84,7 @@ function Content() {
       const loaded = nextId
         ? writeValue(schema, await api(`${resource.name}/${nextId}?locale=en`))
         : initialValue(schema)
+      setGalleryDirty(false)
       setValue(loaded)
       setSavedValue(loaded)
       setHasImage(Boolean(nextId && resource.image))
@@ -129,8 +132,8 @@ function Content() {
     }
   }
   async function image(file?: File) {
-    if (file && file.size > 5 * 1024 * 1024) {
-      setMessage(messages.fileTooLarge)
+    if (file && file.size > (resource.imageMaxBytes || 0)) {
+      setMessage(messages[resource.imageLimitMessage || 'fileTooLarge'])
       return
     }
     if (!file && !window.confirm(messages.removeThisImage)) {
@@ -257,17 +260,18 @@ function Content() {
             </Stack>
             {id && (
               <>
+                {resource.gallery && (
+                  <GalleryEditor key={id} hikeId={id} onDirtyChange={setGalleryDirty} />
+                )}
                 {resource.image && (
                   <EditorSection title={messages.image}>
                     <Stack spacing={2}>
                       {hasImage && (
-                        <Image
+                        <ImagePreview
                           src={`/api/admin/backend/${resource.name}/${id}/${resource.image}?v=${String(imageVersion)}`}
                           alt={messages.imagePreview}
                           width={1920}
                           height={1080}
-                          unoptimized
-                          style={{ width: '100%', height: 'auto' }}
                           onError={() => {
                             setHasImage(false)
                           }}
@@ -331,7 +335,7 @@ function Content() {
                 {resource.label}
               </Typography>
               <Button
-                disabled={busy}
+                disabled={busy || Boolean(resource.uploadOnly)}
                 onClick={() => {
                   void open('')
                 }}

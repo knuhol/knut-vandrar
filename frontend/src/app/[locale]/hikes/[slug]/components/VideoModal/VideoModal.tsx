@@ -1,81 +1,19 @@
 'use client'
 
-import { IconX } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import styles from './VideoModal.module.css'
 
+import { MediaModal } from '@/components/MediaModal/MediaModal'
+
 export function VideoModal({ videoId, onClose }: { videoId: string; onClose: () => void }) {
   const t = useTranslations('Site')
-  const dialog = useRef<HTMLDialogElement>(null)
   const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    const element = dialog.current
-
-    if (!element) {
-      return
-    }
-
-    const overflow = document.body.style.overflow
-    const padding = document.body.style.paddingRight
-    const scrollbar = window.innerWidth - document.documentElement.clientWidth
-    const currentPadding = Number.parseFloat(getComputedStyle(document.body).paddingRight)
-    document.body.style.overflow = 'hidden'
-    document.body.style.paddingRight = `${String(currentPadding + scrollbar)}px`
-
-    const closeOnBackdrop = (event: MouseEvent) => {
-      if (event.target !== element) {
-        return
-      }
-
-      const bounds = element.getBoundingClientRect()
-
-      if (
-        event.clientX < bounds.left ||
-        event.clientX > bounds.right ||
-        event.clientY < bounds.top ||
-        event.clientY > bounds.bottom
-      ) {
-        element.close()
-      }
-    }
-
-    element.addEventListener('click', closeOnBackdrop)
-    element.showModal()
-
-    return () => {
-      element.removeEventListener('click', closeOnBackdrop)
-      document.body.style.overflow = overflow
-      document.body.style.paddingRight = padding
-    }
-  }, [])
-
   return (
-    <dialog
-      ref={dialog}
-      className={`m-auto max-w-none overflow-auto rounded-lg border border-cream/20 bg-forest p-0 text-cream shadow-lg ${styles.dialog}`}
-      aria-label={t('youtube_video')}
-      onClose={onClose}
-    >
-      <div className="flex items-center justify-between gap-4 px-4 py-3">
-        <span>{t('youtube_video')}</span>
-        <button
-          className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-sm bg-cream/10 hover:bg-cream/20"
-          type="button"
-          aria-label={t('closeVideo')}
-          onClick={() => {
-            dialog.current?.close()
-          }}
-        >
-          <IconX className="size-6 shrink-0" aria-hidden="true" />
-        </button>
-      </div>
-      <div
-        className="relative aspect-video overflow-hidden bg-forest text-cream"
-        aria-busy={!loaded}
-      >
+    <MediaModal title={t('youtube_video')} closeLabel={t('closeVideo')} onClose={onClose}>
+      <div className="relative h-full w-full overflow-hidden bg-ink text-cream" aria-busy={!loaded}>
         {!loaded && (
           <div className="absolute inset-0 grid place-items-center" role="status">
             <div
@@ -96,6 +34,6 @@ export function VideoModal({ videoId, onClose }: { videoId: string; onClose: () 
           }}
         />
       </div>
-    </dialog>
+    </MediaModal>
   )
 }

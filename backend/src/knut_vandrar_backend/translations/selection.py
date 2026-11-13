@@ -53,7 +53,14 @@ def translation_candidates(
                     TranslationJob.status.in_(("queued", "running")),
                 )
             )
-            title = getattr(source, "title" if kind in {"hike", "achievement"} else "name")
+            title = getattr(
+                source,
+                "alt"
+                if kind == "photo"
+                else "title"
+                if kind in {"hike", "achievement"}
+                else "name",
+            )
             query = (
                 select(
                     literal(kind).label("entity_type"),

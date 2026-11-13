@@ -1,0 +1,5 @@
+@reference '../../app/globals.css';
+
+.dialog::backdrop {
+  @apply bg-ink;
+}

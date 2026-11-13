@@ -29,7 +29,7 @@ export function TrailRatings({ ratings }: { ratings: Ratings }) {
             <li key={category} className="py-3 first:pt-0 last:pb-0">
               <details>
                 <summary
-                  className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-sm ${category === 'difficulty' ? 'text-orange-dark' : 'text-forest'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest [&::-webkit-details-marker]:hidden`}
+                  className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-sm ${category === 'difficulty' ? 'text-orange-dark' : 'text-forest'} [&::-webkit-details-marker]:hidden`}
                 >
                   <span className="font-semibold">{t(`${category}.label`)}</span>
                   <span className="sr-only">{t('moreInfo')}</span>

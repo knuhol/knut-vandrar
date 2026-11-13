@@ -13,11 +13,18 @@ const password = randomBytes(24).toString('hex')
 const salt = randomBytes(32).toString('hex')
 const token = randomBytes(32).toString('hex')
 let calls = 0
+let bodyBytes = 0
 const backend = createServer((request, response) => {
   assert.equal(request.headers.authorization, `Bearer ${token}`)
   calls++
-  response.setHeader('Content-Type', 'application/json')
-  response.end(JSON.stringify({ items: [], total: 0 }))
+  bodyBytes = 0
+  request.on('data', (chunk) => {
+    bodyBytes += chunk.length
+  })
+  request.on('end', () => {
+    response.setHeader('Content-Type', 'application/json')
+    response.end(JSON.stringify({ items: [], total: 0 }))
+  })
 })
 backend.listen(0, '127.0.0.1')
 await once(backend, 'listening')
@@ -108,6 +115,45 @@ try {
   })
   assert.equal((await call('/api/admin/backend/hikes', 'GET', undefined, cookie)).status, 200)
   assert.equal(calls, 1)
+  const uploadHeaders = {
+    Origin: origin,
+    Cookie: cookie,
+    'Content-Type': 'application/octet-stream',
+  }
+  const photoUpload = await fetch(`${origin}/api/admin/backend/hikes/test-hike/photos`, {
+    method: 'POST',
+    headers: uploadHeaders,
+    body: new Uint8Array(6_000_000),
+  })
+  assert.equal(photoUpload.status, 200, 'Gallery uploads accept photos larger than 5 MiB')
+  assert.equal(bodyBytes, 6_000_000)
+  const coverUpload = await fetch(`${origin}/api/admin/backend/hikes/test-hike/cover-image`, {
+    method: 'PUT',
+    headers: uploadHeaders,
+    body: new Uint8Array(6_000_000),
+  })
+  assert.equal(coverUpload.status, 200, 'Cover images accept photos larger than 5 MiB')
+  assert.equal(bodyBytes, 6_000_000)
+  const callsBeforeOversized = calls
+  const logoUpload = await fetch(`${origin}/api/admin/backend/locations/test-location/logo`, {
+    method: 'PUT',
+    headers: uploadHeaders,
+    body: new Uint8Array(6_000_000),
+  })
+  assert.equal(logoUpload.status, 413, 'Logos retain their existing size limit')
+  const oversizedCover = await fetch(`${origin}/api/admin/backend/hikes/test-hike/cover-image`, {
+    method: 'PUT',
+    headers: uploadHeaders,
+    body: new Uint8Array(25_000_001),
+  })
+  assert.equal(oversizedCover.status, 413, 'Cover uploads enforce the 25 MB limit')
+  const oversizedPhoto = await fetch(`${origin}/api/admin/backend/hikes/test-hike/photos`, {
+    method: 'POST',
+    headers: uploadHeaders,
+    body: new Uint8Array(25_000_001),
+  })
+  assert.equal(oversizedPhoto.status, 413, 'Gallery uploads enforce the 25 MB limit')
+  assert.equal(calls, callsBeforeOversized, 'Rejected uploads must not reach the backend')
   assert.equal(
     (await call('/api/admin/backend/hikes', 'POST', {}, cookie, 'https://evil.example')).status,
     403,

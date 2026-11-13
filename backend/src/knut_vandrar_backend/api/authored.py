@@ -43,6 +43,10 @@ def read_authored(db: Session, kind: str, entity: Any, locale: str) -> dict[str,
     text, metadata = localized(db, kind, entity, locale)
     result = {key: getattr(text, key) for key in CONTENT[kind].fields}
     result.update(id=entity.id, translation=metadata)
+    if kind == "photo":
+        from knut_vandrar_backend.api.photos import read_photo
+
+        return read_photo(db, entity, locale)
     if kind == "achievement":
         result.update(hike_id=entity.hike_id, icon=entity.icon, sort_order=entity.sort_order)
     return result
@@ -191,12 +195,16 @@ def translation_router(kind: str, path: str) -> APIRouter:
         db.commit()
         return {"review_status": target.review_status}
 
+    from knut_vandrar_backend.api.schemas.photo import PhotoEnglish, PhotoRead
+
     schemas: dict[str, type[BaseModel]] = {
+        "photo": PhotoEnglish,
         "location": LocationEnglish,
         "region": RegionEnglish,
         "achievement": AchievementEnglish,
     }
     responses: dict[str, type[BaseModel]] = {
+        "photo": PhotoRead,
         "location": LocationRead,
         "region": RegionRead,
         "achievement": AchievementRead,

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from knut_vandrar_backend.api.authored import read_authored
 from knut_vandrar_backend.api.image_uploads import (
     IMAGE_RESPONSES,
-    ImageBody,
+    PhotoBody,
     image_response,
     optimize_image,
 )
@@ -259,7 +259,7 @@ def delete_hike(hike_id: UUID, db: DatabaseSession) -> Response:
     },
 )
 def upload_hike_cover_image(
-    hike_id: UUID, content: ImageBody, request: Request, db: DatabaseSession
+    hike_id: UUID, content: PhotoBody, request: Request, db: DatabaseSession
 ) -> HikeRead:
     hike = db.get(Hike, hike_id)
     if hike is None:

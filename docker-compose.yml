@@ -41,10 +41,12 @@ services:
       API_PORT: ${API_PORT:?Set API_PORT in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
       API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
+      MEDIA_ROOT: /media
     ports:
       - "${BACKEND_PORT:?Set BACKEND_PORT in .env}:${API_PORT:?Set API_PORT in .env}"
     volumes:
       - ./backend:/app
+      - gallery_media:/media
     command: sh -c "alembic -c alembic.ini upgrade head && uvicorn knut_vandrar_backend.main:app --host $${API_HOST} --port $${API_PORT} --reload"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${API_PORT:?Set API_PORT in .env}/health', timeout=3)"]
@@ -125,6 +127,7 @@ services:
         condition: service_healthy
 
 volumes:
+  gallery_media:
   admin_sessions:
   postgres_data_v18:
     name: knut-vandrar_postgres_data_v18

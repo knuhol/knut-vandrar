@@ -1,4 +1,8 @@
 export async function boundedBody(request: Request, limit: number) {
+  const declaredSize = request.headers.get('content-length')
+  if (declaredSize !== null && Number(declaredSize) > limit) {
+    throw new Error('Request body exceeds size limit')
+  }
   const reader = request.body?.getReader()
   if (!reader) {
     return new Uint8Array()
