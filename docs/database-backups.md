@@ -2,6 +2,12 @@
 
 The scripts create and restore PostgreSQL custom-format dumps for one selected application database. They require PostgreSQL 18 client tools (`pg_dump`, `pg_restore`, `dropdb`, `createdb`, and `psql`). A dump contains that database's schema, data, and large objects; it does not include cluster-wide roles or other databases.
 
+## Gallery images and VPS backups
+
+Regular full VPS backups can cover both the database and gallery images, so a separate image backup is not required if those backups include the PostgreSQL and `gallery_media` Docker volumes. Confirm that the backup configuration includes both volumes and supports a consistent database restore; restore testing is the way to verify coverage.
+
+The database backup scripts described here do **not** back up `gallery_media`. Gallery originals, thumbnails, and fullscreen images live in that volume, while captions, translations, ordering, and image references live in PostgreSQL. Cover images and location logos are stored in PostgreSQL and are included in database dumps. Restore the database and gallery volume from a matching backup to keep records and files aligned.
+
 ## Back up
 
 From the repository root, select `local`, `dev`, or `prod`:

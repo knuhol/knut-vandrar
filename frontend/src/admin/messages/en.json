@@ -176,5 +176,28 @@
       "short": "Dec",
       "full": "December"
     }
-  ]
+  ],
+  "gallery": "Photo gallery",
+  "galleryHelp": "Photos publish after processing. Uploads: JPEG, PNG, WebP or HEIC, up to 25 MB and 40 megapixels each. Originals stay private. Choose description or caption for all photos, then edit it in each language. Save applies all text edits for that photo, including edits to the other field. Swedish and Czech edits are saved as manual translations. Saving never queues paid translations. Load all photos to reorder.",
+  "galleryUpload": "Upload photos",
+  "galleryFileTooLarge": "Photo exceeds 25 MB",
+  "galleryUploaded": "Photos uploaded. No translations were queued.",
+  "galleryAlt": "Image description (English)",
+  "galleryCaption": "Caption (English, optional)",
+  "galleryEarlier": "Move earlier",
+  "galleryLater": "Move later",
+  "galleryOriginal": "Download original",
+  "galleryDeleteConfirmation": "Permanently delete this photo, its original and optimized files?",
+  "galleryLoadMore": "Load more photos",
+  "photoFileTooLarge": "Images must be at most 25 MB.",
+  "galleryTextField": "Text to edit for all photos",
+  "galleryDescription": "Description",
+  "galleryCaptionField": "Caption",
+  "galleryLanguages": {
+    "en": "English (source)",
+    "sv": "Swedish",
+    "cs": "Czech"
+  },
+  "galleryManualOnSave": "Will be saved as a manual translation.",
+  "galleryTranslationMissing": "No translation yet. Enter text to create a manual translation."
 }

@@ -53,7 +53,7 @@
 }
 
 .prose summary {
-  @apply flex cursor-pointer list-none items-center justify-between gap-3 rounded-sm py-3 text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest;
+  @apply flex cursor-pointer list-none items-center justify-between gap-3 rounded-sm py-3 text-forest;
 }
 
 .prose summary::-webkit-details-marker {

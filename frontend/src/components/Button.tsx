@@ -8,9 +8,8 @@ import { handleSectionLinkClick } from '@/navigation/sectionLink'
 import { Link } from '@/i18n/navigation'
 
 const variants = {
-  secondary: 'bg-forest text-cream hover:bg-ink focus-visible:bg-ink',
-  primary:
-    'bg-orange text-ink hover:bg-orange-dark focus-visible:bg-orange-dark focus-visible:outline-[calc(var(--spacing)*0.75)] focus-visible:outline-offset-[var(--spacing)] focus-visible:outline-orange',
+  secondary: 'bg-forest text-cream hover:bg-forest-dark focus-visible:bg-forest-dark',
+  primary: 'bg-orange text-ink hover:bg-orange-dark focus-visible:bg-orange-dark',
 }
 
 const sizes = {

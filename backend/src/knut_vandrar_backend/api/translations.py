@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/translations", tags=["translations"])
 class RequeueWrite(BaseModel):
     model_config = ConfigDict(extra="forbid")
     include_outdated: bool = False
-    entity_type: Literal["hike", "location", "region", "achievement"] | None = None
+    entity_type: Literal["hike", "location", "region", "achievement", "photo"] | None = None
     entity_id: UUID | None = None
     locale: Literal["sv", "cs"] | None = None
 
@@ -57,7 +57,7 @@ class CandidateSelection(RequeueWrite):
 
 
 class TranslationCandidateRead(BaseModel):
-    entity_type: Literal["hike", "location", "region", "achievement"]
+    entity_type: Literal["hike", "location", "region", "achievement", "photo"]
     entity_id: UUID
     title: str
     locale: Literal["sv", "cs"]

@@ -3,6 +3,7 @@
 import os
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import SecretStr
@@ -74,6 +75,9 @@ def _database_url() -> URL:
 
 @dataclass(frozen=True)
 class Settings:
+    media_root: Path = field(
+        default_factory=lambda: Path(os.getenv("MEDIA_ROOT", ".media")).resolve(), kw_only=True
+    )
     database_url: URL
     cors_origins: tuple[str, ...]
     api_host: str

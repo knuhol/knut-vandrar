@@ -16,7 +16,8 @@ dependencies = [
     "psycopg2-binary==2.9.13",
     "python-dotenv==1.2.4",
     "jsonschema==4.26.0",
-    "Pillow==13.0.0"
+    "Pillow==13.0.0",
+    "pillow-heif==1.8.1"
 ]
 
 [project.optional-dependencies]

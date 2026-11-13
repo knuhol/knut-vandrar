@@ -1,3 +1,5 @@
+import { uploadLimits } from './uploads'
+
 import type messages from './messages/en.json'
 import { openapi } from '@/generated/openapi'
 
@@ -9,6 +11,9 @@ export const resources = [
     write: 'HikeWrite',
     english: 'HikeEnglishContent',
     image: 'cover-image',
+    imageMaxBytes: uploadLimits.photo,
+    imageLimitMessage: 'photoFileTooLarge' as const,
+    gallery: true,
   },
   {
     name: 'locations',
@@ -17,6 +22,8 @@ export const resources = [
     write: 'LocationWrite',
     english: 'LocationEnglish',
     image: 'logo',
+    imageMaxBytes: uploadLimits.logo,
+    imageLimitMessage: 'fileTooLarge' as const,
   },
   {
     name: 'regions',
@@ -31,6 +38,14 @@ export const resources = [
     kind: 'achievement',
     write: 'AchievementWrite',
     english: 'AchievementEnglish',
+  },
+  {
+    name: 'photos',
+    label: 'Photos',
+    kind: 'photo',
+    write: 'PhotoWrite',
+    english: 'PhotoEnglish',
+    uploadOnly: true,
   },
 ]
 export type Resource = (typeof resources)[number]
@@ -108,7 +123,7 @@ export function record(value: Json | undefined): Record<string, Json> {
 export function title(value: Json) {
   const row = record(value)
   const translated = record(row.translation)
-  return text(row.name || row.title || translated.title || row.id)
+  return text(row.name || row.title || row.alt || translated.title || row.id)
 }
 
 export function writeValue(schema: Schema, value: Json): Json {
@@ -205,6 +220,7 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
     },
     { title: 'ratings', fields: ['ratings'] },
   ],
+  PhotoWrite: [{ title: 'content', fields: ['english'] }],
   RegionWrite: [{ title: 'content', fields: ['english'] }],
   AchievementWrite: [
     { title: 'content', fields: ['english'] },
@@ -238,3 +254,10 @@ export function valuesEqual(value: Json | undefined, baseline: Json | undefined)
 }
 
 export const fieldWidgets: Partial<Record<string, 'months'>> = { hiking_months: 'months' }
+
+export const gallerySection = { title: 'gallery' } as const
+
+export const galleryTextFields = {
+  alt: { label: 'galleryDescription', maxLength: 1000 },
+  caption: { label: 'galleryCaptionField', maxLength: 5000 },
+} as const
