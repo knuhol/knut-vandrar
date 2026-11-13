@@ -55,3 +55,14 @@ export async function getHikeAlternative(locale: Locale, id: string) {
 export type Hike = NonNullable<Awaited<ReturnType<typeof getHike>>>
 export type HikesPage = Awaited<ReturnType<typeof getHikes>>
 export type HikeSummary = HikesPage['items'][number]
+
+export async function getPhotos(hikeId: string, locale: Locale, offset = 0) {
+  const response = await client['/api/hikes/{hike_id}/photos'].get({
+    params: { hike_id: hikeId },
+    query: { locale, limit: 24, offset },
+  })
+  if (!response.ok) {
+    throw new Error('Could not load gallery')
+  }
+  return response.json()
+}

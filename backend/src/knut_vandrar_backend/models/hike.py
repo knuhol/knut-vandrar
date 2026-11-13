@@ -32,6 +32,7 @@ from knut_vandrar_backend.models.enums import (
     RouteScope,
     TranslationReviewStatus,
 )
+from knut_vandrar_backend.models.photo import Photo
 
 if TYPE_CHECKING:
     from knut_vandrar_backend.models.location import HikingLocation
@@ -124,6 +125,7 @@ class Hike(Base):
     cards: Mapped[list["HikeInfoCard"]] = relationship(
         back_populates="hike", cascade="all, delete-orphan", order_by="HikeInfoCard.sort_order"
     )
+    photos: Mapped[list["Photo"]] = relationship(cascade="all, delete-orphan")
     cover_image: Mapped["HikeCoverImage | None"] = relationship(
         back_populates="hike", cascade="all, delete-orphan", uselist=False
     )

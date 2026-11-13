@@ -1,6 +1,18 @@
 export const messages = {
   sv: {
     Site: {
+      gallery: {
+        defaultAlt: 'Bild från vandringen',
+        loadError: 'Bilderna kunde inte laddas. Försök igen.',
+        title: 'Bilder från vandringen',
+        count: '{count, plural, one {# bild} other {# bilder}}',
+        open: 'Öppna bild {number}: {description}',
+        close: 'Stäng bildvisaren',
+        previous: 'Föregående bild',
+        next: 'Nästa bild',
+        position: '{current} av {total}',
+        showMore: 'Visa fler bilder',
+      },
       achievements: {
         title: 'Milstolpar',
         goals: 'Mål för den här vandringen',
@@ -8,7 +20,7 @@ export const messages = {
       accommodation: {
         tent: 'Tält',
         freeShelter: 'Gratis vindskydd / stuga',
-        mountainHut: 'Fjällstuga (avgift)',
+        mountainHut: 'Fjällstuga (mot avgift)',
         paidAccommodation: 'Annat betalt boende',
       },
       journey: {
@@ -29,12 +41,12 @@ export const messages = {
         overnights: 'Övernattningar',
       },
       practicalities: {
-        season: 'Föreslagna vandringsmånader',
+        season: 'Rekommenderade vandringsmånader',
         seasonNote:
-          'För vandring till fots. Vinterturer och skidåkning ingår inte. Förhållandena varierar mellan åren.',
-        inSeason: '{month}: föreslagen vandringsmånad',
-        outsideSeason: '{month}: utanför den föreslagna vandringssäsongen',
-        water: 'Typer av vattenkällor',
+          'Gäller vandring till fots, inte vinterturer eller skidåkning. Förhållandena varierar mellan åren.',
+        inSeason: '{month}: rekommenderad vandringsmånad',
+        outsideSeason: '{month}: utanför den rekommenderade vandringssäsongen',
+        water: 'Vattenkällor',
         waterSources: { tap: 'Kranvatten', shop: 'Butiker', natural: 'Naturliga vattenkällor' },
         overnights: 'Övernattningsmöjligheter',
         restrictionsLabel: 'Att tänka på vid övernattning',
@@ -42,7 +54,7 @@ export const messages = {
           campingRestrictions:
             'Lokala tältrestriktioner kan gälla. Kontrollera reglerna där du ska övernatta.',
           bookingRequired: 'Vissa boenden kan kräva förbokning.',
-          feesMayApply: 'Avgifter kan tillkomma för boende och faciliteter.',
+          feesMayApply: 'Boende och vissa faciliteter kan kosta extra.',
         },
       },
       brand: 'knut-vandrar',
@@ -82,7 +94,7 @@ export const messages = {
       trailRatings: {
         title: 'Mina omdömen',
         intro:
-          'Min personliga bedömning, från 0 till 5 stjärnor. Fler stjärnor betyder bättre service och underhåll, men högre svårighetsgrad.',
+          'Jag betygsätter olika aspekter av varje vandringsled på en skala från 0 till 5 stjärnor. Fler stjärnor betyder bättre faciliteter, ledunderhåll, kollektivtrafik och provianteringsmöjligheter. När det gäller svårighetsgrad betyder fler stjärnor i stället en mer krävande led.',
         moreInfo: ' – visa förklaring',
         difficulty: {
           label: 'Svårighetsgrad',
@@ -168,6 +180,18 @@ export const messages = {
 
   en: {
     Site: {
+      gallery: {
+        defaultAlt: 'Photo from the hike',
+        loadError: 'Could not load photos. Please try again.',
+        title: 'Photos from the hike',
+        count: '{count, plural, one {# photo} other {# photos}}',
+        open: 'Open photo {number}: {description}',
+        close: 'Close photo viewer',
+        previous: 'Previous photo',
+        next: 'Next photo',
+        position: '{current} of {total}',
+        showMore: 'Show more photos',
+      },
       achievements: {
         title: 'Achievements',
         goals: 'Goals for this hike',
@@ -249,7 +273,7 @@ export const messages = {
       trailRatings: {
         title: 'My ratings',
         intro:
-          'My personal assessment, from 0 to 5 stars. More stars mean better services and maintenance, but greater difficulty.',
+          'I rate different aspects of each trail on a scale from 0 to 5 stars. More stars mean better facilities, maintenance, public transport and resupply options. For difficulty, more stars mean a more challenging trail.',
         moreInfo: ' – show explanation',
         difficulty: {
           label: 'Difficulty',
@@ -335,6 +359,18 @@ export const messages = {
 
   cs: {
     Site: {
+      gallery: {
+        defaultAlt: 'Fotka z hiku',
+        loadError: 'Fotky se nepodařilo načíst. Zkuste to znovu.',
+        title: 'Fotky z hiku',
+        count: '{count, plural, one {# fotka} few {# fotky} other {# fotek}}',
+        open: 'Otevřít fotku {number}: {description}',
+        close: 'Zavřít prohlížeč fotek',
+        previous: 'Předchozí fotka',
+        next: 'Další fotka',
+        position: '{current} z {total}',
+        showMore: 'Zobrazit další fotky',
+      },
       achievements: {
         title: 'Milníky',
         goals: 'Cíle pro tento hike',
@@ -363,20 +399,20 @@ export const messages = {
         overnights: 'Noclehy',
       },
       practicalities: {
-        season: 'Doporučené měsíce pro hiking',
+        season: 'Doporučené měsíce na hiking',
         seasonNote:
-          'Pro pěší hiking. Zimní přechody a lyžování nejsou zahrnuty. Podmínky se rok od roku liší.',
-        inSeason: '{month}: doporučený měsíc pro hiking',
-        outsideSeason: '{month}: mimo doporučenou sezónu pro hiking',
-        water: 'Typy zdrojů vody',
+          'Jde o pěší hiky, ne o zimní přechody nebo lyžování. Podmínky se rok od roku liší.',
+        inSeason: '{month}: doporučený měsíc na hiking',
+        outsideSeason: '{month}: mimo doporučenou hikingovou sezónu',
+        water: 'Zdroje vody',
         waterSources: { tap: 'Voda z kohoutku', shop: 'Obchody', natural: 'Přírodní zdroje vody' },
         overnights: 'Možnosti přenocování',
-        restrictionsLabel: 'Na co myslet při přenocování',
+        restrictionsLabel: 'Na co si dát pozor při nocování',
         restrictions: {
           campingRestrictions:
             'Mohou platit místní omezení táboření. Ověřte si pravidla v místě noclehu.',
-          bookingRequired: 'Některá ubytování mohou vyžadovat rezervaci předem.',
-          feesMayApply: 'Ubytování a využití zázemí mohou být zpoplatněny.',
+          bookingRequired: 'Někde může být potřeba rezervace předem.',
+          feesMayApply: 'Za ubytování a některé služby se může platit.',
         },
       },
       brand: 'knut-vandrar',
@@ -395,7 +431,7 @@ export const messages = {
       hikes: 'Hiky',
       title: 'Jeden hike za druhým.',
       intro:
-        'Dlouhé dny na trailu. Drobné momenty, na které rád vzpomínám. Tady najdete moje hiky po Švédsku.',
+        'Dlouhé dny na trailu. Drobnosti, na které rád vzpomínám. Tady píšu o svých hikách po Švédsku.',
       explore: 'Prohlédnout hiky',
       collection: 'Moje hiky',
       count: '{count, plural, one {# hike} few {# hiky} other {# hiků}}',
@@ -404,7 +440,7 @@ export const messages = {
       completed: 'Dokončený',
       aborted: 'Nedokončený',
       days: '{count, plural, one {# den} few {# dny} other {# dní}}',
-      ascent: 'Stoupání',
+      ascent: 'Nastoupáno',
       translationNoticeLabel: 'Automatický překlad z angličtiny',
       translationNoticeDescription:
         'Čeština je můj rodný jazyk, ale svoje články píšu z praktických důvodů anglicky. Tohle je automatický překlad anglického originálu.',
@@ -416,12 +452,12 @@ export const messages = {
       trailRatings: {
         title: 'Moje hodnocení',
         intro:
-          'Moje osobní hodnocení od 0 do 5 hvězdiček. Více hvězdiček znamená lepší služby a údržbu, ale vyšší obtížnost.',
+          'Moje hodnocení jednotlivých aspektů trailu na škále od 0 do 5 hvězdiček. U zázemí, údržby, dopravy a zásobování znamená více hvězdiček lepší podmínky. U obtížnosti naopak více hvězdiček znamená náročnější trail.',
         moreInfo: ' – zobrazit vysvětlení',
         difficulty: {
           label: 'Obtížnost',
           description:
-            'Celkové posouzení terénu, odlehlosti, vystavení počasí a potřebných zkušeností s hikingem. 0 hvězdiček znamená snadný trail vhodný pro začátečníky; 5 znamená velmi náročný, odlehlý a exponovaný trail vyžadující značné zkušenosti a přípravu.',
+            'Hodnotím terén, odlehlost, vystavení počasí a to, kolik zkušeností s hikingem je potřeba. 0 hvězdiček znamená snadný trail vhodný pro začátečníky; 5 hvězdiček velmi náročný, odlehlý a exponovaný trail, který vyžaduje hodně zkušeností a dobrou přípravu.',
         },
         facilities: {
           label: 'Zázemí',
@@ -436,7 +472,7 @@ export const messages = {
         publicTransport: {
           label: 'Veřejná doprava',
           description:
-            'Jak snadno se dá na trail a z něj dostat vlakem nebo autobusem s ohledem na vzdálenost, četnost spojů a přestupy. Vysoké hodnocení znamená pohodlné spojení.',
+            'Jak snadno se dá dostat na trail a zpět vlakem nebo autobusem. Beru v úvahu vzdálenosti, četnost spojů a přestupy. Vysoké hodnocení znamená dobré spojení.',
         },
         resupplies: {
           label: 'Doplnění zásob',
@@ -450,8 +486,8 @@ export const messages = {
         lowlands: 'Nížiny',
         coastal: 'Pobřeží',
         loop: 'Okruh',
-        aboveArcticCircle: 'Za polárním kruhem',
-        crossesArcticCircle: 'Přes polární kruh',
+        aboveArcticCircle: 'Severně od polárního kruhu',
+        crossesArcticCircle: 'Přechází polární kruh',
         waymarked: 'Značená trasa',
         partlyWaymarked: 'Částečně značená',
         unmarked: 'Neznačená',

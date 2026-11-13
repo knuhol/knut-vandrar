@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { IconArrowLeft as ArrowLeft } from '@tabler/icons-react'
 
+import { HikeGallery } from './components/HikeGallery/HikeGallery'
+
 import { HikeFacts } from './components/HikeFacts'
 import { TrailFacts } from './components/TrailFacts'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
@@ -17,7 +19,7 @@ import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname, Link } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
-import { getHike } from '@/api/hikes'
+import { getHike, getPhotos } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation } from '@/hiking/presentation'
 
@@ -60,6 +62,7 @@ export default async function HikePage({ params }: Props) {
   }
 
   const t = await getTranslations('Site')
+  const galleryPage = await getPhotos(hike.id, locale)
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const isActive = hike.status === 'planned' || hike.status === 'ongoing'
@@ -151,6 +154,7 @@ export default async function HikePage({ params }: Props) {
             <InfoCards cards={hike.cards} />
           </section>
         )}
+        <HikeGallery key={hike.id} hikeId={hike.id} locale={locale} initialPage={galleryPage} />
         <Link
           className="inline-flex items-center gap-2.5 font-semibold text-forest"
           href={{ pathname: '/', hash: 'hikes' }}

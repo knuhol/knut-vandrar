@@ -5,6 +5,12 @@
   }
 }
 
+/* Site-wide policy: suppress browser and component focus outlines. */
+:focus,
+:focus-visible {
+  outline: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

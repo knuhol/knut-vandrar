@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { uploadLimits } from '@/admin/uploads'
 import { boundedBody } from '@/admin/body'
 import { adminConfig } from '@/admin/config'
 import { hasSession, validOrigin } from '@/admin/security'
@@ -37,9 +38,12 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
   let body: Uint8Array | undefined
   if (request.method !== 'GET') {
     try {
-      body = await boundedBody(request, 5 * 1024 * 1024)
+      const isPhotoUpload =
+        (request.method === 'POST' && /^\/api\/hikes\/[a-zA-Z0-9_-]+\/photos$/.test(pathname)) ||
+        (request.method === 'PUT' && /^\/api\/hikes\/[a-zA-Z0-9_-]+\/cover-image$/.test(pathname))
+      body = await boundedBody(request, isPhotoUpload ? uploadLimits.photo : uploadLimits.logo)
     } catch {
-      return NextResponse.json({ error: 'Request too large (maximum 5 MiB)' }, { status: 413 })
+      return NextResponse.json({ error: 'Request exceeds the upload size limit' }, { status: 413 })
     }
   }
   try {
@@ -51,7 +55,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
         cache: 'no-store',
         redirect: 'manual',
         body: body as BodyInit | undefined,
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(120_000),
       },
     )
     return new Response(response.body, {
@@ -59,6 +63,9 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
       headers: {
         'Content-Type': response.headers.get('content-type') || 'application/json',
         'Cache-Control': 'no-store',
+        ...(response.headers.get('content-disposition')
+          ? { 'Content-Disposition': response.headers.get('content-disposition') || '' }
+          : {}),
         'X-Content-Type-Options': 'nosniff',
       },
     })

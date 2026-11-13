@@ -6,6 +6,7 @@
   --color-cream: #faf4e5;
   --color-beige: #e8dec4;
   --color-forest: #2f4f3e;
+  --color-forest-dark: color-mix(in srgb, var(--color-forest) 80%, var(--color-ink));
   --color-sage: #6b8f71;
   --color-ink: #222222;
   --color-muted: #6b6b6b;
@@ -14,6 +15,7 @@
   --spacing: 4px;
   --container-page: 1240px;
   --container-reading: 68ch;
+  --container-media-preview: 320px;
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
   --breakpoint-wide: 1500px;
@@ -53,6 +55,8 @@
 }
 
 :root {
+  --icon-stroke-emphasis: 2.5;
+
   --link-underline-offset: calc(var(--spacing) * 2);
 
   /* Updated by SiteHeader's ResizeObserver, rather than a fixed layout token. */
