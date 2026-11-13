@@ -93,6 +93,11 @@ services:
         NODE_VERSION: ${NODE_VERSION:?Set NODE_VERSION from .nvmrc}
         FRONTEND_INTERNAL_PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
     environment:
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
+      API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN:-}
+      ADMIN_SESSION_DATABASE: /admin-data/sessions.sqlite
       INTERNAL_API_URL: http://backend:${API_PORT}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
       PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}
@@ -100,6 +105,7 @@ services:
     ports:
       - "${FRONTEND_PORT:?Set FRONTEND_PORT in .env}:${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT in .env}"
     volumes:
+      - admin_sessions:/admin-data
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
       - frontend_next:/app/.next
@@ -119,6 +125,7 @@ services:
         condition: service_healthy
 
 volumes:
+  admin_sessions:
   postgres_data_v18:
     name: knut-vandrar_postgres_data_v18
   frontend_node_modules:

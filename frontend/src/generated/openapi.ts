@@ -2263,6 +2263,144 @@ export const openapi = {
           }
         ]
       }
+    },
+    "/api/translations/candidates": {
+      "get": {
+        "tags": [
+          "translations"
+        ],
+        "summary": "List Translation Candidates",
+        "description": "Preview the selected explicit-request scope without changing any state.",
+        "operationId": "list_translation_candidates_api_translations_candidates_get",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include_outdated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Outdated"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "hike",
+                    "location",
+                    "region",
+                    "achievement"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "sv",
+                    "cs"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Locale"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TranslationCandidateRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "x-admin-only": true
+      }
     }
   },
   "components": {
@@ -2306,6 +2444,7 @@ export const openapi = {
       "AchievementIcon": {
         "type": "string",
         "enum": [
+          "backpack",
           "trophy",
           "distance",
           "mountain",
@@ -2409,7 +2548,9 @@ export const openapi = {
           "northbound",
           "southbound",
           "eastbound",
-          "westbound"
+          "westbound",
+          "clockwise",
+          "counterclockwise"
         ],
         "title": "Direction"
       },
@@ -3941,6 +4082,37 @@ export const openapi = {
         ],
         "title": "Page[RegionRead]"
       },
+      "Page_TranslationCandidateRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TranslationCandidateRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[TranslationCandidateRead]"
+      },
       "ProgressCard": {
         "properties": {
           "type": {
@@ -4263,6 +4435,72 @@ export const openapi = {
           "coastal"
         ],
         "title": "TrailType"
+      },
+      "TranslationCandidateRead": {
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "hike",
+              "location",
+              "region",
+              "achievement"
+            ],
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "sv",
+              "cs"
+            ],
+            "title": "Locale"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Status"
+          },
+          "is_missing": {
+            "type": "boolean",
+            "title": "Is Missing"
+          },
+          "is_outdated": {
+            "type": "boolean",
+            "title": "Is Outdated"
+          },
+          "already_queued": {
+            "type": "boolean",
+            "title": "Already Queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_type",
+          "entity_id",
+          "title",
+          "locale",
+          "review_status",
+          "is_missing",
+          "is_outdated",
+          "already_queued"
+        ],
+        "title": "TranslationCandidateRead"
       },
       "TranslationMetadata": {
         "properties": {

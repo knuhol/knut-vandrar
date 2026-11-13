@@ -70,6 +70,8 @@ class Direction(StrEnum):
     SOUTHBOUND = "southbound"
     EASTBOUND = "eastbound"
     WESTBOUND = "westbound"
+    CLOCKWISE = "clockwise"
+    COUNTERCLOCKWISE = "counterclockwise"
 
 
 class RouteScope(StrEnum):
@@ -79,6 +81,7 @@ class RouteScope(StrEnum):
 
 
 class AchievementIcon(StrEnum):
+    BACKPACK = "backpack"
     TROPHY = "trophy"
     DISTANCE = "distance"
     MOUNTAIN = "mountain"
