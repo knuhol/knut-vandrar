@@ -18,6 +18,13 @@ def require_write_auth(
 ) -> None:
     if request.method in READ_METHODS:
         return
+    require_admin_auth(credentials)
+
+
+def require_admin_auth(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+) -> None:
+    """Protect explicitly private reads as well as writes."""
     token = settings.api_write_token
     if token is None:
         raise HTTPException(

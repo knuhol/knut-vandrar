@@ -164,3 +164,31 @@ next server request; currently open browser tabs do not receive live updates.
 
 Visual assets in `frontend/public/brand` are optimized web copies of the supplied
 forest artwork and individually extracted hiking icons. Source files are preserved.
+
+### Admin UI
+
+The responsive, English-only admin lives at `/admin` and uses scoped MUI components with Refine data access. It supports hikes, locations, regions, achievements, image uploads/removal, Markdown previews, manual translation overrides and review changes. Editors follow the generated OpenAPI write schemas; backend cross-field validation remains authoritative. Related-record selectors load paginated options and search loaded records.
+
+Set `API_WRITE_TOKEN` (the existing backend write credential), `ADMIN_PASSWORD_HASH`, and `ADMIN_ORIGIN` in the ignored root `.env`. `ADMIN_ORIGIN` must match the browser origin exactly, including its port. Production requires HTTPS. These variables are server-only; never prefix them with `NEXT_PUBLIC_`.
+
+Generate a unique password of at least 24 characters in a password manager, then run from the repository root:
+
+```sh
+node frontend/scripts/admin-password.mjs /tmp/knut-admin-password.env
+```
+
+The prompt hides the password. Copy the generated `ADMIN_PASSWORD_HASH` entry into the root `.env`, then delete the temporary file. The script refuses to overwrite an existing output file. Do not reuse the API token as the password. Changing the password hash invalidates existing sessions.
+
+Sessions expire after eight hours and use HttpOnly, SameSite=Strict cookies, marked Secure for HTTPS and production. Logout revokes the session server-side. A private SQLite database persists sessions and the global login throttle (ten attempts per fifteen minutes); Compose mounts the dedicated `admin_sessions` volume. For multiple frontend replicas, use shared session/rate-limit storage instead of replica-local SQLite. Do not expose the session database publicly.
+
+Admin API routes require a session for reads as well as writes. Cookie-authenticated writes, including login/logout, check the exact Origin. The API adapter only forwards schema-declared operations and does not forward browser credentials or backend tokens to the browser. Existing public API reads remain public.
+
+Translation requests are explicit and may incur provider costs. The default queues only entries flagged `needs_retranslation`. Including missing/outdated translations requires opting in. Requests support entity type, record and target-language scopes and report queued/skipped counts, not completion. Manual translations remain protected. Saving content and changing review status never enqueue work.
+
+Configuration changes require recreating the affected services. Do not perform container operations without explicit authorization. The explicit-translation worker/migration deployment remains separate from the admin UI.
+
+Run the isolated authentication/API integration checks with `npm run --workspace frontend test:admin`. They start temporary local Next.js and mock API servers, use throwaway credentials/session storage, and never call the real backend or translation provider.
+
+The admin environment banner shows Local (green), Dev (yellow), or Prod (red), including on the login screen. `DEPLOYMENT_ENVIRONMENT` configures the label for local/non-Compose runs; the VPS routing overrides set it automatically. It is independent of the Next.js build mode.
+
+The translation-request screen previews all matching entity/language pairs using paginated server-side filtering. It shows missing/outdated and review state plus active duplicates that would be skipped. This preview is read-only; the backend preview endpoint requires Bearer authentication and the admin proxy additionally requires a session.

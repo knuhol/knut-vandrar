@@ -920,9 +920,9 @@ def test_openapi_documents_write_auth_but_not_public_reads(client: TestClient) -
     assert schema["components"]["securitySchemes"]["AdminBearer"]["scheme"] == "bearer"
     for path in schema["paths"].values():
         for method, operation in path.items():
-            if method in {"get", "head", "options"}:
+            if method in {"get", "head", "options"} and not operation.get("x-admin-only"):
                 assert not operation.get("security")
-            elif method in {"post", "put", "patch", "delete"}:
+            elif method in {"post", "put", "patch", "delete"} or operation.get("x-admin-only"):
                 assert {"AdminBearer": []} in operation["security"]
                 assert "401" in operation["responses"]
     assert TEST_WRITE_TOKEN not in json.dumps(schema)
@@ -1202,3 +1202,165 @@ def test_worker_recovery_cannot_reset_cost_limit(
             ("explicit_request", 2, "queued"),
             ("source_changed", 1, "superseded"),
         }
+
+
+def test_translation_candidates_preview_matches_request_and_has_no_side_effects(
+    client: TestClient,
+) -> None:
+    from knut_vandrar_backend.models.location import RegionTranslation
+
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
+    with _db_session(client) as db:
+        db.add(
+            RegionTranslation(
+                region_id=UUID(region["id"]),
+                locale_code="sv",
+                name="Text",
+                review_status="needs_retranslation",
+            )
+        )
+        db.add(
+            RegionTranslation(
+                region_id=UUID(region["id"]),
+                locale_code="cs",
+                name="Manual",
+                review_status="manual",
+            )
+        )
+        db.commit()
+    flagged = client.get("/api/translations/candidates")
+    assert flagged.status_code == 200, flagged.text
+    assert flagged.json()["total"] == 1
+    assert flagged.json()["items"][0]["title"] == "Lapland"
+    assert flagged.json()["items"][0]["review_status"] == "needs_retranslation"
+    assert not flagged.json()["items"][0]["already_queued"]
+    broad = {"include_outdated": True}
+    page = client.get(
+        "/api/translations/candidates", params={"include_outdated": "true", "limit": 1}
+    ).json()
+    assert page["total"] == 3
+    assert len(page["items"]) == 1
+    next_page = client.get(
+        "/api/translations/candidates", params={"include_outdated": "true", "limit": 1, "offset": 1}
+    ).json()
+    assert next_page["items"] != page["items"]
+    assert (
+        client.get(
+            "/api/translations/candidates",
+            params={
+                "entity_type": "hike",
+                "entity_id": hike["id"],
+                "locale": "cs",
+                "include_outdated": "true",
+            },
+        ).json()["total"]
+        == 1
+    )
+    with _db_session(client) as db:
+        assert list(db.scalars(select(TranslationJob))) == []
+    result = client.post("/api/translations/requeue", json=broad).json()
+    assert result == {"queued": 3, "skipped": 0}
+    rows = client.get("/api/translations/candidates", params={"include_outdated": "true"}).json()
+    assert rows["total"] == 3
+    assert all(row["already_queued"] for row in rows["items"])
+    assert sum(row["is_missing"] for row in rows["items"]) == 2
+    assert client.post("/api/translations/requeue", json=broad).json() == {
+        "queued": 0,
+        "skipped": 3,
+    }
+
+
+def test_translation_candidates_auth_and_validation(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    invalid: list[dict[str, str | int]] = [
+        {"entity_id": "00000000-0000-0000-0000-000000000001"},
+        {"locale": "en"},
+        {"limit": 101},
+        {"offset": -1},
+    ]
+    for params in invalid:
+        assert client.get("/api/translations/candidates", params=params).status_code == 422
+    client.headers.pop("Authorization", None)
+    response = client.get("/api/translations/candidates")
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+    assert (
+        client.get(
+            "/api/translations/candidates", headers={"Authorization": "Bearer wrong"}
+        ).status_code
+        == 401
+    )
+    monkeypatch.setattr(auth, "settings", replace(settings, api_write_token=None))
+    assert client.get("/api/translations/candidates").status_code == 503
+
+
+def test_translation_candidates_current_and_profile_outdated(client: TestClient) -> None:
+    from knut_vandrar_backend.models.location import RegionTranslation
+
+    region = client.post("/api/regions", json={"english": {"name": "Region"}}).json()
+    with _db_session(client) as db:
+        db.add(
+            RegionTranslation(
+                region_id=UUID(region["id"]),
+                locale_code="sv",
+                name="Region",
+                review_status="approved",
+                source_revision=1,
+                profile_fingerprint=profile_fingerprint(db, "region", "sv")[1],
+            )
+        )
+        db.commit()
+    selection = {"entity_type": "region", "locale": "sv", "include_outdated": "true"}
+    assert client.get("/api/translations/candidates", params=selection).json()["total"] == 0
+    with _db_session(client) as db:
+        target = db.get(RegionTranslation, (UUID(region["id"]), "sv"))
+        assert target is not None
+        target.profile_fingerprint = None
+        db.commit()
+    rows = client.get("/api/translations/candidates", params=selection).json()
+    assert rows["total"] == 1
+    assert rows["items"][0]["is_outdated"]
+    assert not rows["items"][0]["is_missing"]
+    assert (
+        client.get(
+            "/api/translations/candidates", params={"entity_type": "region", "locale": "sv"}
+        ).json()["total"]
+        == 0
+    )
+
+
+def test_backpack_achievement_round_trip(client: TestClient) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    response = client.post(
+        "/api/achievements",
+        json={
+            "hike_id": hike["id"],
+            "icon": "backpack",
+            "english": {"title": "First hike without resupply"},
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["icon"] == "backpack"
+    detail = client.get(f"/api/hikes/{hike['id']}").json()
+    assert detail["achievements"][0]["icon"] == "backpack"
+    assert (
+        client.get("/openapi.json")
+        .json()["components"]["schemas"]["AchievementIcon"]["enum"]
+        .count("backpack")
+        == 1
+    )
+
+
+@pytest.mark.parametrize("direction", ["clockwise", "counterclockwise"])
+def test_circular_directions_round_trip(client: TestClient, direction: str) -> None:
+    response = client.post("/api/hikes", json=_planned_payload(direction=direction))
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["direction"] == direction
+    assert client.get(f"/api/hikes/{hike['id']}").json()["direction"] == direction
+    alternate = "counterclockwise" if direction == "clockwise" else "clockwise"
+    updated = client.put(f"/api/hikes/{hike['id']}", json=_planned_payload(direction=alternate))
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["direction"] == alternate

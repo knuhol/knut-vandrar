@@ -35,9 +35,11 @@ class BackendAPI(FastAPI):
         schema = super().openapi()
         for path in schema.get("paths", {}).values():
             for method, operation in path.items():
-                if method.upper() in READ_METHODS:
+                if method.upper() in READ_METHODS and not operation.get("x-admin-only"):
                     operation.pop("security", None)
-                elif method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
+                elif method.upper() in {"POST", "PUT", "PATCH", "DELETE"} or operation.get(
+                    "x-admin-only"
+                ):
                     responses = operation.setdefault("responses", {})
                     responses.setdefault("401", {"description": "Missing or invalid Bearer token"})
                     responses.setdefault(

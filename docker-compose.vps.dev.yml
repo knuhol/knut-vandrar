@@ -11,6 +11,8 @@ services:
       - traefik.http.services.knut-vandrar-dev-api.loadbalancer.server.port=${API_PORT}
 
   frontend:
+    environment:
+      DEPLOYMENT_ENVIRONMENT: dev
     labels:
       - traefik.enable=true
       - traefik.docker.network=vandrar_web-net
