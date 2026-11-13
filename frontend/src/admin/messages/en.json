@@ -1,0 +1,180 @@
+{
+  "discardUnsavedChanges": "Discard unsaved changes?",
+  "loadFailed": "Load failed",
+  "savedNoTranslationsWereQueued": "Saved. No translations were queued.",
+  "saveFailed": "Save failed",
+  "permanentlyDeleteThisRecordRelatedContent": "Permanently delete this record? Related content may also be deleted.",
+  "deleteFailed": "Delete failed",
+  "removeThisImage": "Remove this image?",
+  "imageUploaded": "Image uploaded.",
+  "imageRemoved": "Image removed.",
+  "imageOperationFailed": "Image operation failed",
+  "couldNotSignOut": "Could not sign out",
+  "knutVandrar": "knut-vandrar",
+  "signOut": "Sign out",
+  "adminSections": "Admin sections",
+  "translationRequests": "Translation requests",
+  "backToList": "Back to list",
+  "image": "Image",
+  "removeImage": "Remove image",
+  "delete": "Delete ",
+  "create": "Create",
+  "loading": "Loading…",
+  "edit": "Edit",
+  "noRecordsYet": "No records yet.",
+  "previous": "Previous",
+  "page": "Page ",
+  "separator": " · ",
+  "records": " records",
+  "next": "Next",
+  "remove": "Remove",
+  "add": "Add ",
+  "notSpecified": "Not specified",
+  "hidePreview": "Hide preview",
+  "previewMarkdown": "Preview Markdown",
+  "unableToSignIn": "Unable to sign in",
+  "knutVandrarAdmin": "knut-vandrar admin",
+  "signInToManageYourHiking": "Sign in to manage your hiking content.",
+  "password": "Password",
+  "signingIn": "Signing in…",
+  "signIn": "Sign in",
+  "unableToLoadOptions": "Unable to load options",
+  "searchLoadedRecordsLoadMoreTo": "Search loaded records; load more to include the next page.",
+  "loadMoreRecords": "Load more records",
+  "flaggedMissingAndOutdated": "flagged, missing and outdated",
+  "allEntityTypes": "all entity types",
+  "bothTargetLanguages": "both target languages",
+  "requestFailed": "Request failed",
+  "requestTranslations": "Request translations",
+  "onlyThisActionRequestsPaidTranslation": "Only this action requests paid translation work. Saving content or marking it for retranslation does not queue jobs. Manual translations are protected.",
+  "entityType": "Entity type",
+  "allTypes": "All types",
+  "targetLanguage": "Target language",
+  "swedishAndCzech": "Swedish and Czech",
+  "swedish": "Swedish",
+  "czech": "Czech",
+  "scope": "Scope",
+  "flaggedOnlyNeedsRetranslation": "Flagged only (needs retranslation)",
+  "alsoIncludeMissingAndOutdated": "Also include missing and outdated",
+  "reviewAndRequestTranslations": "Review and request translations",
+  "translationUnavailable": "Translation unavailable",
+  "reviewStatusSavedNoWorkWas": "Review status saved. No work was queued.",
+  "manualTranslationSavedAndProtectedFrom": "Manual translation saved and protected from automatic replacement.",
+  "translations": "Translations",
+  "language": "Language",
+  "loadTranslation": "Load translation",
+  "locale": "Locale: ",
+  "review": " · Review: ",
+  "showingFallbackContentSaveToCreate": " · Showing fallback content; save to create a manual translation.",
+  "englishSource": "English source",
+  "translation": "Translation",
+  "saveManualTranslation": "Save manual translation",
+  "save": "Save",
+  "working": "Working…",
+  "outdated": "Outdated",
+  "current": "Current",
+  "missing": "missing",
+  "flagged": "flagged",
+  "queueConfirmation": "Queue {scope} translations for {entity}, {locale}? The worker may incur translation costs. Manual translations are excluded.",
+  "queueResult": "Queued: {queued}. Skipped active duplicates: {skipped}. This reports queueing, not completion.",
+  "imagePreview": "Current image",
+  "fileTooLarge": "Images must be at most 5 MiB.",
+  "unsaved": " · Unsaved",
+  "saveBeforeTranslations": "Save your source changes before reviewing translations.",
+  "removeManualProtection": "Changing this manual translation’s review status removes its protection from future automatic translation requests. Continue?",
+  "environmentLabels": {
+    "local": "Local",
+    "dev": "Dev",
+    "prod": "Prod"
+  },
+  "localDateTimeZone": "Local time ({timezone}). Saved with timezone information.",
+  "invalidLocalDateTime": "Enter a valid local date and time. This time may not exist because of a daylight-saving change.",
+  "translationStatus": "Translation status",
+  "loadingTranslationStatus": "Loading translation status…",
+  "translationStatusUnavailable": "Could not load translation status. Try loading the translation again.",
+  "translationMissing": "Missing translation",
+  "translationStatusUnknown": "Unknown review status",
+  "translationReviewLabels": {
+    "source": "Source",
+    "unreviewed": "Unreviewed",
+    "approved": "Approved",
+    "needs_retranslation": "Needs retranslation",
+    "manual": "Manual (protected)"
+  },
+  "translationsInScope": "Translations in selected scope",
+  "translationPreviewExplanation": "Manual translations are excluded. Entries with an active request are shown but will be skipped when requesting translations.",
+  "matchingTranslations": "{count} matching translations",
+  "noMatchingTranslations": "No translations match the selected scope.",
+  "translationAlreadyQueued": "Already queued or running — will be skipped",
+  "translationListUnavailable": "Could not load matching translations. Change the filters or reload to retry.",
+  "editorSections": {
+    "content": "English content",
+    "journey": "Status, location and dates",
+    "statistics": "Distance and elevation",
+    "route": "Route and coordinates",
+    "overnights": "Overnight stays and restrictions",
+    "cards": "Information cards",
+    "geography": "Location and geography",
+    "trail": "Trail information",
+    "season": "Season and information dates",
+    "water": "Water sources",
+    "ratings": "Ratings",
+    "details": "Details",
+    "danger": "Delete entity"
+  },
+  "unsavedChanges": "Unsaved changes",
+  "hikingMonthsLabel": "Available hiking months",
+  "monthsNotSpecified": "Not specified. Add hiking months to select availability.",
+  "selectHikingMonths": "Select at least one month, or Remove to leave availability unspecified.",
+  "hikingMonthsHelp": "Select or deselect months. Remove clears availability back to not specified.",
+  "monthNames": [
+    {
+      "short": "Jan",
+      "full": "January"
+    },
+    {
+      "short": "Feb",
+      "full": "February"
+    },
+    {
+      "short": "Mar",
+      "full": "March"
+    },
+    {
+      "short": "Apr",
+      "full": "April"
+    },
+    {
+      "short": "May",
+      "full": "May"
+    },
+    {
+      "short": "Jun",
+      "full": "June"
+    },
+    {
+      "short": "Jul",
+      "full": "July"
+    },
+    {
+      "short": "Aug",
+      "full": "August"
+    },
+    {
+      "short": "Sep",
+      "full": "September"
+    },
+    {
+      "short": "Oct",
+      "full": "October"
+    },
+    {
+      "short": "Nov",
+      "full": "November"
+    },
+    {
+      "short": "Dec",
+      "full": "December"
+    }
+  ]
+}

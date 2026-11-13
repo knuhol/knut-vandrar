@@ -92,9 +92,15 @@ services:
         FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
     restart: unless-stopped
     environment:
+      API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN:-}
+      ADMIN_SESSION_DATABASE: /admin-data/sessions.sqlite
       INTERNAL_API_URL: http://backend-internal:${API_PORT}
       PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT}
       FRONTEND_HOST: ${FRONTEND_HOST:?Set FRONTEND_HOST}
+    volumes:
+      - admin_sessions:/admin-data
     networks:
       - default
       - traefik
@@ -113,6 +119,7 @@ services:
         condition: service_healthy
 
 volumes:
+  admin_sessions:
   postgres_data:
 
 networks:

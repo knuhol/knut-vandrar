@@ -87,7 +87,7 @@ The checked-in FastAPI OpenAPI export is the frontend contract; regenerate it wi
 
 ## Backend write authentication
 
-GET/HEAD reads are public. Every POST, PUT, PATCH and DELETE API operation inherits
+Content GET/HEAD reads are public. The admin-only translation candidate preview is an explicit authenticated-read exception. Every POST, PUT, PATCH and DELETE API operation inherits
 Bearer authentication through the application's global dependency, including image
 uploads, translation overrides, review-state changes and new routers. Browser CORS
 preflight remains available. Write operations advertise `AdminBearer` in OpenAPI;
@@ -146,3 +146,8 @@ Deploy revision 005 with the old worker stopped, then start the updated worker. 
 cancels pending legacy automatic jobs; the new worker independently refuses automatic
 job reasons. An already-issued remote request cannot be recalled. Explicitly requested
 pending jobs are preserved by the migration. No translation content is deleted.
+
+
+### Translation request preview
+
+`GET /api/translations/candidates` requires the admin Bearer token even though it is a read. It accepts the same filters as `/requeue` as query parameters, plus `limit` (1–100, default 10) and `offset`. The response is a paginated list of matching entity/language pairs with the English title, review status, missing/outdated flags, and `already_queued` for an active explicitly requested job matching the current source/profile. Manual translations are excluded. Preview and enqueue share database-side selection logic. Previewing does not create jobs, update translations, or call the provider; the list can change before a later explicit request.

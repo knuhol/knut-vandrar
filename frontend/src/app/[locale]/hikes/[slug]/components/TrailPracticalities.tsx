@@ -23,6 +23,7 @@ export function TrailPracticalities({
   locale: Locale
 }) {
   const t = useTranslations('Site.practicalities')
+  const overnightNotes = noteLines(details.overnightNote)
   const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' })
   const fullMonthFormatter = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' })
 
@@ -32,18 +33,13 @@ export function TrailPracticalities({
     details.overnightOptions.length === 0 &&
     details.overnightRestrictions.length === 0 &&
     !details.seasonNote &&
-    !details.overnightNote
+    overnightNotes.length === 0
   ) {
     return null
   }
 
   return (
     <div className="mt-5 grid gap-5 border-t border-beige pt-5">
-      {noteLines(details.seasonNote).map((note) => (
-        <p key={note} className="text-sm leading-relaxed text-muted">
-          {note}
-        </p>
-      ))}
       {details.hikingMonths.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-forest">{t('season')}</h3>
@@ -68,6 +64,11 @@ export function TrailPracticalities({
           <p className="mt-2 text-xs leading-relaxed text-muted">{t('seasonNote')}</p>
         </section>
       )}
+      {noteLines(details.seasonNote).map((note) => (
+        <p key={note} className="text-sm leading-relaxed text-muted">
+          {note}
+        </p>
+      ))}
       {details.waterSources.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-forest">{t('water')}</h3>
@@ -86,25 +87,24 @@ export function TrailPracticalities({
           <AccommodationOptions options={details.overnightOptions.map((type) => ({ type }))} />
         </section>
       )}
-      {noteLines(details.overnightNote).map((note) => (
-        <p key={note} className="text-sm leading-relaxed text-muted">
-          {note}
-        </p>
-      ))}
-      {details.overnightRestrictions.length > 0 && (
+      {(details.overnightRestrictions.length > 0 || overnightNotes.length > 0) && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-forest">{t('restrictionsLabel')}</h3>
-          <ul className="grid gap-2">
-            {details.overnightRestrictions.map((restriction) => (
-              <li
-                key={restriction}
-                className="flex items-start gap-2 text-sm leading-relaxed text-muted"
-              >
-                <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-sage" aria-hidden="true" />
-                <span>{t(`restrictions.${restriction}`)}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-start gap-2 text-sm leading-relaxed text-muted">
+            <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-sage" aria-hidden="true" />
+            <div className="min-w-0 space-y-2">
+              {details.overnightRestrictions.length > 0 && (
+                <ul className="grid gap-2">
+                  {details.overnightRestrictions.map((restriction) => (
+                    <li key={restriction}>{t(`restrictions.${restriction}`)}</li>
+                  ))}
+                </ul>
+              )}
+              {overnightNotes.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
+            </div>
+          </div>
         </section>
       )}
     </div>

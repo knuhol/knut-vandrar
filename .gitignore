@@ -46,3 +46,6 @@ Dockerfile.dockerignore
 tmp/
 temp/
 !.env.vps.*.example
+
+# Private admin session state
+.admin/

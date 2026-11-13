@@ -4,6 +4,8 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconRoute,
+  IconRotateClockwise,
+  IconRotate,
 } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
@@ -19,7 +21,9 @@ const directions = {
   southbound: IconArrowDown,
   eastbound: IconArrowRight,
   westbound: IconArrowLeft,
-}
+  clockwise: IconRotateClockwise,
+  counterclockwise: IconRotate,
+} satisfies Record<NonNullable<HikeDetails['direction']>, typeof IconArrowUp>
 
 export function HikeJourney({ details, status }: { details: HikeDetails; status: Hike['status'] }) {
   const t = useTranslations('Site.journey')

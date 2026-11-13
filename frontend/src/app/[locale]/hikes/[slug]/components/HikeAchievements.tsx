@@ -5,6 +5,7 @@ import {
   IconMountain,
   IconCompass,
   IconTent,
+  IconBackpack,
 } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
@@ -22,6 +23,7 @@ export function HikeAchievements({
   const t = useTranslations('Site.achievements')
   const isActive = status === 'planned' || status === 'ongoing'
   const icons = {
+    backpack: IconBackpack,
     trophy: IconTrophy,
     distance: IconFootsteps,
     arctic: IconWorldLatitude,

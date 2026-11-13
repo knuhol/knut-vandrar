@@ -11,10 +11,17 @@
     "generate:api": "python3 ../backend/scripts/export_openapi.py",
     "check:api": "python3 ../backend/scripts/export_openapi.py --check",
     "format:check": "prettier --check .",
-    "format:fix": "prettier --write ."
+    "format:fix": "prettier --write .",
+    "test:admin": "node scripts/test-admin.mjs"
   },
   "dependencies": {
+    "@emotion/cache": "11.14.0",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/material": "7.3.5",
+    "@mui/material-nextjs": "7.3.5",
     "@radix-ui/react-dropdown-menu": "2.2.1",
+    "@refinedev/core": "5.0.12",
     "@tabler/icons-react": "3.51.0",
     "fets": "0.8.13",
     "next": "16.4.5",
