@@ -5,13 +5,10 @@ import { Alert, Box, type AlertColor } from '@mui/material'
 function formattedJson(message: string): string | undefined {
   try {
     const value: unknown = JSON.parse(message)
-    if (value !== null && typeof value === 'object') {
-      return JSON.stringify(value, null, 2)
-    }
+    return JSON.stringify(value, null, 2)
   } catch {
     return undefined
   }
-  return undefined
 }
 
 export function AdminMessage({
@@ -24,10 +21,11 @@ export function AdminMessage({
   const json = formattedJson(message)
   return (
     <Alert
-      severity={json ? 'error' : severity}
+      severity={severity}
       sx={{
         minWidth: 0,
         overflowWrap: 'anywhere',
+        whiteSpace: 'pre-wrap',
         '& .MuiAlert-message': { minWidth: 0, width: '100%' },
       }}
     >

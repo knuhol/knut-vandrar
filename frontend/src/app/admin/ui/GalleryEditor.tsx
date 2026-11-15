@@ -12,6 +12,8 @@ import {
   Typography,
 } from '@mui/material'
 
+import { AdminMessage } from './AdminMessage'
+import { useAdminFeedback } from './useAdminFeedback'
 import { ImagePreview } from './ImagePreview'
 import { EditorSection } from './EditorSection'
 
@@ -60,7 +62,7 @@ export function GalleryEditor({
   const [total, setTotal] = useState(0)
   const [drafts, setDrafts] = useState<Partial<Record<string, GalleryText>>>({})
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('')
+  const { feedback, show: setMessage } = useAdminFeedback()
   const [field, setField] = useState<keyof GalleryText>('alt')
   const [localized, setLocalized] = useState<Partial<Record<string, Photo>>>({})
   const fieldConfig = galleryTextFields[field]
@@ -103,15 +105,15 @@ export function GalleryEditor({
     return () => {
       active = false
     }
-  }, [hikeId])
+  }, [hikeId, setMessage])
 
-  async function run(action: () => Promise<void>) {
+  async function run(target: string, action: () => Promise<void>) {
     setBusy(true)
     setMessage('')
     try {
       await action()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.saveFailed)
+      setMessage(error instanceof Error ? error.message : messages.saveFailed, target)
     } finally {
       setBusy(false)
     }
@@ -144,6 +146,12 @@ export function GalleryEditor({
     setItems(ordered)
   }
 
+  function feedbackAt(target: string) {
+    return feedback.message && feedback.target === target ? (
+      <AdminMessage message={feedback.message} severity={feedback.severity} />
+    ) : null
+  }
+
   return (
     <EditorSection title={messages[gallerySection.title]} dirty={dirty}>
       <Stack spacing={2}>
@@ -163,8 +171,8 @@ export function GalleryEditor({
             const input = event.target as HTMLInputElement
             const files = [...(input.files || [])]
             input.value = ''
-            void run(async () => {
-              const errors: string[] = []
+            void run('upload', async () => {
+              const errors: { file: string; error: unknown }[] = []
               for (const file of files) {
                 try {
                   if (file.size > uploadLimits.photo) {
@@ -172,21 +180,27 @@ export function GalleryEditor({
                   }
                   await api(`hikes/${hikeId}/photos`, 'POST', file)
                 } catch (error) {
-                  errors.push(
-                    `${file.name}: ${error instanceof Error ? error.message : messages.saveFailed}`,
-                  )
+                  const message = error instanceof Error ? error.message : messages.saveFailed
+                  let detail: unknown = message
+                  try {
+                    detail = JSON.parse(message)
+                  } catch {
+                    // Non-JSON failures retain their readable message.
+                  }
+                  errors.push({ file: file.name, error: detail })
                 }
               }
               await refresh()
-              setMessage(errors.length > 0 ? errors.join('\n') : messages.galleryUploaded)
+              setMessage(
+                errors.length > 0 ? JSON.stringify(errors) : messages.galleryUploaded,
+                'upload',
+                errors.length > 0 ? 'error' : 'success',
+              )
             })
           }}
         />
-        {message && (
-          <Alert severity="info" sx={{ whiteSpace: 'pre-line' }}>
-            {message}
-          </Alert>
-        )}
+        {feedbackAt('upload')}
+        {feedbackAt('')}
         <TextField
           select
           label={messages.galleryTextField}
@@ -266,7 +280,7 @@ export function GalleryEditor({
                     <Button
                       disabled={busy || !changed}
                       onClick={() => {
-                        void run(async () => {
+                        void run(photo.id, async () => {
                           for (const locale of changedLocales(photo)) {
                             const draft = drafts[`${photo.id}:${locale}`] || baseline(photo, locale)
                             const fields = { alt: draft.alt, caption: draft.caption || null }
@@ -288,7 +302,7 @@ export function GalleryEditor({
                               }))
                             }
                           }
-                          setMessage(messages.savedNoTranslationsWereQueued)
+                          setMessage(messages.savedNoTranslationsWereQueued, photo.id, 'success')
                         })
                       }}
                     >
@@ -297,7 +311,7 @@ export function GalleryEditor({
                     <Button
                       disabled={busy || index === 0 || items.length !== total}
                       onClick={() => {
-                        void run(async () => {
+                        void run(photo.id, async () => {
                           await move(index, -1)
                         })
                       }}
@@ -307,7 +321,7 @@ export function GalleryEditor({
                     <Button
                       disabled={busy || index === items.length - 1 || items.length !== total}
                       onClick={() => {
-                        void run(async () => {
+                        void run(photo.id, async () => {
                           await move(index, 1)
                         })
                       }}
@@ -326,7 +340,7 @@ export function GalleryEditor({
                       disabled={busy}
                       onClick={() => {
                         if (window.confirm(messages.galleryDeleteConfirmation)) {
-                          void run(async () => {
+                          void run(photo.id, async () => {
                             await api(`photos/${photo.id}`, 'DELETE')
                             await refresh()
                           })
@@ -336,6 +350,7 @@ export function GalleryEditor({
                       {messages.delete}
                     </Button>
                   </Stack>
+                  {feedbackAt(photo.id)}
                 </Stack>
               </CardContent>
             </Card>
@@ -345,7 +360,7 @@ export function GalleryEditor({
           <Button
             disabled={busy}
             onClick={() => {
-              void run(async () => {
+              void run('more', async () => {
                 const pages = await fetchPages(hikeId, items.length, 100)
                 const page = pages[0].page
                 setLocalized((current) => mergePages(current, pages))
@@ -357,6 +372,7 @@ export function GalleryEditor({
             {messages.galleryLoadMore}
           </Button>
         )}
+        {feedbackAt('more')}
       </Stack>
     </EditorSection>
   )

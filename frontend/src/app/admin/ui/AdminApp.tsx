@@ -16,6 +16,7 @@ import {
 } from '@mui/material'
 
 import { GalleryEditor } from './GalleryEditor'
+import { useAdminFeedback } from './useAdminFeedback'
 import { AdminMessage } from './AdminMessage'
 import { ImagePreview } from './ImagePreview'
 import { EditorSection } from './EditorSection'
@@ -50,7 +51,7 @@ function Content() {
   const [imageVersion, setImageVersion] = useState(0)
   const [hasImage, setHasImage] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('')
+  const { feedback, show: setMessage } = useAdminFeedback()
   const { result, query } = useList({
     resource: resource.name,
     pagination: { currentPage: page, pageSize: 10 },
@@ -92,7 +93,7 @@ function Content() {
       setId(nextId)
       setEditing(true)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.loadFailed)
+      setMessage(error instanceof Error ? error.message : messages.loadFailed, `open:${nextId}`)
     } finally {
       setBusy(false)
     }
@@ -108,10 +109,10 @@ function Content() {
       )
       setId(text(saved.id))
       setSavedValue(submitted)
-      setMessage(messages.savedNoTranslationsWereQueued)
+      setMessage(messages.savedNoTranslationsWereQueued, 'save', 'success')
       await query.refetch()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.saveFailed)
+      setMessage(error instanceof Error ? error.message : messages.saveFailed, 'save')
     } finally {
       setBusy(false)
     }
@@ -121,32 +122,34 @@ function Content() {
       return
     }
     setBusy(true)
+    setMessage('')
     try {
       await api(`${resource.name}/${id}`, 'DELETE')
       setEditing(false)
       await query.refetch()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.deleteFailed)
+      setMessage(error instanceof Error ? error.message : messages.deleteFailed, 'delete')
     } finally {
       setBusy(false)
     }
   }
   async function image(file?: File) {
     if (file && file.size > (resource.imageMaxBytes || 0)) {
-      setMessage(messages[resource.imageLimitMessage || 'fileTooLarge'])
+      setMessage(messages[resource.imageLimitMessage || 'fileTooLarge'], 'image')
       return
     }
     if (!file && !window.confirm(messages.removeThisImage)) {
       return
     }
     setBusy(true)
+    setMessage('')
     try {
       await api(`${resource.name}/${id}/${resource.image || ''}`, file ? 'PUT' : 'DELETE', file)
       setHasImage(Boolean(file))
       setImageVersion(Date.now())
-      setMessage(file ? messages.imageUploaded : messages.imageRemoved)
+      setMessage(file ? messages.imageUploaded : messages.imageRemoved, 'image', 'success')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.imageOperationFailed)
+      setMessage(error instanceof Error ? error.message : messages.imageOperationFailed, 'image')
     } finally {
       setBusy(false)
     }
@@ -162,8 +165,13 @@ function Content() {
       }
       window.location.assign('/admin')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : messages.couldNotSignOut)
+      setMessage(error instanceof Error ? error.message : messages.couldNotSignOut, 'logout')
     }
+  }
+  function feedbackAt(target: string) {
+    return feedback.message && feedback.target === target ? (
+      <AdminMessage message={feedback.message} severity={feedback.severity} />
+    ) : null
   }
   return (
     <Container maxWidth="lg">
@@ -181,6 +189,7 @@ function Content() {
             {messages.signOut}
           </Button>
         </Stack>
+        {feedbackAt('logout')}
         <Stack
           component="nav"
           aria-label={messages.adminSections}
@@ -216,7 +225,6 @@ function Content() {
             {messages.translationRequests}
           </Button>
         </Stack>
-        {message && <AdminMessage message={message} />}
         {section === 'translations' ? (
           <TranslationRequest />
         ) : editing ? (
@@ -257,6 +265,7 @@ function Content() {
               <Button type="submit" disabled={busy}>
                 {busy ? messages.working : messages.save}
               </Button>
+              {feedbackAt('save')}
             </Stack>
             {id && (
               <>
@@ -299,6 +308,7 @@ function Content() {
                       >
                         {messages.removeImage}
                       </Button>
+                      {feedbackAt('image')}
                     </Stack>
                   </EditorSection>
                 )}
@@ -324,6 +334,7 @@ function Content() {
                     {messages.delete}
                     {resource.kind}
                   </Button>
+                  {feedbackAt('delete')}
                 </EditorSection>
               </>
             )}
@@ -343,6 +354,7 @@ function Content() {
                 {messages.create}
               </Button>
             </Stack>
+            {feedbackAt('open:')}
             {query.isLoading && <Typography>{messages.loading}</Typography>}
             {query.error && <AdminMessage message={query.error.message} severity="error" />}
             <Box
@@ -373,6 +385,7 @@ function Content() {
                       {messages.edit}
                     </Button>
                   </CardActions>
+                  {feedbackAt(`open:${text(row.id)}`)}
                 </Card>
               ))}
             </Box>
