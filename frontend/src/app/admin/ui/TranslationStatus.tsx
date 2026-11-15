@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Alert, Chip, Stack } from '@mui/material'
 
+import { AdminMessage } from './AdminMessage'
+
 import { api, ApiError } from '@/admin/client'
 import messages from '@/admin/messages/en.json'
 import { record, type Json, type Resource } from '@/admin/resources'
@@ -17,7 +19,7 @@ export function TranslationStatus({
   locale: string
 }) {
   const [metadata, setMetadata] = useState<Record<string, Json>>()
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -34,7 +36,7 @@ export function TranslationStatus({
         if (error instanceof ApiError && error.status === 404) {
           setMetadata({ review_status: 'missing' })
         } else {
-          setError(true)
+          setError(error instanceof Error ? error.message : messages.translationStatusUnavailable)
         }
       }
     }
@@ -45,7 +47,7 @@ export function TranslationStatus({
   }, [resource.name, id, locale])
 
   if (error) {
-    return <Alert severity="error">{messages.translationStatusUnavailable}</Alert>
+    return <AdminMessage message={error} severity="error" />
   }
   if (!metadata) {
     return <Alert severity="info">{messages.loadingTranslationStatus}</Alert>

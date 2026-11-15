@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 
+import { useAdminFeedback } from './useAdminFeedback'
 import { AdminMessage } from './AdminMessage'
 import { EditorSection } from './EditorSection'
 import { Fields } from './Fields'
@@ -38,7 +39,7 @@ export function TranslationRequest() {
   const [listRevision, setListRevision] = useState(0)
   const [locale, setLocale] = useState('')
   const [include, setInclude] = useState(false)
-  const [message, setMessage] = useState('')
+  const { feedback, show: setMessage } = useAdminFeedback()
   const [busy, setBusy] = useState(false)
   async function submit() {
     if (
@@ -52,6 +53,7 @@ export function TranslationRequest() {
       return
     }
     setBusy(true)
+    setMessage('')
     try {
       const result = record(
         await api('translations/requeue', 'POST', {
@@ -65,6 +67,8 @@ export function TranslationRequest() {
         messages.queueResult
           .replace('{queued}', text(result.queued))
           .replace('{skipped}', text(result.skipped)),
+        '',
+        'success',
       )
     } catch (error) {
       setMessage(error instanceof Error ? error.message : messages.requestFailed)
@@ -128,7 +132,7 @@ export function TranslationRequest() {
       >
         {messages.reviewAndRequestTranslations}
       </Button>
-      {message && <AdminMessage message={message} />}
+      {feedback.message && <AdminMessage message={feedback.message} severity={feedback.severity} />}
     </Stack>
   )
 }
@@ -148,7 +152,7 @@ export function TranslationEditor({
   const [savedValue, setSavedValue] = useState<Json>(null)
   const dirty = !valuesEqual(value, savedValue)
   const [metadata, setMetadata] = useState<Record<string, Json>>({})
-  const [message, setMessage] = useState('')
+  const { feedback, show: setMessage } = useAdminFeedback()
   const [busy, setBusy] = useState(false)
   const schema = schemaFor(resource.english)
   async function load() {
@@ -157,6 +161,7 @@ export function TranslationEditor({
     }
     setStatusRevision((previous) => previous + 1)
     setBusy(true)
+    setMessage('')
     try {
       const result = record(await api(`${resource.name}/${id}?locale=${locale}`))
       setMetadata(record(result.translation))
@@ -168,7 +173,7 @@ export function TranslationEditor({
       setValue(error instanceof ApiError && error.status === 404 ? source : null)
       setSavedValue(null)
       setMetadata({ locale, review_status: 'missing' })
-      setMessage(error instanceof Error ? error.message : messages.translationUnavailable)
+      setMessage(error instanceof Error ? error.message : messages.translationUnavailable, 'load')
     } finally {
       setBusy(false)
     }
@@ -184,6 +189,7 @@ export function TranslationEditor({
       return
     }
     setBusy(true)
+    setMessage('')
     try {
       await api(
         `${resource.name}/${id}/translations/${locale}${review ? '/review' : ''}`,
@@ -203,6 +209,8 @@ export function TranslationEditor({
         review
           ? messages.reviewStatusSavedNoWorkWas
           : messages.manualTranslationSavedAndProtectedFrom,
+        '',
+        'success',
       )
     } catch (error) {
       setMessage(error instanceof Error ? error.message : messages.saveFailed)
@@ -259,6 +267,9 @@ export function TranslationEditor({
         >
           {messages.loadTranslation}
         </Button>
+        {feedback.message && feedback.target === 'load' && (
+          <AdminMessage message={feedback.message} severity={feedback.severity} />
+        )}
         {value !== null && (
           <>
             {metadata.locale && metadata.locale !== locale && (
@@ -304,7 +315,9 @@ export function TranslationEditor({
             </Stack>
           </>
         )}
-        {message && <AdminMessage message={message} />}
+        {feedback.message && feedback.target !== 'load' && (
+          <AdminMessage message={feedback.message} severity={feedback.severity} />
+        )}
       </Stack>
     </EditorSection>
   )

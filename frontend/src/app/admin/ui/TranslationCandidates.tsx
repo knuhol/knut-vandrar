@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Alert, Button, Chip, Paper, Stack, Typography } from '@mui/material'
 
+import { AdminMessage } from './AdminMessage'
+
 import { api } from '@/admin/client'
 import messages from '@/admin/messages/en.json'
 import { record, resources, text, type Json } from '@/admin/resources'
@@ -24,7 +26,7 @@ function CandidatePage({
   onPage: (page: number) => void
 }) {
   const [data, setData] = useState<Record<string, Json>>()
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
   const pageSize = 10
   useEffect(() => {
     let active = true
@@ -48,9 +50,9 @@ function CandidatePage({
         if (active) {
           setData(result)
         }
-      } catch {
+      } catch (error) {
         if (active) {
-          setError(true)
+          setError(error instanceof Error ? error.message : messages.translationListUnavailable)
         }
       }
     }
@@ -61,7 +63,7 @@ function CandidatePage({
   }, [selection.entityType, selection.entityId, selection.locale, selection.includeOutdated, page])
 
   if (error) {
-    return <Alert severity="error">{messages.translationListUnavailable}</Alert>
+    return <AdminMessage message={error} severity="error" />
   }
   if (!data) {
     return <Alert severity="info">{messages.loadingTranslationStatus}</Alert>
