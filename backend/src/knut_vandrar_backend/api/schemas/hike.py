@@ -25,6 +25,11 @@ class RouteCard(StrictCardModel):
     url: HttpUrl
 
 
+class GpxCollectionCard(StrictCardModel):
+    type: Literal["gpx_collection"]
+    url: HttpUrl
+
+
 class ProgressCard(StrictCardModel):
     type: Literal["progress"]
     url: HttpUrl
@@ -33,6 +38,7 @@ class ProgressCard(StrictCardModel):
 class LivePositionCard(StrictCardModel):
     type: Literal["live_position"]
     state: Literal["active", "inactive"]
+    password: str | None = None
     url: HttpUrl | None = None
 
 
@@ -59,7 +65,13 @@ class YouTubeVideoCard(StrictCardModel):
 
 
 InfoCard = Annotated[
-    RouteCard | ProgressCard | LivePositionCard | EquipmentCard | SocialFeedCard | YouTubeVideoCard,
+    RouteCard
+    | GpxCollectionCard
+    | ProgressCard
+    | LivePositionCard
+    | EquipmentCard
+    | SocialFeedCard
+    | YouTubeVideoCard,
     Field(discriminator="type"),
 ]
 

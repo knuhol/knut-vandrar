@@ -23,7 +23,7 @@ import { getPathname, Link } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
 import { getHike, getPhotos } from '@/api/hikes'
 
-import { hikePresentation, locationPresentation } from '@/hiking/presentation'
+import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
 import { metadataDescription } from '@/seo/text'
 import { hikeLanguages, hikePath } from '@/seo/urls'
@@ -87,17 +87,18 @@ export default async function HikePage({ params }: Props) {
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const hasJourney = hasHikeJourney(presentation.details)
+  const cards = visibleHikeCards(hike)
   const isActive = hike.status === 'planned' || hike.status === 'ongoing'
   const resourceItem: HikeNavigationItem = {
     id: 'resources',
     label: t(isActive ? 'followHike' : 'hikeResources'),
   }
   const navigationItems: HikeNavigationItem[] = [
-    ...(isActive && hike.cards.length > 0 ? [resourceItem] : []),
+    ...(isActive && cards.length > 0 ? [resourceItem] : []),
     { id: 'story', label: t('about') },
     ...(hasJourney ? [{ id: 'journey' as const, label: t('journey.title') }] : []),
     ...(hike.location ? [{ id: 'trail' as const, label: t('trailOrArea') }] : []),
-    ...(!isActive && hike.cards.length > 0 ? [resourceItem] : []),
+    ...(!isActive && cards.length > 0 ? [resourceItem] : []),
     ...(galleryPage.total > 0 ? [{ id: 'photos' as const, label: t('gallery.title') }] : []),
   ]
 
@@ -152,9 +153,9 @@ export default async function HikePage({ params }: Props) {
             <HikeNavigation label={t('pageContents')} items={navigationItems} />
           </div>
           <div className="grid gap-12 tablet:gap-16">
-            {isActive && hike.cards.length > 0 && (
+            {isActive && cards.length > 0 && (
               <HikeSection id="resources" title={t('followHike')} variant="contrast">
-                <InfoCards cards={hike.cards} />
+                <InfoCards cards={cards} />
               </HikeSection>
             )}
             <HikeSection id="story" title={t('about')} as="article">
@@ -179,9 +180,9 @@ export default async function HikePage({ params }: Props) {
                 details={locationData.details}
               />
             )}
-            {!isActive && hike.cards.length > 0 && (
+            {!isActive && cards.length > 0 && (
               <HikeSection id="resources" title={t('hikeResources')} variant="contrast">
-                <InfoCards cards={hike.cards} />
+                <InfoCards cards={cards} />
               </HikeSection>
             )}
             <HikeGallery key={hike.id} hikeId={hike.id} locale={locale} initialPage={galleryPage} />
