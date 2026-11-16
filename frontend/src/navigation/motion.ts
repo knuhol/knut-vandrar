@@ -1,8 +1,8 @@
-export function motionDuration(element: Element) {
+export function motionDuration(element: Element, token = '--duration-motion') {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return 0
   }
-  const value = getComputedStyle(element).getPropertyValue('--duration-motion').trim()
+  const value = getComputedStyle(element).getPropertyValue(token).trim()
   const duration = Number.parseFloat(value)
   // CSS optimizers may normalize 300ms to .3s; Web Animations expects milliseconds.
   return Number.isFinite(duration) ? duration * (value.endsWith('ms') ? 1 : 1000) : 0

@@ -51,6 +51,7 @@
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
   --duration-motion: var(--duration-fast);
   --duration-entrance: var(--duration-fast);
+  --duration-image-reveal: 150ms;
   --duration-fast: 300ms;
   --duration-slow: 800ms;
   --duration-loading: 1.2s;
