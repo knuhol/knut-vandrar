@@ -3322,6 +3322,31 @@ export const openapi = {
         ],
         "title": "EquipmentCard"
       },
+      "GpxCollectionCard": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "enum": [
+              "gpx_collection"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "url"
+        ],
+        "title": "GpxCollectionCard"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -3742,6 +3767,9 @@ export const openapi = {
                   "$ref": "#/components/schemas/RouteCard"
                 },
                 {
+                  "$ref": "#/components/schemas/GpxCollectionCard"
+                },
+                {
                   "$ref": "#/components/schemas/ProgressCard"
                 },
                 {
@@ -3761,6 +3789,7 @@ export const openapi = {
                 "propertyName": "type",
                 "mapping": {
                   "equipment": "#/components/schemas/EquipmentCard",
+                  "gpx_collection": "#/components/schemas/GpxCollectionCard",
                   "live_position": "#/components/schemas/LivePositionCard",
                   "progress": "#/components/schemas/ProgressCard",
                   "route": "#/components/schemas/RouteCard",
@@ -4239,6 +4268,9 @@ export const openapi = {
                   "$ref": "#/components/schemas/RouteCard"
                 },
                 {
+                  "$ref": "#/components/schemas/GpxCollectionCard"
+                },
+                {
                   "$ref": "#/components/schemas/ProgressCard"
                 },
                 {
@@ -4258,6 +4290,7 @@ export const openapi = {
                 "propertyName": "type",
                 "mapping": {
                   "equipment": "#/components/schemas/EquipmentCard",
+                  "gpx_collection": "#/components/schemas/GpxCollectionCard",
                   "live_position": "#/components/schemas/LivePositionCard",
                   "progress": "#/components/schemas/ProgressCard",
                   "route": "#/components/schemas/RouteCard",
@@ -4300,6 +4333,17 @@ export const openapi = {
               "inactive"
             ],
             "title": "State"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
           },
           "url": {
             "anyOf": [

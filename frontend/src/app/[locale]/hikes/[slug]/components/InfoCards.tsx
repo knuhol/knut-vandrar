@@ -9,16 +9,19 @@ import {
   IconMapPin as MapPin,
   IconChartBar as ChartNoAxesColumn,
   IconCamera as Camera,
+  IconRoute as Route,
 } from '@tabler/icons-react'
 
 import { VideoModal } from './VideoModal/VideoModal'
 
 import { InfoCard } from './InfoCard'
+import { TrackingPassword } from './TrackingPassword'
 
 import type { Hike } from '@/api/hikes'
 
 const icons = {
   route: Map,
+  gpx_collection: Route,
   progress: ChartNoAxesColumn,
   live_position: MapPin,
   equipment: Backpack,
@@ -46,6 +49,11 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
 
   return (
     <>
+      {cards.map((card, index) =>
+        card.type === 'live_position' && card.state === 'active' && card.url && card.password ? (
+          <TrackingPassword key={`${String(index)}-${card.password}`} password={card.password} />
+        ) : null,
+      )}
       <section className="grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         {cards.map((card, index) => {
           const Icon = icons[card.type]

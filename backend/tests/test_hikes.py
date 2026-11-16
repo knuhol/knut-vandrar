@@ -19,7 +19,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from knut_vandrar_backend.api import auth
 from knut_vandrar_backend.api.hikes import _duration_days
-from knut_vandrar_backend.api.schemas.hike import RouteCard, YouTubeVideoCard
+from knut_vandrar_backend.api.schemas.hike import (
+    GpxCollectionCard,
+    LivePositionCard,
+    RouteCard,
+    YouTubeVideoCard,
+)
 from knut_vandrar_backend.database.base import Base
 from knut_vandrar_backend.database.dependencies import get_db
 from knut_vandrar_backend.main import app
@@ -69,6 +74,16 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
                     type="youtube_video",
                     sort_order=2,
                     data_structure=YouTubeVideoCard.model_json_schema(),
+                ),
+                InfoCardType(
+                    type="live_position",
+                    sort_order=3,
+                    data_structure=LivePositionCard.model_json_schema(),
+                ),
+                InfoCardType(
+                    type="gpx_collection",
+                    sort_order=7,
+                    data_structure=GpxCollectionCard.model_json_schema(),
                 ),
                 TranslationProfile(
                     content_type="hike",
@@ -1688,3 +1703,55 @@ def test_discovery_has_no_urls_when_content_is_empty(client: TestClient) -> None
         "limit": 100,
         "offset": 0,
     }
+
+
+def test_gpx_collection_card_round_trip(client: TestClient) -> None:
+    cards = [{"type": "gpx_collection", "url": "https://www.plotaroute.com/routecollection/18991"}]
+    response = client.post("/api/hikes", json=_planned_payload(cards=cards))
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["cards"] == cards
+    fetched = client.get(f"/api/hikes/{hike['id']}")
+    assert fetched.status_code == 200, fetched.text
+    assert fetched.json()["cards"] == cards
+
+
+def test_card_display_order_follows_card_type_order(client: TestClient) -> None:
+    route = {"type": "route", "url": "https://example.com/route"}
+    gpx = {"type": "gpx_collection", "url": "https://www.plotaroute.com/routecollection/18991"}
+    second_route = {"type": "route", "url": "https://example.com/second-route"}
+    response = client.post("/api/hikes", json=_planned_payload(cards=[gpx, route, second_route]))
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["cards"] == [route, second_route, gpx]
+
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory.begin() as db:
+        card_type = db.get(InfoCardType, "gpx_collection")
+        assert card_type is not None
+        card_type.sort_order = 0
+
+    fetched = client.get(f"/api/hikes/{hike['id']}")
+    assert fetched.status_code == 200, fetched.text
+    assert fetched.json()["cards"] == [gpx, route, second_route]
+
+    # Saving the same array must preserve the configured card-type priority.
+    saved = client.put(
+        f"/api/hikes/{hike['id']}",
+        json=_planned_payload(cards=[route, second_route, gpx]),
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["cards"] == [gpx, route, second_route]
+
+
+@pytest.mark.parametrize("password", [None, "1234xss"])
+def test_live_tracking_public_password(client: TestClient, password: str | None) -> None:
+    card = {"type": "live_position", "state": "active", "url": "https://share.garmin.com/hike"}
+    if password is not None:
+        card["password"] = password
+    response = client.post("/api/hikes", json=_planned_payload(cards=[card]))
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    fetched = client.get(f"/api/hikes/{hike['id']}")
+    assert fetched.status_code == 200
+    assert fetched.json()["cards"][0]["password"] == password

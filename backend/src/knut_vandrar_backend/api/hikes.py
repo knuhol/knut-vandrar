@@ -335,7 +335,13 @@ def _translation(db: Session, hike_id: UUID, locale: str) -> HikeTranslation | N
 
 def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Request) -> HikeRead:
     card_adapter = TypeAdapter(InfoCard)
-    cards = [card_adapter.validate_python(item.data) for item in hike.cards]
+    ordered_cards = db.scalars(
+        select(HikeInfoCard)
+        .join(InfoCardType, HikeInfoCard.type == InfoCardType.type)
+        .where(HikeInfoCard.hike_id == hike.id)
+        .order_by(InfoCardType.sort_order, HikeInfoCard.sort_order, HikeInfoCard.id)
+    )
+    cards = [card_adapter.validate_python(item.data) for item in ordered_cards]
     return HikeRead(
         id=hike.id,
         location=read_location(db, hike.location, request, translation.locale_code)
