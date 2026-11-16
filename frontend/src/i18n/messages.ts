@@ -24,6 +24,7 @@ export const messages = {
         paidAccommodation: 'Annat betalt boende',
       },
       journey: {
+        title: 'Rutt och övernattningar',
         route: 'Riktning och etapper',
         scope: {
           full_trail: 'Hela leden',
@@ -86,6 +87,7 @@ export const messages = {
       translationNoticeLabel: 'Automatiskt översatt från engelska',
       translationNoticeDescription:
         'Jag pratar svenska, men det är inte mitt modersmål. Av praktiska skäl skriver jag mina artiklar på engelska. Den här texten är därför automatiskt översatt från det engelska originalet.',
+      pageContents: 'På den här sidan',
       about: 'Om vandringen',
       starRating: {
         score: '{value, number} av 5 stjärnor',
@@ -203,6 +205,7 @@ export const messages = {
         paidAccommodation: 'Other paid accommodation',
       },
       journey: {
+        title: 'Route and overnight stays',
         route: 'Direction and stages',
         scope: {
           full_trail: 'Full trail',
@@ -265,6 +268,7 @@ export const messages = {
       translationNoticeLabel: 'Automatically translated from English',
       translationNoticeDescription:
         'I write my articles in English for practical reasons. This is an automatic translation of the English original.',
+      pageContents: 'On this page',
       about: 'About the hike',
       starRating: {
         score: '{value, number} out of 5 stars',
@@ -382,6 +386,7 @@ export const messages = {
         paidAccommodation: 'Jiné placené ubytování',
       },
       journey: {
+        title: 'Trasa a noclehy',
         route: 'Směr a etapy',
         scope: {
           full_trail: 'Celý trail',
@@ -444,6 +449,7 @@ export const messages = {
       translationNoticeLabel: 'Automatický překlad z angličtiny',
       translationNoticeDescription:
         'Čeština je můj rodný jazyk, ale svoje články píšu z praktických důvodů anglicky. Tohle je automatický překlad anglického originálu.',
+      pageContents: 'Na této stránce',
       about: 'O hiku',
       starRating: {
         score: '{value, number} z 5 hvězdiček',

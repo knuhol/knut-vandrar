@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import '../globals.css'
+import { PageMotion } from '@/components/PageMotion'
 import { Footer, Header } from '@/components/Shell'
 import { routing } from '@/i18n/routing'
 
@@ -73,6 +74,7 @@ export default async function LocaleLayout({
         className={`${heading.variable} ${body.variable} ${numbers.variable} flex min-h-svh flex-col bg-paper font-sans text-lg leading-relaxed text-ink`}
       >
         <NextIntlClientProvider>
+          <PageMotion />
           <Header locale={locale} />
           <main id="content" className="flex min-w-0 flex-1 flex-col">
             {children}
