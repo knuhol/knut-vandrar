@@ -44,20 +44,20 @@ export function HikeAchievements({
 
   return (
     <section>
-      <div className="mb-3">
-        <Heading as="h3" className="text-xl">
+      <div className="mb-4">
+        <Heading as="h3" tone="brand">
           {t('title')}
         </Heading>
         {isActive && <p className="mt-1 text-sm text-muted">{t('goals')}</p>}
       </div>
-      <ul className="grid grid-cols-1 gap-3 tablet:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
         {items.map(({ id, label, description, Icon }) => (
           <li
             key={id}
-            className="flex min-w-0 items-center gap-3 rounded-lg border border-orange/30 bg-paper p-3"
+            className="flex min-w-0 items-start gap-3 rounded-sm border border-orange-outline bg-orange-soft p-3"
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange/15 text-orange-dark">
-              <Icon className="size-6" aria-hidden="true" />
+            <span className="grid size-6 shrink-0 place-items-center text-orange-dark">
+              <Icon className="size-5" aria-hidden="true" />
             </span>
             <span>
               <span className="block text-sm font-semibold text-forest">{label}</span>

@@ -13,6 +13,9 @@ import { FactItems } from './FactItems'
 import { AccommodationOptions } from './AccommodationOptions'
 import { HikeAchievements } from './HikeAchievements'
 
+import { HikeSection } from './HikeSection/HikeSection'
+
+import { Heading } from '@/components/Heading'
 import type { HikeDetails } from '@/hiking/details'
 import type { Hike } from '@/api/hikes'
 
@@ -24,6 +27,16 @@ const directions = {
   clockwise: IconRotateClockwise,
   counterclockwise: IconRotate,
 } satisfies Record<NonNullable<HikeDetails['direction']>, typeof IconArrowUp>
+
+export function hasHikeJourney(details: HikeDetails) {
+  return Boolean(
+    details.scope ||
+    details.direction ||
+    details.stages ||
+    details.achievements.length > 0 ||
+    details.overnights.some((stay) => stay.count > 0),
+  )
+}
 
 export function HikeJourney({ details, status }: { details: HikeDetails; status: Hike['status'] }) {
   const t = useTranslations('Site.journey')
@@ -48,33 +61,39 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
       : []),
   ]
 
-  if (routeItems.length === 0 && !hasAchievements && overnights.length === 0) {
+  if (!hasHikeJourney(details)) {
     return null
   }
 
   return (
-    <div className="mt-5 grid gap-4 border-t border-beige pt-5 tablet:grid-cols-2 tablet:gap-8">
-      {routeItems.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-forest">{t('route')}</h3>
-          <div className="grid gap-2">
-            {routeItems.length > 0 && <FactItems items={routeItems} />}
+    <HikeSection id="journey" title={t('title')} variant="panel">
+      <div className="grid items-start gap-8 tablet:grid-cols-2">
+        {routeItems.length > 0 && (
+          <div>
+            <div className="mb-4">
+              <Heading as="h3" tone="brand">
+                {t('route')}
+              </Heading>
+            </div>
+            <FactItems items={routeItems} />
           </div>
-        </div>
-      )}
-      {overnights.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-forest">
-            {t(status === 'planned' ? 'plannedNights' : 'overnights')}
-          </h3>
-          <AccommodationOptions options={overnights} />
-        </div>
-      )}
-      {hasAchievements && (
-        <div className="border-t border-beige pt-5 tablet:col-span-2">
-          <HikeAchievements details={details} status={status} />
-        </div>
-      )}
-    </div>
+        )}
+        {overnights.length > 0 && (
+          <div>
+            <div className="mb-4">
+              <Heading as="h3" tone="brand">
+                {t(status === 'planned' ? 'plannedNights' : 'overnights')}
+              </Heading>
+            </div>
+            <AccommodationOptions options={overnights} />
+          </div>
+        )}
+        {hasAchievements && (
+          <div className="min-w-0 tablet:col-span-2">
+            <HikeAchievements details={details} status={status} />
+          </div>
+        )}
+      </div>
+    </HikeSection>
   )
 }

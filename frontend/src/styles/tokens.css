@@ -7,6 +7,10 @@
   --color-beige: #e8dec4;
   --color-forest: #2f4f3e;
   --color-forest-dark: color-mix(in srgb, var(--color-forest) 80%, var(--color-ink));
+  --color-forest-soft: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper));
+  --color-forest-outline: color-mix(in srgb, var(--color-forest) 28%, var(--color-forest-soft));
+  --color-orange-soft: color-mix(in srgb, var(--color-orange) 10%, transparent);
+  --color-orange-outline: color-mix(in srgb, var(--color-orange) 30%, transparent);
   --color-sage: #6b8f71;
   --color-ink: #222222;
   --color-muted: #6b6b6b;
@@ -15,6 +19,7 @@
   --spacing: 4px;
   --container-page: 1240px;
   --container-reading: 68ch;
+  --container-navigation: 260px;
   --container-media-preview: 320px;
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
@@ -43,7 +48,8 @@
   --shadow-*: initial;
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
-  --duration-fast: 200ms;
+  --duration-motion: var(--duration-fast);
+  --duration-fast: 300ms;
   --duration-slow: 800ms;
   --duration-loading: 1.2s;
 }
@@ -56,6 +62,8 @@
 
 :root {
   --icon-stroke-emphasis: 2.5;
+
+  --section-scroll-offset: calc(var(--header-height) + var(--spacing) * 6);
 
   --link-underline-offset: calc(var(--spacing) * 2);
 

@@ -1,6 +1,8 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+import { Chapter } from '../Chapter/Chapter'
+
 import type { UIComponentProps } from '../uiComponentProps'
 
 import styles from './Markdown.module.css'
@@ -26,7 +28,11 @@ export function Markdown({
           {children}
         </ReactMarkdown>
       ) : (
-        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[collapsibleSections]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[collapsibleSections]}
+          components={{ details: ({ children: content }) => <Chapter>{content}</Chapter> }}
+        >
           {children}
         </ReactMarkdown>
       )}

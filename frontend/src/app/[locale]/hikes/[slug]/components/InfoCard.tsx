@@ -36,10 +36,10 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`flex min-h-20 w-full items-center gap-3 rounded-lg border p-4 text-left ${variant === 'video' ? 'border-forest bg-forest text-cream' : 'border-beige bg-paper text-forest'} ${interactive ? 'card-interactive cursor-pointer' : ''} ${inactive ? 'text-muted' : ''}`}
+      className={`flex min-h-20 w-full items-center gap-3 rounded-lg border p-4 text-left ${variant === 'video' ? 'border-orange bg-orange text-ink' : 'border-beige bg-paper text-forest'} ${interactive ? 'card-interactive cursor-pointer' : ''} ${inactive ? 'text-muted' : ''}`}
     >
       <span
-        className={`grid size-9 shrink-0 place-items-center rounded-full [&>svg]:size-5 ${variant === 'video' ? 'bg-cream/15' : 'bg-cream'}`}
+        className={`grid size-9 shrink-0 place-items-center rounded-full [&>svg]:size-5 ${variant === 'video' ? 'bg-ink/10' : 'bg-cream'}`}
       >
         {icon}
       </span>
@@ -48,7 +48,7 @@ export function InfoCard({
         {(message || action) && (
           <span
             data-link-label={interactive ? true : undefined}
-            className={`mt-1 block text-sm ${variant === 'video' ? 'text-cream/80' : 'text-muted'}`}
+            className={`mt-1 block text-sm ${variant === 'video' ? 'text-ink' : 'text-muted'}`}
           >
             {message || action}
           </span>

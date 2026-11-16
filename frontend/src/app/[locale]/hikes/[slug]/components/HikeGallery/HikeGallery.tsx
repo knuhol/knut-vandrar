@@ -1,8 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
+import Image from 'next/image'
 import { useRef, useState } from 'react'
+import { HikeSection } from '../HikeSection/HikeSection'
 
 import { Button } from '@/components/Button'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
@@ -10,7 +11,6 @@ import { MediaModal } from '@/components/MediaModal/MediaModal'
 import type { getPhotos } from '@/api/hikes'
 import type { Locale } from '@/i18n/routing'
 import { imageUrl } from '@/api/images'
-import { Heading } from '@/components/Heading'
 
 type GalleryPage = Awaited<ReturnType<typeof getPhotos>>
 
@@ -79,7 +79,7 @@ function PhotoViewer({
         }
       }}
     >
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col gap-2">
         <div
           className="relative min-h-0 flex-1 touch-pan-y"
           onTouchStart={(event) => {
@@ -102,13 +102,13 @@ function PhotoViewer({
             key={photo.id}
             src={photo.src}
             alt={photo.alt}
-            fill
             sizes="100vw"
+            fill
             className="object-contain"
             unoptimized
           />
         </div>
-        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
+        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <MediaControl
             action="previous"
             label={t('previous')}
@@ -117,10 +117,15 @@ function PhotoViewer({
               void move(-1)
             }}
           />
-          <div className="text-center" aria-live="polite" aria-atomic="true">
-            <p className="text-sm font-semibold text-beige">
+          <div className="grid min-w-0 gap-1 text-center" aria-live="polite" aria-atomic="true">
+            <p className="text-xs font-semibold text-beige">
               {t('position', { current: index + 1, total })}
             </p>
+            {(error || photo.caption) && (
+              <p className="max-h-20 overflow-y-auto text-sm leading-relaxed">
+                {error ? t('loadError') : photo.caption}
+              </p>
+            )}
           </div>
           <MediaControl
             action="next"
@@ -130,13 +135,6 @@ function PhotoViewer({
               void move(1)
             }}
           />
-          <p
-            className="col-span-3 h-16 overflow-y-auto text-center text-base"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {error ? t('loadError') : photo.caption}
-          </p>
         </div>
       </div>
     </MediaModal>
@@ -193,11 +191,7 @@ export function HikeGallery({
   }
 
   return (
-    <section className="my-10 tablet:my-15" aria-label={t('title')}>
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
-        <Heading as="h2">{t('title')}</Heading>
-        <span className="text-sm text-muted">{t('count', { count: page.total })}</span>
-      </div>
+    <HikeSection id="photos" title={t('title')} meta={t('count', { count: page.total })}>
       <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4">
         {photos.map((photo, index) => (
           <button
@@ -214,8 +208,8 @@ export function HikeGallery({
               src={photo.thumbnailSrc}
               alt={photo.alt}
               fill
-              sizes="(min-width: 641px) 33vw, 50vw"
               className="object-cover"
+              sizes="(min-width: 641px) 33vw, 50vw"
               unoptimized
             />
           </button>
@@ -249,6 +243,6 @@ export function HikeGallery({
           }}
         />
       )}
-    </section>
+    </HikeSection>
   )
 }

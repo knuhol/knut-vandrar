@@ -18,15 +18,15 @@ export function TrailRatings({ ratings }: { ratings: Ratings }) {
 
   return (
     <section>
-      <Heading as="h3" className="text-xl">
+      <Heading as="h3" tone="brand">
         {t('title')}
       </Heading>
       <p className="mt-2 text-sm leading-relaxed text-muted">{t('intro')}</p>
-      <ul className="mt-4 divide-y divide-beige">
+      <ul className="mt-4 grid gap-4">
         {categories
           .filter((category) => ratings[category] !== null)
           .map((category) => (
-            <li key={category} className="py-3 first:pt-0 last:pb-0">
+            <li key={category}>
               <details>
                 <summary
                   className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-sm ${category === 'difficulty' ? 'text-orange-dark' : 'text-forest'} [&::-webkit-details-marker]:hidden`}
