@@ -8,6 +8,11 @@ Regular full VPS backups can cover both the database and gallery images, so a se
 
 The database backup scripts described here do **not** back up `gallery_media`. Gallery originals, thumbnails, and fullscreen images live in that volume, while captions, translations, ordering, and image references live in PostgreSQL. Cover images and location logos are stored in PostgreSQL and are included in database dumps. Restore the database and gallery volume from a matching backup to keep records and files aligned.
 
+For portable image transfers, use the [media export/import commands](media-transfers.md).
+They include gallery files and metadata, covers, and logos, support dry runs and
+selective imports, and preserve unrelated destination content. After a database clone,
+import an archive from the matching source state to restore the gallery files.
+
 ## Back up
 
 From the repository root, select `local`, `dev`, or `prod`:

@@ -19,6 +19,7 @@ from knut_vandrar_backend.api.image_uploads import PhotoBody, optimize_image
 from knut_vandrar_backend.api.schemas.pagination import Limit, Offset, Page
 from knut_vandrar_backend.api.schemas.photo import PhotoOrder, PhotoRead, PhotoWrite
 from knut_vandrar_backend.database.dependencies import get_db
+from knut_vandrar_backend.media.storage import photo_files_directory
 from knut_vandrar_backend.models.hike import Hike
 from knut_vandrar_backend.models.photo import Photo, PhotoTranslation
 from knut_vandrar_backend.settings import settings
@@ -218,7 +219,7 @@ def get_image(
     photo_id: UUID, variant: Literal["thumbnail", "fullscreen"], digest: str, db: DatabaseSession
 ) -> FileResponse:
     photo = require_photo(db, photo_id)
-    path = photo_directory(photo.id) / variant
+    path = photo_files_directory(settings.media_root, photo.id, photo.digest) / variant
     if digest != photo.digest or not path.is_file():
         raise HTTPException(404, "Image not found")
     return FileResponse(
@@ -239,7 +240,7 @@ def get_image(
 )
 def get_original(photo_id: UUID, db: DatabaseSession) -> FileResponse:
     photo = require_photo(db, photo_id)
-    path = photo_directory(photo.id) / "original"
+    path = photo_files_directory(settings.media_root, photo.id, photo.digest) / "original"
     if not path.is_file():
         raise HTTPException(404, "Original not found")
     extension = {

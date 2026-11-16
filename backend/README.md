@@ -154,6 +154,12 @@ pending jobs are preserved by the migration. No translation content is deleted.
 
 ## Hike photo galleries
 
+Media can be transferred between environments with the backend CLI and Docker/SSH
+wrappers described in the [media transfer guide](../docs/media-transfers.md).
+Migration `009_media_imports` adds commit receipts for interrupted-import recovery.
+Imported galleries use private digest-versioned subdirectories; legacy uploads remain
+readable through the same public and authenticated image endpoints.
+
 `POST /api/hikes/{hike_id}/photos` accepts a single raw image body (admin Bearer token required). The admin UI uploads a selected batch sequentially, reports individual failures and retains successful uploads. Each photo accepts up to **25,000,000 bytes (25 MB)** and **40 megapixels**. HEIC/HEIF is decoded with pinned `pillow-heif`; JPEG, PNG, static GIF and WebP use the existing Pillow pipeline. SVG and animated images are rejected for galleries.
 
 Upload processing applies orientation, strips metadata from public derivatives, and writes a 640 px thumbnail and a 2560 px fullscreen WebP (quality 82, no upscaling). The untouched original is retained privately. A photo becomes public only after all files and its metadata have been saved. Processing is synchronous; the UI allows up to two minutes per request. Configure any external reverse proxy to allow 25 MB uploads and sufficient processing time.

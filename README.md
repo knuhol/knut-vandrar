@@ -55,6 +55,8 @@ See [the VPS deployment guide](docs/vps-deployment.md) for production and develo
 
 Use [`scripts/db-backup.sh`](scripts/db-backup.sh) and [`scripts/db-restore.sh`](scripts/db-restore.sh) to back up or replace the local, dev, or production database. See the [backup and restore guide](docs/database-backups.md) for configuration and safe restore instructions.
 
+Use [`scripts/media-export.sh`](scripts/media-export.sh) and [`scripts/media-import.sh`](scripts/media-import.sh) to transfer covers, location logos, and gallery files with their metadata between environments. See the [media transfer guide](docs/media-transfers.md) for dry runs, conflict handling, SSH routing, and recovery.
+
 ## Development
 
 The frontend source and backend source are mounted into their development containers. Next.js and Uvicorn reload when files change. On frontend startup, the container compares the package manifests with a hash saved in its `node_modules` volume and runs `npm ci` if dependencies have changed; this keeps persistent volumes in sync after rebuilds. Database migrations run automatically each time the backend container starts. `CORS_ORIGINS` controls allowed browser origins. The frontend validates and uses `NEXT_PUBLIC_API_URL` for its API health request; it is browser-visible and must not contain credentials or other secrets.
