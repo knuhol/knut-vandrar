@@ -431,7 +431,7 @@ export const messages = {
       hikes: 'Hiky',
       title: 'Jeden hike za druhým.',
       intro:
-        'Dlouhé dny na trailu. Drobnosti, na které rád vzpomínám. Tady píšu o svých hikách po Švédsku.',
+        'Dlouhé dny na trailu. Drobné okamžiky, na které rád vzpomínám. Tohle jsou moje hiky po Švédsku.',
       explore: 'Prohlédnout hiky',
       collection: 'Moje hiky',
       count: '{count, plural, one {# hike} few {# hiky} other {# hiků}}',
