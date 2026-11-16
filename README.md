@@ -132,17 +132,18 @@ Local Make targets use `backend/.venv/bin/python`, so activating the virtual env
 make format-check # check both applications without modifying files
 make format-fix   # apply formatting to both applications
 make lint         # run frontend and backend lint checks
-make test         # run configured tests (currently backend pytest)
+make test         # run frontend Jest and backend pytest suites
 make check        # run formatting checks, linting, and tests
 ```
 
-The frontend has no test suite configured yet; its test command is skipped until one is added. Backend tests use in-memory SQLite. GitHub Actions runs frontend, backend, and Docker build/health checks on pull requests targeting `main` or `dev`, on pushes to `main`, and when manually dispatched (manual runs perform checks only). Successful `dev` → `main` pull requests deploy the proposed commit to development; pushes to `main` deploy production. The promotion workflow opens the `dev` → `main` pull request, and another workflow resets the `dev` branch to the merged `main` commit. Because the promotion PR is created with `GITHUB_TOKEN`, GitHub may hold its pull request checks for maintainer approval; approve them from the pull request banner. CI and deployment do not commit source changes.
+Frontend tests use Jest and React Testing Library in `frontend/tests/specs`; run them with `npm --workspace frontend test` or use `npm --workspace frontend run test:watch` during development. CI runs `test:ci`, including the isolated admin integration checks. Backend tests use in-memory SQLite. GitHub Actions runs frontend, backend, and Docker build/health checks on pull requests targeting `main` or `dev`, on pushes to `main`, and when manually dispatched (manual runs perform checks only). Successful `dev` → `main` pull requests deploy the proposed commit to development; pushes to `main` deploy production. The promotion workflow opens the `dev` → `main` pull request, and another workflow resets the `dev` branch to the merged `main` commit. Because the promotion PR is created with `GITHUB_TOKEN`, GitHub may hold its pull request checks for maintainer approval; approve them from the pull request banner. CI and deployment do not commit source changes.
 
 ## Project layout
 
 ```text
 frontend/          Next.js app and Tailwind styles
 frontend/scripts/  Frontend container entrypoint
+frontend/tests/    Jest setup and frontend regression specs
 backend/src/knut_vandrar_backend/ FastAPI app, routes, schemas, models, and database code
 backend/alembic/   Database migration environment and revisions
 backend/scripts/   Backend schema exporter

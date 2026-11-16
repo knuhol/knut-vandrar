@@ -83,6 +83,10 @@ export default typescriptEslint.config(
     },
   },
   {
+    files: ['tests/**/*.mjs'],
+    languageOptions: { globals: globals.jest },
+  },
+  {
     files: ['**/*.json'],
     rules: {
       '@typescript-eslint/no-unused-expressions': ['off'],
@@ -516,7 +520,10 @@ export default typescriptEslint.config(
       'import/order': ['error'],
       'import/newline-after-import': ['error'],
       'import/prefer-default-export': ['off'],
-      'import/no-unassigned-import': ['error', { allow: ['**/*.css', 'server-only'] }],
+      'import/no-unassigned-import': [
+        'error',
+        { allow: ['**/*.css', 'server-only', '@testing-library/jest-dom'] },
+      ],
       'import/no-named-default': ['error'],
       'import/no-anonymous-default-export': ['error'],
       'import/dynamic-import-chunkname': ['error'],

@@ -18,4 +18,32 @@ Shared interactions live in `src/styles/interactions.css`. The `card-interactive
 
 The homepage requests one API page of at most 10 hikes and preserves the API's ordering and pagination metadata. Previous/Next links change the `offset` URL parameter and return to the hike collection. They do not prefetch additional pages. Collection-wide filtering is deferred to the archive.
 
-ESLint uses the current stable ESLint and Unicorn releases. `@eslint/compat` preserves the React, accessibility, and import plugins while they migrate APIs removed in ESLint 10. The npm ESLint overrides in the root and frontend manifests resolve their older peer declarations to the pinned ESLint version; keep these aligned, and remove the compatibility setup when upstream plugins support ESLint 10 directly. Renamed Unicorn rules retain their configured severity and options.
+ESLint uses the current stable ESLint and Unicorn releases. `@eslint/compat` preserves the React, accessibility, and import plugins while they migrate APIs removed in ESLint 10. The root `.npmrc` enables `legacy-peer-deps` for plugins whose peer declarations still exclude ESLint 10; the Docker build copies that configuration into the frontend image. Renamed Unicorn rules retain their configured severity and options.
+
+After changing dependencies, update both lockfiles from the repository root:
+
+```sh
+npm install
+npm --prefix frontend --userconfig "$PWD/.npmrc" install --package-lock-only --workspaces=false
+```
+
+The standalone lockfile command must load the root configuration explicitly because `--prefix frontend` does not inherit the root project's `.npmrc`.
+
+## Tests
+
+Tests live in `tests/specs`, outside the application routes. `jest.config.mjs` uses `next/jest` for TypeScript, JSX, CSS Modules, and asset handling, and maps the existing `@/` alias. Component tests use jsdom, React Testing Library, and jest-dom assertions configured in `tests/setup.ts`. Specs that need Node APIs declare `@jest-environment node`.
+
+Run these from the repository root using the Node runtime from `.nvmrc`:
+
+```sh
+npm --workspace frontend test              # all specs, including admin integration
+npm --workspace frontend run test:watch    # rerun affected specs while editing
+npm --workspace frontend run test:ci       # noninteractive, at most two workers
+npm --workspace frontend run test:admin    # only the admin specs
+```
+
+Date/time tests run in `Europe/Stockholm` to cover winter, summer, and daylight-saving transitions consistently on every machine. The fractional-hour-offset regression uses a separate Node process with `Asia/Kathmandu`, since changing Jest's virtual `process.env` does not change the runtime time zone.
+
+Scrolling regressions live in `tests/specs/navigation/motion.spec.ts` and use controlled animation frames to cover completion, cancellation, replacement, anchor navigation state, and reduced motion without real-time delays. Markdown chapter regressions live in `tests/specs/components/collapsibleSections.spec.ts`. These replace the former `scripts/test-page-motion.mjs` checks.
+
+The admin integration spec preserves the original HTTP checks. It starts temporary local Next.js and mock API servers with random credentials and throwaway SQLite session storage; it does not need Docker or a running backend. Keep this spec serial within its file and allow its server startup timeout. Use component tests for synchronous components and interactions; async server pages need integration or end-to-end coverage.
