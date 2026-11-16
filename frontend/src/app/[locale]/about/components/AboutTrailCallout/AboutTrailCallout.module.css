@@ -1,0 +1,14 @@
+.landscape {
+  background-image:
+    linear-gradient(
+      to right,
+      var(--color-forest),
+      color-mix(in srgb, var(--color-forest) 75%, transparent)
+    ),
+    url('/brand/forest.svg');
+  background-position:
+    center,
+    right bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
+}

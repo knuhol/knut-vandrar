@@ -88,3 +88,13 @@ class AchievementIcon(StrEnum):
     COMPASS = "compass"
     TENT = "tent"
     ARCTIC = "arctic"
+
+
+class PageKey(StrEnum):
+    ABOUT = "about"
+    CZECH_TRANSLATION_NOTES = "czech-translation-notes"
+
+
+class PageTemplate(StrEnum):
+    ABOUT = "about"
+    STANDARD = "standard"

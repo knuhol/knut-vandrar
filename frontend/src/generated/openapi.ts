@@ -3144,10 +3144,473 @@ export const openapi = {
         },
         "x-admin-only": true
       }
+    },
+    "/api/pages": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Discover",
+        "operationId": "discover_api_pages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PageSummary"
+                  },
+                  "type": "array",
+                  "title": "Response Discover Api Pages Get"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Could not load pages"
+          }
+        }
+      }
+    },
+    "/api/pages/{page_key}": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Get Page",
+        "operationId": "get_page_api_pages__page_key__get",
+        "parameters": [
+          {
+            "name": "page_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageKey"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "sv",
+                "en",
+                "cs"
+              ],
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Page not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/page-locales": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Listing",
+        "operationId": "listing_api_page_locales_get",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Maximum entries to return",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "Maximum entries to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of entries to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of entries to skip"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PageRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "x-admin-only": true
+      },
+      "post": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_page_locales_post",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/page-locales/{entity_id}": {
+      "get": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_page_locales__entity_id__get",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "x-admin-only": true
+      },
+      "put": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Update",
+        "operationId": "update_api_page_locales__entity_id__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pages"
+        ],
+        "summary": "Delete",
+        "operationId": "delete_api_page_locales__entity_id__delete",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AboutPageContent": {
+        "properties": {
+          "eyebrow": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Eyebrow"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "introduction": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Introduction"
+          },
+          "body_markdown": {
+            "type": "string",
+            "maxLength": 100_000,
+            "minLength": 1,
+            "title": "Body Markdown"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "enum": [
+              "about"
+            ]
+          },
+          "portrait_alt": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Portrait Alt"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Caption"
+          },
+          "aside_title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Aside Title"
+          },
+          "aside_text": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Aside Text"
+          },
+          "cta_title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Cta Title"
+          },
+          "cta_text": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Cta Text"
+          },
+          "cta": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Cta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "eyebrow",
+          "title",
+          "introduction",
+          "body_markdown",
+          "type",
+          "portrait_alt",
+          "caption",
+          "aside_title",
+          "aside_text",
+          "cta_title",
+          "cta_text",
+          "cta"
+        ],
+        "title": "AboutPageContent"
+      },
       "AccommodationType": {
         "type": "string",
         "enum": [
@@ -4793,6 +5256,164 @@ export const openapi = {
         ],
         "title": "OvernightWrite"
       },
+      "PageKey": {
+        "type": "string",
+        "enum": [
+          "about",
+          "czech-translation-notes"
+        ],
+        "title": "PageKey"
+      },
+      "PageRead": {
+        "properties": {
+          "page_key": {
+            "$ref": "#/components/schemas/PageKey"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "sv",
+              "en",
+              "cs"
+            ],
+            "title": "Locale"
+          },
+          "published": {
+            "type": "boolean",
+            "title": "Published",
+            "default": false
+          },
+          "indexable": {
+            "type": "boolean",
+            "title": "Indexable",
+            "default": false
+          },
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AboutPageContent"
+              },
+              {
+                "$ref": "#/components/schemas/StandardPageContent"
+              }
+            ],
+            "title": "Content",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "about": "#/components/schemas/AboutPageContent",
+                "standard": "#/components/schemas/StandardPageContent"
+              }
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "page_key",
+          "locale",
+          "content",
+          "id"
+        ],
+        "title": "PageRead"
+      },
+      "PageSummary": {
+        "properties": {
+          "page_key": {
+            "$ref": "#/components/schemas/PageKey"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "sv",
+              "en",
+              "cs"
+            ],
+            "title": "Locale"
+          },
+          "indexable": {
+            "type": "boolean",
+            "title": "Indexable"
+          },
+          "available_locales": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "sv",
+                "en",
+                "cs"
+              ]
+            },
+            "type": "array",
+            "title": "Available Locales"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page_key",
+          "locale",
+          "indexable",
+          "available_locales"
+        ],
+        "title": "PageSummary"
+      },
+      "PageWrite": {
+        "properties": {
+          "page_key": {
+            "$ref": "#/components/schemas/PageKey"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "sv",
+              "en",
+              "cs"
+            ],
+            "title": "Locale"
+          },
+          "published": {
+            "type": "boolean",
+            "title": "Published",
+            "default": false
+          },
+          "indexable": {
+            "type": "boolean",
+            "title": "Indexable",
+            "default": false
+          },
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AboutPageContent"
+              },
+              {
+                "$ref": "#/components/schemas/StandardPageContent"
+              }
+            ],
+            "title": "Content",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "about": "#/components/schemas/AboutPageContent",
+                "standard": "#/components/schemas/StandardPageContent"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "page_key",
+          "locale",
+          "content"
+        ],
+        "title": "PageWrite"
+      },
       "Page_AchievementRead_": {
         "properties": {
           "items": {
@@ -4916,6 +5537,37 @@ export const openapi = {
           "offset"
         ],
         "title": "Page[LocationRead]"
+      },
+      "Page_PageRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PageRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[PageRead]"
       },
       "Page_PhotoRead_": {
         "properties": {
@@ -5168,6 +5820,65 @@ export const openapi = {
           "url"
         ],
         "title": "ProgressCard"
+      },
+      "PublicPage": {
+        "properties": {
+          "page_key": {
+            "$ref": "#/components/schemas/PageKey"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "sv",
+              "en",
+              "cs"
+            ],
+            "title": "Locale"
+          },
+          "indexable": {
+            "type": "boolean",
+            "title": "Indexable"
+          },
+          "available_locales": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "sv",
+                "en",
+                "cs"
+              ]
+            },
+            "type": "array",
+            "title": "Available Locales"
+          },
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AboutPageContent"
+              },
+              {
+                "$ref": "#/components/schemas/StandardPageContent"
+              }
+            ],
+            "title": "Content",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "about": "#/components/schemas/AboutPageContent",
+                "standard": "#/components/schemas/StandardPageContent"
+              }
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "page_key",
+          "locale",
+          "indexable",
+          "available_locales",
+          "content"
+        ],
+        "title": "PublicPage"
       },
       "RatingWrite": {
         "properties": {
@@ -5458,6 +6169,51 @@ export const openapi = {
           "url"
         ],
         "title": "SocialFeedCard"
+      },
+      "StandardPageContent": {
+        "properties": {
+          "eyebrow": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Eyebrow"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "introduction": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Introduction"
+          },
+          "body_markdown": {
+            "type": "string",
+            "maxLength": 100_000,
+            "minLength": 1,
+            "title": "Body Markdown"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "enum": [
+              "standard"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "eyebrow",
+          "title",
+          "introduction",
+          "body_markdown",
+          "type"
+        ],
+        "title": "StandardPageContent"
       },
       "TrailType": {
         "type": "string",

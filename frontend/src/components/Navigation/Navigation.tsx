@@ -78,6 +78,14 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       'aria-current': hikesActive ? 'location' : undefined,
       section: true,
     },
+    {
+      id: 'about',
+      href: '/about',
+      label: t('aboutMe'),
+      'aria-current':
+        pathname === `/${locale}${routing.pathnames['/about'][locale]}` ? 'page' : undefined,
+      section: false,
+    },
   ] as const
 
   return (

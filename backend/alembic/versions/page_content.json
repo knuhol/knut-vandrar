@@ -1,0 +1,75 @@
+[
+  {
+    "page_key": "about",
+    "locale": "sv",
+    "published": true,
+    "indexable": true,
+    "content": {
+      "type": "about",
+      "eyebrow": "Människan bakom vandringarna",
+      "title": "Hej, jag är Knut.",
+      "introduction": "Jag har vandrat hela livet. Det tog betydligt längre tid att upptäcka hur mycket jag tycker om att stanna kvar på leden — och hur bra det enkla livet är för mig.",
+      "body_markdown": "Jag är mjukvaruutvecklare, make, pappa, teknisk dykare och långdistansvandrare, och har fortfarande mycket att lära om fotografering och filmskapande.\n\nJag är [current_age] år och kommer ursprungligen från Tjeckien. Jag har bott i Sverige i [years_in_sweden] år och bor nu på landsbygden i Örebro län, i mellersta Sverige. Jag delar mina berättelser på tjeckiska, svenska och engelska.\n\n## Hur jag kom att stanna längre\n\nVandring har alltid varit en del av mitt liv. Under många år innebar det mest helger ute i naturen, enskilda etapper av leder och ibland turer på fem till sju dagar.\n\nJag trivdes där ute, men insåg av någon anledning aldrig att det faktiskt var möjligt för mig att gå en hel långdistansled. Sådant förknippade jag med ultraidrottare, professionella äventyrare eller människor vars hela liv kretsade kring vandring.\n\nSedan ändrade ett transportproblem mina planer.\n\nAllteftersom jag gick etapperna på en led blev det allt krångligare att ta sig till och från dem som återstod. Till slut började jag undra om det faktiskt skulle vara enklare att gå hela leden i ett svep.\n\nDet praktiska beslutet blev min väg in i thru-hiking.\n\nDet som överraskade mig mest var hur mycket jag tyckte om den vanliga vardagsrytmen. Att gå, äta, hitta någonstans att sova och göra om det nästa dag. Ju mer jag kom in i det, desto längre ville jag stanna.\n\nNågot jag hade sett som en enstaka tur blev ett sätt att leva som jag ville återvända till.\n\n## Varför jag stannade kvar\n\nJag är autistisk och har gått igenom utmattning. Att förstå min autism har hjälpt mig att förstå svårigheter som jag tidigare inte kunde förklara — bland annat varför vardagen kunde vara så utmattande och varför jag trivdes så bra ute i naturen.\n\nPå leden har mina dagar en tydlig struktur. Det finns praktiska beslut att fatta, men färre krav som konkurrerar om uppmärksamheten och mycket mindre överbelastning av sinnesintryck. Jag sover bättre, det blir tystare i huvudet och jag kan komma till ro i det jag gör.\n\nMed tiden insåg jag att vandring är läkande för mig. Tid att gå, vila och följa en enkel rutin ger mig utrymme att återhämta mig och känna mig mer som mig själv.\n\nJag tycker också helt enkelt om det. Att välja en väg på en papperskarta, hitta en bra tältplats, koka kaffe utanför tältet och veta att jag kan fortsätta gå i morgon.\n\nDet är det jag vill dela genom Knut vandrar: hur det är att tillbringa dagar och veckor ute i naturen, de praktiska saker jag lär mig längs vägen och de små ögonblick som stannar kvar efteråt.\n\nJag tycker fortfarande om en helgvandring. Jag har bara upptäckt att jag oftast gärna stannar längre om jag har möjlighet.",
+      "portrait_alt": "Knut på vandring",
+      "caption": "Ett ansikte bakom berättelserna från stigen.",
+      "aside_title": "Mellan vandringarna",
+      "aside_text": "Dagliga uppdateringar på Instagram, vandringsfilmer på YouTube och rutter på Plotaroute.",
+      "cta_title": "Nästa berättelse börjar på stigen.",
+      "cta_text": "Planerade turer, pågående äventyr och minnen från vandringar som redan är gjorda.",
+      "cta": "Utforska mina vandringar"
+    }
+  },
+  {
+    "page_key": "about",
+    "locale": "en",
+    "published": true,
+    "indexable": true,
+    "content": {
+      "type": "about",
+      "eyebrow": "The person behind the hikes",
+      "title": "Hi, I’m Knut.",
+      "introduction": "I’ve been hiking all my life. It took me considerably longer to discover how much I enjoy staying on the trail—and how good that simple way of living is for me.",
+      "body_markdown": "I’m a software developer, husband, father, technical scuba diver, and thru-hiker, with plenty still to learn about photography and filmmaking.\n\nI’m [current_age], originally from Czechia, and I’ve been living in Sweden for [years_in_sweden] years. I now live in the countryside in Örebro County, central Sweden. I share my stories in Czech, Swedish, and English.\n\n## How I ended up staying longer\n\nHiking has always been part of my life. For years, that mostly meant weekends outdoors, walking individual sections of trails, and occasionally going away for five to seven days.\n\nI liked being out there, but somehow never realised that walking an entire long-distance trail was a realistic possibility for me. I associated that sort of thing with ultra athletes, professional adventurers, or people whose whole lives revolved around hiking.\n\nThen a transport problem changed my plans.\n\nAs I worked my way through the sections of a trail, getting to and from the remaining ones became increasingly complicated. Eventually, I wondered whether walking the whole thing in one go might actually be easier.\n\nThat practical decision introduced me to thru-hiking.\n\nWhat surprised me most was how much I enjoyed the ordinary routine. Walking, eating, finding somewhere to sleep, and doing it again the following day. As I settled into it, I kept wanting more time.\n\nSomething I’d thought of as an occasional trip became a way of living I wanted to return to.\n\n## Why I stayed\n\nI’m autistic, and I’ve been through burnout. Understanding my autism has helped me make sense of difficulties I hadn’t previously understood—including why everyday life could be so exhausting, and why being outdoors suited me so well.\n\nOn the trail, my days have a clear structure. There are practical decisions to make, but fewer competing demands and much less sensory overload. I sleep better, my mind becomes quieter, and I can settle into what I’m doing.\n\nOver time, I realised that hiking is healing for me. Having time to walk, rest, and follow a simple routine gives me room to recover and feel more like myself.\n\nI also just enjoy it. Choosing a route on a paper map, finding a good campsite, making coffee outside the tent, and knowing I can keep walking tomorrow.\n\nThat’s what I want to share through Knut vandrar: the experience of spending days and weeks outdoors, the practical things I learn along the way, and the small moments that stay with me afterwards.\n\nI still enjoy a weekend hike. I’ve simply discovered that, given the chance, I’d usually like to stay longer.",
+      "portrait_alt": "Knut out hiking",
+      "caption": "A face behind the stories from the trail.",
+      "aside_title": "Between hikes",
+      "aside_text": "Daily updates on Instagram, hiking films on YouTube, and routes on Plotaroute.",
+      "cta_title": "The next story starts on the trail.",
+      "cta_text": "Plans for the next trip, adventures in progress, and memories from the miles behind me.",
+      "cta": "Explore my hikes"
+    }
+  },
+  {
+    "page_key": "about",
+    "locale": "cs",
+    "published": true,
+    "indexable": true,
+    "content": {
+      "type": "about",
+      "eyebrow": "Člověk za příběhy z trailu",
+      "title": "Ahoj, jsem Knut.",
+      "introduction": "Hikingu se věnuji celý život. Podstatně déle mi trvalo zjistit, jak moc mě baví zůstávat na trailu — a jak dobře mi ten jednoduchý způsob života dělá.",
+      "body_markdown": "Jsem softwarový vývojář, manžel, táta, technický potápěč a thru-hiker a ve fotografování i natáčení filmů se mám pořád co učit.\n\nJe mi [current_age] let a pocházím z Česka. Ve Švédsku žiju už [years_in_sweden] let a teď bydlím na venkově v kraji Örebro ve středním Švédsku. Své příběhy sdílím česky, švédsky a anglicky.\n\n## Jak jsem začal zůstávat déle\n\nHiking byl vždycky součástí mého života. Dlouhá léta to znamenalo hlavně víkendy venku, jednotlivé úseky trailů a občas výpravu na pět až sedm dní.\n\nVenku mi bylo dobře, ale nějak mi nikdy nedošlo, že projít celý dálkový trail je reálná možnost i pro mě. Spojoval jsem si to s ultravytrvalci, profesionálními dobrodruhy nebo lidmi, jejichž celý život se točí kolem hikingu.\n\nPak mi plány změnil problém s dopravou.\n\nJak jsem postupně procházel jednotlivé úseky jednoho trailu, bylo stále složitější dostat se na ty zbývající a zase zpátky. Nakonec mě napadlo, jestli by vlastně nebylo jednodušší projít to celé najednou.\n\nTohle praktické rozhodnutí mě přivedlo k thru-hikingu.\n\nNejvíc mě překvapilo, jak moc mě baví ta obyčejná rutina. Jít, jíst, najít místo na spaní a další den znovu. Čím víc jsem si na ten rytmus zvykal, tím déle jsem chtěl zůstat.\n\nZ něčeho, co jsem považoval za občasný výlet, se stal způsob života, ke kterému jsem se chtěl vracet.\n\n## Proč jsem zůstal\n\nJsem autista a prošel jsem si vyhořením. Porozumět vlastnímu autismu mi pomohlo pochopit potíže, kterým jsem dřív nerozuměl — včetně toho, proč pro mě každodenní život mohl být tak vyčerpávající a proč mi pobyt venku tolik vyhovoval.\n\nNa trailu mají moje dny jasný řád. Je potřeba dělat praktická rozhodnutí, ale je tu méně požadavků, které soupeří o pozornost, a mnohem méně smyslového přetížení. Lépe spím, v hlavě mám větší klid a dokážu se ponořit do toho, co právě dělám.\n\nPostupně mi došlo, že hiking na mě působí léčivě. Čas na chůzi, odpočinek a jednoduchou rutinu mi dává prostor zotavit se a cítit se víc sám sebou.\n\nA taky mě to prostě baví. Vybírat trasu na papírové mapě, najít dobré místo na stan, vařit kávu před stanem a vědět, že zítra můžu jít dál.\n\nPrávě to chci prostřednictvím Knut vandrar sdílet: jaké to je trávit venku dny a týdny, praktické věci, které se cestou učím, i drobné okamžiky, které ve mně zůstávají ještě potom.\n\nPořád si rád užiju víkendový hike. Jen jsem zjistil, že když mám možnost, většinou bych rád zůstal déle.",
+      "portrait_alt": "Knut na hiku",
+      "caption": "Tvář za příběhy z trailu.",
+      "aside_title": "Mezi hiky",
+      "aside_text": "Každodenní novinky na Instagramu, filmy z hiků na YouTube a trasy na Plotaroute.",
+      "cta_title": "Další příběh začíná na trailu.",
+      "cta_text": "Plány na další cestu, probíhající dobrodružství i vzpomínky na hiky, které už jsou za mnou.",
+      "cta": "Prohlédnout moje hiky"
+    }
+  },
+  {
+    "page_key": "czech-translation-notes",
+    "locale": "cs",
+    "published": true,
+    "indexable": true,
+    "content": {
+      "type": "standard",
+      "eyebrow": "Jazyk a terminologie",
+      "title": "Proč píšu hike a trail",
+      "introduction": "Jak vznikají české překlady a proč v nich některá slova zůstávají anglicky.",
+      "body_markdown": "## Proč používám anglické výrazy\n\nČeština je můj rodný jazyk, ale většinu hikingové terminologie jsem si osvojil v angličtině a švédštině. V těchto jazycích čtu o vybavení, plánuju cesty a bavím se s ostatními hikery. Anglické výrazy mi proto často přijdou na mysl jako první a jejich české ekvivalenty někdy ani neznám.\n\nKdyž jsem je začal hledat na českých turistických fórech, zjistil jsem, že mi řada z nich prostě nesedí. Se slovy jako „přechod“ nebo „dálkový turista“ se nedokážu moc ztotožnit. Vlastní zážitky bych takhle přirozeně nepopisoval.\n\nProto tu píšu o hicích, trailech a thru-hikingu. Takhle o tom mluvím a přemýšlím i mimo tenhle web.\n\nJe to moje jazyková preference. Každý ať používá výrazy, které mu vyhovují.\n\n## Jak vznikají české články\n\nČlánky píšu nejdřív anglicky a z anglického originálu vznikají české a švédské překlady. Je to pro mě praktický způsob, jak sdílet stejné příběhy ve třech jazycích.\n\nČeské verze vznikají automatickým překladem, takže se v nich můžou objevit neobratné věty nebo chyby. Anglické hikingové výrazy ale v textu ponechávám záměrně.\n\nChci, aby i česká verze zněla jako já. To občas znamená kombinaci češtiny s anglickými slovy, kterou bych použil i při běžném rozhovoru.\n\n## Malý slovníček\n\nPokud tyhle výrazy neznáš, tady je stručné vysvětlení, jak je na webu používám.\n\n| Výraz | Co tím myslím |\n| --- | --- |\n| Hike | Pěší výlet nebo výprava, u mě často na několik dní či týdnů. |\n| Trail | Stezka nebo pojmenovaná trasa, po které jdu. |\n| Thru-hike | Absolvování celého trailu od začátku do konce během jedné výpravy. |\n| Section hike | Absolvování části trailu. Celý trail tak můžu postupně projít při několika samostatných výpravách. |\n| Resupply | Doplnění jídla a dalších zásob během hiku, třeba nákupem nebo vyzvednutím předem poslaného balíku. |\n| Base weight | Hmotnost vybavení v batohu bez spotřebních zásob, jako jsou jídlo, voda a palivo. |\n| NOBO / SOBO | Směr chůze: na sever (*northbound*) / na jih (*southbound*). |\n\n## Co je záměr a co chyba\n\nSlovo „hike“ uprostřed české věty je záměr. Zkomolený název místa, změněný význam nebo nesrozumitelná věta jsou chyby překladu.\n\nPokud na něco takového narazíš, budu rád, když mi dáš vědět. Chci, aby se moje příběhy dobře četly i česky, i když v nich občas nějaké to anglické slovo zůstane."
+    }
+  }
+]

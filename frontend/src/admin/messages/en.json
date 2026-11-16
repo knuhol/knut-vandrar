@@ -108,7 +108,7 @@
   "translationAlreadyQueued": "Already queued or running — will be skipped",
   "translationListUnavailable": "Could not load matching translations. Change the filters or reload to retry.",
   "editorSections": {
-    "content": "English content",
+    "content": "Content",
     "journey": "Status, location and dates",
     "statistics": "Distance and elevation",
     "route": "Route and coordinates",
@@ -120,7 +120,9 @@
     "water": "Water sources",
     "ratings": "Ratings",
     "details": "Details",
-    "danger": "Delete entity"
+    "danger": "Delete entity",
+    "publication": "Page and publication",
+    "englishContent": "English content"
   },
   "unsavedChanges": "Unsaved changes",
   "hikingMonthsLabel": "Available hiking months",
@@ -199,5 +201,9 @@
     "cs": "Czech"
   },
   "galleryManualOnSave": "Will be saved as a manual translation.",
-  "galleryTranslationMissing": "No translation yet. Enter text to create a manual translation."
+  "galleryTranslationMissing": "No translation yet. Enter text to create a manual translation.",
+  "pages": "Pages",
+  "pagesHelp": "Each locale is authored and published independently. Choose the about template for About and the standard template for translation notes. No fallback or automatic translations. About body placeholders: [current_age] and [years_in_sweden]. Indexable only takes effect on the production site.",
+  "published": "Published",
+  "draft": "Draft"
 }

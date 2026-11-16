@@ -1,6 +1,6 @@
 import { uploadLimits } from './uploads'
 
-import type messages from './messages/en.json'
+import messages from './messages/en.json'
 import { openapi } from '@/generated/openapi'
 
 export const resources = [
@@ -47,8 +47,21 @@ export const resources = [
     english: 'PhotoEnglish',
     uploadOnly: true,
   },
+  {
+    name: 'page-locales',
+    label: messages.pages,
+    kind: 'page',
+    write: 'PageWrite',
+    manualLocales: true,
+  },
 ]
 export type Resource = (typeof resources)[number]
+export type TranslatableResource = Resource & { english: string }
+
+export function supportsTranslations(resource: Resource): resource is TranslatableResource {
+  return typeof resource.english === 'string'
+}
+
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 export interface Schema {
   $ref?: string
@@ -123,6 +136,9 @@ export function record(value: Json | undefined): Record<string, Json> {
 export function title(value: Json) {
   const row = record(value)
   const translated = record(row.translation)
+  if (row.page_key && row.locale) {
+    return `${text(record(row.content).title || row.page_key)} (${text(row.locale)})`
+  }
   return text(row.name || row.title || row.alt || translated.title || row.id)
 }
 
@@ -168,8 +184,12 @@ interface EditorGroup {
 }
 
 const editorGroups: Partial<Record<string, EditorGroup[]>> = {
+  PageWrite: [
+    { title: 'publication', fields: ['page_key', 'locale', 'published', 'indexable'] },
+    { title: 'content', fields: ['content'] },
+  ],
   HikeWrite: [
-    { title: 'content', fields: ['english'] },
+    { title: 'englishContent', fields: ['english'] },
     {
       title: 'journey',
       fields: [
@@ -201,7 +221,7 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
     { title: 'cards', fields: ['cards'] },
   ],
   LocationWrite: [
-    { title: 'content', fields: ['english'] },
+    { title: 'englishContent', fields: ['english'] },
     {
       title: 'geography',
       fields: ['kind', 'country_codes', 'region_ids', 'arctic_circle_position'],
@@ -220,10 +240,10 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
     },
     { title: 'ratings', fields: ['ratings'] },
   ],
-  PhotoWrite: [{ title: 'content', fields: ['english'] }],
-  RegionWrite: [{ title: 'content', fields: ['english'] }],
+  PhotoWrite: [{ title: 'englishContent', fields: ['english'] }],
+  RegionWrite: [{ title: 'englishContent', fields: ['english'] }],
   AchievementWrite: [
-    { title: 'content', fields: ['english'] },
+    { title: 'englishContent', fields: ['english'] },
     { title: 'details', fields: ['hike_id', 'icon', 'sort_order'] },
   ],
 }

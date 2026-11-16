@@ -21,6 +21,7 @@
   --container-reading: 68ch;
   --container-navigation: 260px;
   --container-media-preview: 320px;
+  --container-popover: 30rem;
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
   --breakpoint-wide: 1500px;
@@ -49,6 +50,7 @@
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
   --duration-motion: var(--duration-fast);
+  --duration-entrance: var(--duration-fast);
   --duration-fast: 300ms;
   --duration-slow: 800ms;
   --duration-loading: 1.2s;

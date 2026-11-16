@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
+import { getPathname } from '@/i18n/navigation'
 import { siteIdentity } from '@/config/site'
-import { absoluteUrl, homePath, isIndexable } from '@/seo/urls'
+import { absoluteUrl, isIndexable } from '@/seo/urls'
 import type { Locale } from '@/i18n/routing'
 
 const socialLocales = { sv: 'sv_SE', en: 'en_GB', cs: 'cs_CZ' } as const
@@ -15,6 +16,7 @@ export function pageMetadata({
   image,
   imageAlt,
   article = false,
+  indexable = true,
 }: {
   locale: Locale
   title: string
@@ -24,6 +26,7 @@ export function pageMetadata({
   image?: string
   imageAlt: string
   article?: boolean
+  indexable?: boolean
 }): Metadata {
   const url = absoluteUrl(path)
   const socialImage = image
@@ -38,12 +41,14 @@ export function pageMetadata({
   return {
     title: { absolute: fullTitle },
     description,
-    authors: [{ name: siteIdentity.author, url: absoluteUrl(homePath(locale)) }],
+    authors: [
+      { name: siteIdentity.author, url: absoluteUrl(getPathname({ locale, href: '/about' })) },
+    ],
     creator: siteIdentity.author,
     publisher: siteIdentity.name,
     alternates: { canonical: url, languages },
     robots: isIndexable
-      ? { index: true, follow: true, 'max-image-preview': 'large' }
+      ? { index: indexable, follow: true, 'max-image-preview': 'large' }
       : { index: false, follow: false },
     openGraph: {
       title: fullTitle,
@@ -56,7 +61,7 @@ export function pageMetadata({
         .map((language) => socialLocales[language as Locale]),
       images: [socialImage],
       ...(article
-        ? { type: 'article', authors: [absoluteUrl(homePath(locale))] }
+        ? { type: 'article', authors: [absoluteUrl(getPathname({ locale, href: '/about' }))] }
         : { type: 'website' }),
     },
     twitter: { card: 'summary_large_image', title: fullTitle, description, images: [socialImage] },

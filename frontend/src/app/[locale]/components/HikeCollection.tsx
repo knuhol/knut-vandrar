@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl'
 
 import { HikeCard } from './HikeCard'
-import { Eyebrow } from './Eyebrow'
+import { Eyebrow } from '@/components/Eyebrow'
 
 import { Pill, PillLink } from '@/components/Pill'
 import { Container } from '@/components/Container'
@@ -28,7 +28,9 @@ export function HikeCollection({ page }: { page: HikesPage }) {
     <section className="pt-9.5 pb-12.5 tablet:pt-15 tablet:pb-20">
       <Container>
         <div id="hikes" className="mb-7 outline-none" tabIndex={-1}>
-          <Eyebrow className="mb-2.5">{t('collectionEyebrow')}</Eyebrow>
+          <div className="mb-2.5">
+            <Eyebrow>{t('collectionEyebrow')}</Eyebrow>
+          </div>
           <div className="mb-2.5">
             <Heading as="h2">{t('collection')}</Heading>
           </div>

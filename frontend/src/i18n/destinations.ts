@@ -3,6 +3,9 @@ import 'server-only'
 import type { getPathname } from './navigation'
 import type { routing, Locale } from './routing'
 
+import { PageKey, staticPages } from '@/content/staticPages'
+import { getPage } from '@/api/pages'
+
 import { getHike } from '@/api/hikes'
 
 type Destination = Parameters<typeof getPathname>[0]['href']
@@ -17,6 +20,12 @@ type ResolveDestination = (
 // resolve translated slugs here, keeping the shared switcher independent of content types.
 const destinations = {
   '/': () => Promise.resolve('/' as const),
+  '/translationNotes': async (_locale, target) =>
+    (await getPage(PageKey.CzechTranslationNotes, target))
+      ? staticPages[PageKey.CzechTranslationNotes].href
+      : '/',
+  '/about': async (_locale, target) =>
+    (await getPage(PageKey.About, target)) ? staticPages[PageKey.About].href : '/',
   '/hikes/[slug]': async (locale, target, params) => {
     if (typeof params.slug !== 'string' || !params.slug) {
       return undefined

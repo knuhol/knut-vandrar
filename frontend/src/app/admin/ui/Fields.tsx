@@ -102,7 +102,15 @@ export function Fields({
             </MenuItem>
           ))}
         </TextField>
-        <Fields schema={selected} value={value} onChange={onChange} label={label} />
+        <Fields
+          schema={selected}
+          value={value}
+          baseline={baseline}
+          onChange={onChange}
+          label={label}
+          bare={bare}
+          required={required}
+        />
       </Stack>
     )
   }
@@ -120,7 +128,10 @@ export function Fields({
             )
             const entries = Object.entries(properties)
             const single =
-              entries.length === 1 && nonNull(entries[0][1]).properties ? entries[0] : undefined
+              entries.length === 1 &&
+              (nonNull(entries[0][1]).properties || nonNull(entries[0][1]).oneOf)
+                ? entries[0]
+                : undefined
             return (
               <EditorSection
                 key={group.title}

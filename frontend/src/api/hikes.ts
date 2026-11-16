@@ -1,19 +1,11 @@
 import 'server-only'
 
-import { createClient, type NormalizeOAS } from 'fets'
 import { cache } from 'react'
 
-import { serverConfig } from '@/config/server'
-import type { openapi } from '@/generated/openapi'
+import { client } from './client'
+
 import type { Locale } from '@/i18n/routing'
 import { collectionPageSize } from '@/hiking/pagination'
-
-const client = createClient<NormalizeOAS<typeof openapi>>({
-  endpoint: serverConfig.apiBaseUrl,
-  globalParams: {
-    cache: 'no-store',
-  },
-})
 
 export const getHikes = cache(async (locale: Locale, offset = 0) => {
   const response = await client['/api/hikes'].get({
