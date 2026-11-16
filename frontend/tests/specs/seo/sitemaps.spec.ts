@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { sitemapDocument, sitemapIndex } from '@/seo/sitemaps'
+import { getPageDiscovery } from '@/api/pages'
 import { getHikeDiscovery } from '@/api/hikes'
 import { GET as sitemapResponse } from '@/app/sitemap.xml/route'
 import { GET as chunkResponse } from '@/app/sitemaps/[filename]/route'
@@ -8,6 +9,7 @@ jest.mock('server-only', () => ({}))
 jest.mock('@/config/server', () => ({
   serverConfig: { deploymentEnvironment: 'prod', siteOrigin: 'https://knut.vandrar.se' },
 }))
+jest.mock('@/api/pages', () => ({ getPageDiscovery: jest.fn().mockResolvedValue([]) }))
 jest.mock('@/api/hikes', () => ({ getHikeDiscovery: jest.fn() }))
 
 const discover = jest.mocked(getHikeDiscovery)
@@ -74,4 +76,22 @@ describe('sitemap discovery', () => {
     )
     expect(missing.status).toBe(404)
   })
+})
+
+test('includes only indexable pages and their real indexed language alternatives', async () => {
+  jest.mocked(getPageDiscovery).mockResolvedValue([
+    { page_key: 'about', locale: 'en', indexable: true, available_locales: ['en', 'sv'] },
+    { page_key: 'about', locale: 'sv', indexable: false, available_locales: ['en', 'sv'] },
+    {
+      page_key: 'czech-translation-notes',
+      locale: 'cs',
+      indexable: true,
+      available_locales: ['cs'],
+    },
+  ])
+  const xml = await sitemapDocument('pages-0.xml')
+  expect(xml).toContain('https://knut.vandrar.se/en/about')
+  expect(xml).toContain('https://knut.vandrar.se/cs/poznamky-k-prekladum')
+  expect(xml).not.toContain('/sv/om-mig')
+  expect(xml).not.toContain('/en/translationNotes')
 })

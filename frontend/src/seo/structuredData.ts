@@ -1,3 +1,4 @@
+import { getPathname } from '@/i18n/navigation'
 import { siteIdentity } from '@/config/site'
 import { absoluteUrl, homePath, hikePath } from '@/seo/urls'
 import type { Hike, HikesPage } from '@/api/hikes'
@@ -6,6 +7,17 @@ import { plainText } from '@/seo/text'
 
 const websiteId = `${absoluteUrl('/')}#website`
 const authorId = `${absoluteUrl('/')}#author`
+
+function personData(locale: Locale) {
+  return {
+    '@type': 'Person',
+    '@id': authorId,
+    name: siteIdentity.author,
+    url: absoluteUrl(getPathname({ locale, href: '/about' })),
+    image: absoluteUrl('/knut.webp'),
+    sameAs: Object.values(siteIdentity.profiles),
+  }
+}
 
 export function identityData(locale: Locale) {
   return {
@@ -20,14 +32,7 @@ export function identityData(locale: Locale) {
         inLanguage: ['sv', 'en', 'cs'],
         publisher: { '@id': authorId },
       },
-      {
-        '@type': 'Person',
-        '@id': authorId,
-        name: siteIdentity.author,
-        url: absoluteUrl(homePath(locale)),
-        image: absoluteUrl('/knut.png'),
-        sameAs: Object.values(siteIdentity.profiles),
-      },
+      personData(locale),
     ],
   }
 }
@@ -87,5 +92,20 @@ export function hikeData(locale: Locale, hike: Hike, collection: string, image?:
         ],
       },
     ],
+  }
+}
+
+export function profileData(locale: Locale, title: string, description: string) {
+  const url = absoluteUrl(getPathname({ locale, href: '/about' }))
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${url}#profile`,
+    url,
+    name: title,
+    description,
+    inLanguage: locale,
+    isPartOf: { '@id': websiteId },
+    mainEntity: { ...personData(locale), description },
   }
 }

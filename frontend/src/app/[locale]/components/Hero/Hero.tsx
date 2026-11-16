@@ -6,11 +6,12 @@ import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { IconArrowDown } from '@tabler/icons-react'
 
-import { Eyebrow } from '../Eyebrow'
 import styles from './Hero.module.css'
+import { Eyebrow } from '@/components/Eyebrow'
 
 import { ButtonLink } from '@/components/Button'
 import { Heading } from '@/components/Heading'
+import { Link } from '@/i18n/navigation'
 
 export function Hero() {
   const t = useTranslations('Site')
@@ -65,14 +66,21 @@ export function Hero() {
     >
       <div className={styles.copy}>
         <div className="grid gap-5 desktop:max-w-220 desktop:grid-cols-[minmax(0,1fr)_calc(var(--spacing)*40)] desktop:items-start desktop:gap-10">
-          <Image
-            className="h-24 w-24 shrink-0 rounded-full border-3 border-orange object-cover shadow-sm desktop:col-start-2 desktop:row-start-1 desktop:h-40 desktop:w-40"
-            src="/knut.png"
-            alt={t('author')}
-            width={160}
-            height={160}
-            sizes="(min-width: 1001px) 160px, 96px"
-          />
+          <Link
+            href="/about"
+            aria-label={t('aboutMe')}
+            data-link-kind="portrait"
+            className="card-interactive block h-24 w-24 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 desktop:col-start-2 desktop:row-start-1 desktop:h-40 desktop:w-40"
+          >
+            <Image
+              className="h-full w-full rounded-full border-3 border-orange object-cover shadow-sm"
+              src="/knut.webp"
+              alt={t('author')}
+              width={160}
+              height={160}
+              sizes="(min-width: 1001px) 160px, 96px"
+            />
+          </Link>
           <div className="min-w-0 desktop:col-start-1 desktop:row-start-1">
             <Eyebrow>{t('heroEyebrow')}</Eyebrow>
             <div className="mb-4.5 max-w-80 tablet:max-w-162.5">

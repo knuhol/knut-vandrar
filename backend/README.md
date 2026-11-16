@@ -171,3 +171,30 @@ Upload processing applies orientation, strips metadata from public derivatives, 
 Gallery bytes live under centralized `MEDIA_ROOT` (`.media` by default for host development; set an absolute path in the root `.env` when needed). Both local and VPS Compose configurations mount a dedicated **gallery_media** volume at `/media`. Do not expose this directory through a web server or static mount. Only the two derivative endpoints are public; `GET /api/photos/{id}/original` requires admin authentication and returns `private, no-store`. Originals may contain GPS/EXIF data. Derived images use immutable cache URLs; removing an image cannot revoke copies already cached by visitors.
 
 Deployments run migration `008_hike_gallery` through the normal backend entrypoint. No existing cover/logo data or database volumes are changed. Back up the database **and gallery_media volume together**, off the VPS. Regular full VPS backups satisfy this requirement if they include both Docker volumes and support consistent database restoration; no separate image backup is then needed. Database dump scripts alone do not include gallery files. See the [backup guide](../docs/database-backups.md#gallery-images-and-vps-backups). Preserve that volume on rebuilds; do not use `down -v`. No cloud storage account is needed. Originals are stored separately from derivatives so they can be removed later under an explicit retention policy without changing public galleries.
+
+## Manually authored pages
+
+Migration `012_manual_pages` creates the `pages` definitions (About and standard
+text templates) and `page_locales`, and imports the current About biographies in
+Swedish, English, and Czech plus the Czech translation notes. The versioned
+`alembic/versions/page_content.json` is migration input, not a runtime fallback.
+Normal startup applies the migration; it never overwrites subsequent admin edits.
+
+The admin **Pages** resource edits one `(page_key, locale)` record at a time,
+including publication and production indexing. Choose the matching content type:
+`about` for About, `standard` for translation notes. These records have no source
+locale, automatic translation jobs, or review status. New records default to draft
+and noindex. Imported final copy is published and indexable in production;
+nonproduction frontend environments remain noindex.
+
+`GET /api/pages/{page_key}?locale=cs` returns only published content, with the
+published locales for language switching and metadata. Missing/unpublished content
+returns 404 without fallback. `GET /api/pages` exposes lightweight published-page
+discovery for sitemaps. All `/api/page-locales` CRUD, including reads of drafts,
+requires admin authentication.
+
+The frontend owns routes and templates. Adding a logical page requires a backend
+`PageKey` and definition migration, regenerated OpenAPI, and frontend route mapping.
+About Markdown supports `[current_age]` and `[years_in_sweden]`, resolved at request
+time from frontend identity configuration in Stockholm time. Birth and move dates
+are not emitted in structured data.

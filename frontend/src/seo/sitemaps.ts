@@ -1,5 +1,8 @@
 import type { MetadataRoute } from 'next'
 
+import { getPageDiscovery } from '@/api/pages'
+import { staticPages } from '@/content/staticPages'
+import { getPathname } from '@/i18n/navigation'
 import { getHikeDiscovery } from '@/api/hikes'
 import { absoluteUrl, homePath, homeLanguages, hikeLanguages } from '@/seo/urls'
 import { routing } from '@/i18n/routing'
@@ -16,13 +19,29 @@ type SitemapSource = {
 const sources: Record<string, SitemapSource> = {
   pages: {
     count: () => Promise.resolve(1),
-    entries: () =>
-      Promise.resolve(
-        routing.locales.map((locale) => ({
+    entries: async () => {
+      const pages = (await getPageDiscovery()).filter((page) => page.indexable)
+      const languages = new Map<string, Record<string, string>>()
+      for (const page of pages) {
+        const alternatives = languages.get(page.page_key) || {}
+        alternatives[page.locale] = absoluteUrl(
+          getPathname({ locale: page.locale, href: staticPages[page.page_key].href }),
+        )
+        languages.set(page.page_key, alternatives)
+      }
+      return [
+        ...routing.locales.map((locale) => ({
           url: absoluteUrl(homePath(locale)),
           alternates: { languages: { ...homeLanguages(), 'x-default': absoluteUrl('/') } },
         })),
-      ),
+        ...pages.map((page) => ({
+          url: absoluteUrl(
+            getPathname({ locale: page.locale, href: staticPages[page.page_key].href }),
+          ),
+          alternates: { languages: languages.get(page.page_key) },
+        })),
+      ]
+    },
   },
   hikes: {
     count: async () => Math.ceil((await getHikeDiscovery(0, 1)).total / hikesPerSitemap),

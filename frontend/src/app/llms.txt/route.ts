@@ -1,5 +1,8 @@
 import { getTranslations } from 'next-intl/server'
 
+import { getPageDiscovery } from '@/api/pages'
+import { staticPages } from '@/content/staticPages'
+import { getPathname } from '@/i18n/navigation'
 import { siteIdentity } from '@/config/site'
 import { absoluteUrl, homePath, isIndexable } from '@/seo/urls'
 import { routing } from '@/i18n/routing'
@@ -17,6 +20,7 @@ export async function GET() {
       return `- [${localized('languages.' + locale)}](${absoluteUrl(homePath(locale))}): ${localized('metadataDescription')}`
     }),
   )
+  const pages = await getPageDiscovery()
   const body = [
     `# ${siteIdentity.name}`,
     '',
@@ -27,6 +31,15 @@ export async function GET() {
     ...collections,
     '',
     `- [Sitemap](${absoluteUrl('/sitemap.xml')}): Canonical pages and available translations.`,
+    '',
+    '## Pages',
+    '',
+    ...pages
+      .filter((page) => page.indexable)
+      .map(
+        (page) =>
+          `- [${page.page_key} (${page.locale})](${absoluteUrl(getPathname({ locale: page.locale, href: staticPages[page.page_key].href }))})`,
+      ),
     '',
     '## Author profiles',
     '',

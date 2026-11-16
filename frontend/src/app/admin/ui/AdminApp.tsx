@@ -31,6 +31,7 @@ import {
   record,
   resources,
   schemaFor,
+  supportsTranslations,
   title,
   writeValue,
   valuesEqual,
@@ -252,6 +253,7 @@ function Content() {
                 void save(event)
               }}
             >
+              {resource.manualLocales && <Alert severity="info">{messages.pagesHelp}</Alert>}
               <Fields
                 key={`${resource.name}-${id}`}
                 schema={schema}
@@ -312,16 +314,17 @@ function Content() {
                     </Stack>
                   </EditorSection>
                 )}
-                {dirty ? (
-                  <Alert severity="info">{messages.saveBeforeTranslations}</Alert>
-                ) : (
-                  <TranslationEditor
-                    key={`${resource.name}-${id}`}
-                    resource={resource}
-                    id={id}
-                    source={record(value).english || null}
-                  />
-                )}
+                {supportsTranslations(resource) &&
+                  (dirty ? (
+                    <Alert severity="info">{messages.saveBeforeTranslations}</Alert>
+                  ) : (
+                    <TranslationEditor
+                      key={`${resource.name}-${id}`}
+                      resource={resource}
+                      id={id}
+                      source={record(value).english || null}
+                    />
+                  ))}
                 <EditorSection title={messages.editorSections.danger}>
                   <Button
                     color="error"
@@ -370,7 +373,13 @@ function Content() {
                     <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
                       {title(row as Json)}
                     </Typography>
-                    <Typography variant="body2">{text(row.status || resource.kind)}</Typography>
+                    <Typography variant="body2">
+                      {resource.manualLocales
+                        ? row.published
+                          ? messages.published
+                          : messages.draft
+                        : text(row.status || resource.kind)}
+                    </Typography>
                     <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>
                       {text(row.id)}
                     </Typography>

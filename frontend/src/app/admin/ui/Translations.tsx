@@ -31,7 +31,7 @@ import {
   writeValue,
   valuesEqual,
   type Json,
-  type Resource,
+  type TranslatableResource,
 } from '@/admin/resources'
 
 export function TranslationRequest() {
@@ -142,7 +142,7 @@ export function TranslationEditor({
   id,
   source,
 }: {
-  resource: Resource
+  resource: TranslatableResource
   id: string
   source: Json
 }) {
