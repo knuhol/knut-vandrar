@@ -16,14 +16,21 @@ export function FactItems({
           key={item.id}
           className="inline-flex max-w-full items-center gap-2 rounded-sm border border-beige bg-paper px-3 py-2 text-sm text-forest"
         >
-          {item.count !== undefined && (
-            <span className="shrink-0 font-sans text-sm leading-tight font-semibold tabular-nums whitespace-nowrap">
-              {format.number(item.count)}×
+          <div className="flex flex-row gap-0.5 items-center ">
+            {item.count !== undefined && (
+              <>
+                <span className="shrink-0 font-sans text-base leading-tight font-semibold tabular-nums whitespace-nowrap">
+                  {format.number(item.count)}
+                </span>
+                <span className="shrink-0 font-sans text-base leading-tight font-semibold tabular-nums whitespace-nowrap">
+                  ×
+                </span>
+              </>
+            )}
+            <span className="shrink-0 [&_svg]:size-5" aria-hidden="true">
+              {item.icon}
             </span>
-          )}
-          <span className="shrink-0 [&_svg]:size-5" aria-hidden="true">
-            {item.icon}
-          </span>
+          </div>
           <span className="min-w-0 wrap-anywhere">{item.label}</span>
         </li>
       ))}

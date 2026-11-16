@@ -76,7 +76,11 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
               <div className="col-span-2 grid grid-cols-subgrid items-baseline">
                 <dt>{t('start')}</dt>
                 <dd>
-                  <EndpointLocation name={hike.start_point} coordinates={endpoints?.start} />
+                  <EndpointLocation
+                    name={hike.start_point}
+                    coordinates={endpoints?.start}
+                    stage={hike.start_stage}
+                  />
                 </dd>
               </div>
             )}
@@ -84,7 +88,11 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
               <div className="col-span-2 grid grid-cols-subgrid items-baseline">
                 <dt>{t('finish')}</dt>
                 <dd>
-                  <EndpointLocation name={hike.end_point} coordinates={endpoints?.end} />
+                  <EndpointLocation
+                    name={hike.end_point}
+                    coordinates={endpoints?.end}
+                    stage={hike.end_stage}
+                  />
                 </dd>
               </div>
             )}
