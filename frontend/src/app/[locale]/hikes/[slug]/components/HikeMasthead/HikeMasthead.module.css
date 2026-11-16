@@ -1,0 +1,36 @@
+.landscape {
+  background-image:
+    linear-gradient(
+      to right,
+      var(--color-forest),
+      color-mix(in srgb, var(--color-forest) 75%, transparent)
+    ),
+    url('/brand/forest.svg');
+  background-position:
+    center,
+    right bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro,
+  .facts {
+    animation: enter var(--duration-motion) ease-out both;
+  }
+
+  .facts {
+    animation-delay: calc(var(--duration-motion) / 3);
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0.6;
+    transform: translateY(calc(var(--spacing) * 2));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

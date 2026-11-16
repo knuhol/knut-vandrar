@@ -15,12 +15,12 @@ export function Heading({
 }: Omit<UIComponentProps<ComponentProps<'h1'>>, 'className'> & {
   as?: keyof typeof defaults
   className?: TextSizeClass
-  tone?: 'default' | 'brand'
+  tone?: 'default' | 'brand' | 'inverse'
 }) {
   return (
     <Tag
       {...props}
-      className={`font-display leading-tight font-bold tracking-tight ${className} ${tone === 'brand' ? 'text-forest' : ''}`}
+      className={`font-display leading-tight font-bold tracking-tight ${className} ${tone === 'brand' ? 'text-forest' : ''} ${tone === 'inverse' ? 'text-cream' : ''}`}
     />
   )
 }

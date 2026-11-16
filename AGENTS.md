@@ -16,6 +16,7 @@
 
 ## Frontend instructions
 
+- Maximize server rendering and keep page loading fast. Do not add page loading indicators, progress bars, spinners, or artificial delays. Requests for a page loading animation mean subtle entrance animations for content near the top of the screen, using CSS where possible without waiting for hydration and respecting reduced-motion preferences.
 - Prefer Tailwind utilities for component styling whenever practical.
 - Keep `frontend/src/app/globals.css` limited to essential global rules that cannot be handled through Tailwind configuration or component styling. Prefer removing it when no such rules remain.
 - Use the frontend design-token CSS file as the source of truth for spacing, font sizes, colors, and other design values. Never hardcode these values when a token exists. If a needed token does not exist, add a reusable variable to the token file instead of introducing a one-off value.

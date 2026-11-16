@@ -2,10 +2,15 @@
 
 .prose {
   overflow-wrap: anywhere;
+  counter-reset: chapter;
 }
 
 .prose p {
   @apply mb-5;
+}
+
+.prose > :last-child {
+  @apply mb-0;
 }
 
 .prose a {
@@ -49,11 +54,37 @@
 }
 
 .prose details {
-  @apply mb-4 border-y border-beige;
+  @apply mb-6 overflow-clip rounded-lg border border-forest-outline bg-forest-soft;
+  counter-increment: chapter;
+}
+
+.prose details[open] {
+  @apply border-forest bg-paper pb-6;
+}
+
+.prose details > :not(summary) {
+  @apply mx-5 tablet:mx-8;
+}
+
+.prose details > summary + * {
+  @apply mt-6;
 }
 
 .prose summary {
-  @apply flex cursor-pointer list-none items-center justify-between gap-3 rounded-sm py-3 text-forest;
+  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 bg-forest-soft px-5 py-5 text-forest tablet:px-8;
+}
+
+.prose summary::before {
+  content: counter(chapter, decimal-leading-zero);
+  @apply font-statistic text-3xl leading-tight text-orange-dark;
+}
+
+.prose details[open] > summary {
+  @apply sticky top-(--header-height) z-1 bg-forest text-cream;
+}
+
+.prose details[open] > summary::before {
+  @apply text-orange;
 }
 
 .prose summary::-webkit-details-marker {

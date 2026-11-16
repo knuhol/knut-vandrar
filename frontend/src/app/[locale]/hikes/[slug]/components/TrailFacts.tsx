@@ -6,7 +6,7 @@ import { TrailTags } from './TrailTags'
 import { TrailRatings } from './TrailRatings'
 import { TrailPracticalities } from './TrailPracticalities'
 
-import { Heading } from '@/components/Heading'
+import { HikeSection } from './HikeSection/HikeSection'
 import type { Locale } from '@/i18n/routing'
 import { imageUrl } from '@/api/images'
 import type { Hike } from '@/api/hikes'
@@ -40,80 +40,78 @@ export function TrailFacts({
   const locationTags = [...new Set(tags)]
 
   return (
-    <section className="min-w-0 rounded-lg border border-beige bg-cream p-5">
-      <div className="mb-5">
-        <Heading as="h2" className="text-xl">
-          {t('trailOrArea')}
-        </Heading>
-      </div>
-
-      <dl className="grid gap-4.5 [&_dd]:text-base">
-        <div>
-          <dt className="sr-only">{t('name')}</dt>
-          <dd className="font-semibold text-forest">
-            {location.official_url ? (
-              <a
-                className="link-dotted inline-flex items-center gap-1.5"
-                href={location.official_url}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {location.name}
-                <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
-              </a>
-            ) : (
-              location.name
-            )}
-          </dd>
-        </div>
-        {location.country_codes.length > 0 && (
-          <div>
-            <dt className="sr-only">{t('countries')}</dt>
-            <dd>
-              <ul className="flex flex-wrap gap-2">
-                {location.country_codes.map((code) => (
-                  <li
-                    key={code}
-                    className="inline-flex items-center gap-2 rounded-full border border-beige bg-paper px-3 py-1.5 text-sm text-forest"
+    <HikeSection id="trail" title={t('trailOrArea')} variant="paper">
+      <div className="mb-8 grid items-center gap-8 tablet:grid-cols-2">
+        <div className={location.logo_url ? 'min-w-0' : 'min-w-0 tablet:col-span-2'}>
+          <dl className="grid gap-4.5 [&_dd]:text-base">
+            <div>
+              <dt className="sr-only">{t('name')}</dt>
+              <dd className="font-display text-xl leading-tight font-bold text-forest">
+                {location.official_url ? (
+                  <a
+                    className="link-dotted inline-flex items-center gap-1.5"
+                    href={location.official_url}
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
-                    <span aria-hidden="true">{countryFlag(code)}</span>
-                    {countries.of(code) ?? code}
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </div>
-        )}
-        {locationTags.length > 0 && (
-          <div>
-            <dt className="sr-only">{t('trailTags.label')}</dt>
-            <dd>
+                    {location.name}
+                    <ArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
+                  </a>
+                ) : (
+                  location.name
+                )}
+              </dd>
+            </div>
+            {location.country_codes.length > 0 && (
+              <div>
+                <dt className="sr-only">{t('countries')}</dt>
+                <dd>
+                  <ul className="flex flex-wrap gap-2">
+                    {location.country_codes.map((code) => (
+                      <li
+                        key={code}
+                        className="inline-flex items-center gap-2 rounded-full border border-beige bg-paper px-3 py-1.5 text-sm text-forest"
+                      >
+                        <span aria-hidden="true">{countryFlag(code)}</span>
+                        {countries.of(code) ?? code}
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+          </dl>
+          {(locationTags.length > 0 || location.regions.length > 0) && (
+            <div className="mt-4.5">
               <TrailTags
                 tags={locationTags}
                 regions={location.regions.map((region) => region.name)}
               />
-            </dd>
+            </div>
+          )}
+        </div>
+        {location.logo_url && (
+          <div className="min-w-0 w-full">
+            <Image
+              src={imageUrl(location.logo_url)}
+              alt=""
+              width={320}
+              height={160}
+              sizes="(min-width: 641px) 33vw, 100vw"
+              className="block h-auto max-h-28 w-full max-w-full object-contain object-left tablet:max-h-40"
+              unoptimized
+            />
           </div>
         )}
-      </dl>
-      {details && <TrailPracticalities details={details} locale={locale} />}
-      {ratings && (
-        <div className="mt-5 border-t border-beige pt-5">
-          <TrailRatings ratings={ratings} />
-        </div>
-      )}
-      {location.logo_url && (
-        <div className="mt-5 flex justify-center border-t border-beige pt-5">
-          <Image
-            src={imageUrl(location.logo_url)}
-            alt=""
-            width={220}
-            height={90}
-            className="h-auto max-h-25 max-w-full object-contain"
-            unoptimized
-          />
-        </div>
-      )}
-    </section>
+      </div>
+      <div className="grid items-start gap-8 tablet:grid-cols-2">
+        {details && <TrailPracticalities details={details} locale={locale} />}
+        {ratings && (
+          <div className="min-w-0">
+            <TrailRatings ratings={ratings} />
+          </div>
+        )}
+      </div>
+    </HikeSection>
   )
 }

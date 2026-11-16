@@ -2,23 +2,13 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { IconArrowRight as ArrowRight } from '@tabler/icons-react'
 
 import { EndpointLocation } from './EndpointLocation'
-import { HikeJourney } from './HikeJourney'
 
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { Heading } from '@/components/Heading'
 import type { Hike } from '@/api/hikes'
 import type { HikeEndpoints } from '@/hiking/presentation'
-import type { HikeDetails } from '@/hiking/details'
 
-export function HikeFacts({
-  hike,
-  endpoints,
-  details,
-}: {
-  hike: Hike
-  endpoints?: HikeEndpoints
-  details?: HikeDetails
-}) {
+export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEndpoints }) {
   const t = useTranslations('Site')
   const format = useFormatter()
   const start = hike.status === 'planned' ? hike.planned_start_at : hike.actual_start_at
@@ -27,8 +17,8 @@ export function HikeFacts({
     hike.duration_days !== null || hike.distance_km !== null || hike.ascent_m !== null
 
   return (
-    <div className="min-w-0 rounded-lg border border-beige bg-cream p-5">
-      <div className="mb-4">
+    <div className="min-w-0 rounded-lg bg-cream p-6">
+      <div className="sr-only">
         <Heading as="h2" className="text-xl">
           {t('hikeFacts')}
         </Heading>
@@ -43,7 +33,8 @@ export function HikeFacts({
                   <dd>
                     <HikeStats
                       hike={hike}
-                      className="gap-x-4 gap-y-3 text-forest [&_span]:gap-1.5"
+                      fontSize="xl"
+                      className="gap-x-4 gap-y-3 text-forest tablet:gap-x-6 [&_span]:gap-2"
                     />
                   </dd>
                 </>
@@ -100,7 +91,6 @@ export function HikeFacts({
           </dl>
         )}
       </div>
-      {details && <HikeJourney details={details} status={hike.status} />}
     </div>
   )
 }
