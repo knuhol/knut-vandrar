@@ -33,7 +33,7 @@ lint:
 	cd backend && $(BACKEND_PYTHON) -m mypy
 
 test:
-	cd frontend && npm test --if-present
+	cd frontend && npm test
 	cd backend && $(BACKEND_PYTHON) -m pytest
 
 check: format-check lint test check-api

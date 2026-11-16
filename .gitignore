@@ -19,6 +19,7 @@ out/
 dist/
 build/
 *.tsbuildinfo
+coverage/
 
 # Environment variables
 .env

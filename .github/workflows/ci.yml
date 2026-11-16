@@ -39,8 +39,8 @@ jobs:
         run: npm --workspace frontend run format:check
       - name: Lint
         run: npm --workspace frontend run lint
-      - name: Test (when configured)
-        run: npm --workspace frontend test --if-present
+      - name: Test with Jest
+        run: npm --workspace frontend run test:ci
       - name: Build
         run: npm --workspace frontend run build
 

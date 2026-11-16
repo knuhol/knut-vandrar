@@ -12,7 +12,10 @@
     "check:api": "python3 ../backend/scripts/export_openapi.py --check",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
-    "test:admin": "node scripts/test-admin.mjs"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --maxWorkers=2",
+    "test:admin": "jest tests/specs/admin"
   },
   "dependencies": {
     "@emotion/cache": "11.14.0",
@@ -38,6 +41,10 @@
     "@next/env": "16.4.5",
     "@next/eslint-plugin-next": "16.4.5",
     "@tailwindcss/postcss": "4.3.4",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/jest": "30.0.0",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -51,6 +58,8 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-unicorn": "79.0.0",
     "globals": "17.14.0",
+    "jest": "30.4.2",
+    "jest-environment-jsdom": "30.4.1",
     "postcss": "8.5.32",
     "prettier": "3.9.10",
     "tailwindcss": "4.3.4",
