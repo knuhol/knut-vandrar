@@ -3,6 +3,7 @@ import { Montserrat, Source_Sans_3, Barlow_Condensed } from 'next/font/google'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { ImageMotion } from '@/components/ImageMotion'
 
 import '../globals.css'
 import { PageMotion } from '@/components/PageMotion'
@@ -86,6 +87,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <StructuredData data={identityData(locale)} />
           <PageMotion />
+          <ImageMotion />
           <Header locale={locale} />
           <main id="content" className="flex min-w-0 flex-1 flex-col">
             {children}
