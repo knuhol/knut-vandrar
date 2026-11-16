@@ -3,7 +3,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=vandrar_web-net
-      - traefik.http.routers.knut-vandrar-dev-api.rule=Host(`dev.vandrar.se`) && PathPrefix(`/api`)
+      - traefik.http.routers.knut-vandrar-dev-api.rule=Host(`dev.vandrar.se`) && PathPrefix(`/api`) && !PathPrefix(`/api/admin`) && !Path(`/api/language`)
       - traefik.http.routers.knut-vandrar-dev-api.entrypoints=websecure
       - traefik.http.routers.knut-vandrar-dev-api.tls=true
       - traefik.http.routers.knut-vandrar-dev-api.tls.certresolver=myresolver

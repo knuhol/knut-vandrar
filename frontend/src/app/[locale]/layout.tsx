@@ -8,6 +8,10 @@ import '../globals.css'
 import { PageMotion } from '@/components/PageMotion'
 import { Footer, Header } from '@/components/Shell'
 import { routing } from '@/i18n/routing'
+import { StructuredData } from '@/components/StructuredData'
+import { identityData } from '@/seo/structuredData'
+import { isIndexable, siteOrigin } from '@/seo/urls'
+import { siteIdentity } from '@/config/site'
 
 const heading = Montserrat({
   subsets: ['latin', 'latin-ext'],
@@ -41,8 +45,14 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'Site' })
 
   return {
+    metadataBase: new URL(siteOrigin),
     title: { default: t('metadataTitle'), template: t('metadataTitleTemplate') },
     description: t('metadataDescription'),
+    applicationName: siteIdentity.name,
+    authors: [{ name: siteIdentity.author }],
+    creator: siteIdentity.author,
+    publisher: siteIdentity.name,
+    robots: isIndexable ? { index: true, follow: true } : { index: false, follow: false },
     manifest: '/brand/site.webmanifest',
     icons: {
       icon: [
@@ -74,6 +84,7 @@ export default async function LocaleLayout({
         className={`${heading.variable} ${body.variable} ${numbers.variable} flex min-h-svh flex-col bg-paper font-sans text-lg leading-relaxed text-ink`}
       >
         <NextIntlClientProvider>
+          <StructuredData data={identityData(locale)} />
           <PageMotion />
           <Header locale={locale} />
           <main id="content" className="flex min-w-0 flex-1 flex-col">

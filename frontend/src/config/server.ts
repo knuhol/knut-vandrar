@@ -1,22 +1,32 @@
 import 'server-only'
 
 import { publicConfig } from './public'
+import { deploymentEnvironment } from './deployment.mjs'
+import { siteIdentity } from './site'
 
-const configuredEnvironment =
-  process.env.DEPLOYMENT_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'prod' : 'local')
+const environment = deploymentEnvironment()
 
-function deploymentEnvironment(): 'local' | 'dev' | 'prod' {
+function websiteOrigin() {
+  const origin = new URL(process.env.SITE_URL || siteIdentity.productionUrl)
+
   if (
-    configuredEnvironment === 'local' ||
-    configuredEnvironment === 'dev' ||
-    configuredEnvironment === 'prod'
+    !['http:', 'https:'].includes(origin.protocol) ||
+    origin.username ||
+    origin.password ||
+    origin.pathname !== '/' ||
+    origin.search ||
+    origin.hash ||
+    (environment === 'prod' && origin.protocol !== 'https:')
   ) {
-    return configuredEnvironment
+    throw new Error(
+      'SITE_URL must be a website origin without credentials, path, query, or fragment; production requires HTTPS',
+    )
   }
-  throw new Error('DEPLOYMENT_ENVIRONMENT must be local, dev, or prod')
+  return origin.origin
 }
 
 export const serverConfig = {
-  deploymentEnvironment: deploymentEnvironment(),
+  deploymentEnvironment: environment,
   apiBaseUrl: (process.env.INTERNAL_API_URL || publicConfig.apiBaseUrl).replace(/\/$/, ''),
+  siteOrigin: websiteOrigin(),
 }

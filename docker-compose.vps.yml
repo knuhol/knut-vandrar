@@ -98,6 +98,7 @@ services:
       API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       ADMIN_ORIGIN: ${ADMIN_ORIGIN:-}
+      SITE_URL: ${SITE_URL:-}
       ADMIN_SESSION_DATABASE: /admin-data/sessions.sqlite
       INTERNAL_API_URL: http://backend-internal:${API_PORT}
       PORT: ${FRONTEND_INTERNAL_PORT:?Set FRONTEND_INTERNAL_PORT}

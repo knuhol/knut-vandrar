@@ -1647,3 +1647,44 @@ def test_photo_manual_edit_preserves_other_text_and_never_queues(client: TestCli
     assert client.get(path + "?locale=cs").json()["translation"]["locale"] == "en"
     with app.state.testing_session_local() as db:
         assert not db.scalars(select(TranslationJob)).all()
+
+
+def test_discovery_is_public_bounded_and_uses_only_existing_translations(
+    client: TestClient,
+) -> None:
+    first = client.post("/api/hikes", json=_planned_payload()).json()
+    second = client.post("/api/hikes", json=_planned_payload()).json()
+    content = _planned_payload()["english"]
+    assert isinstance(content, dict)
+    translated = {**content, "title": "Min första vandring"}
+    assert (
+        client.put(f"/api/hikes/{first['id']}/translations/sv", json=translated).status_code == 200
+    )
+    client.headers.pop("Authorization")
+
+    response = client.get("/api/discovery/hikes", params={"limit": 1})
+    assert response.status_code == 200
+    assert response.headers["x-robots-tag"] == "noindex"
+    page = response.json()
+    assert page["total"] == 2
+    assert len(page["items"]) == 1
+    following = client.get("/api/discovery/hikes", params={"limit": 1, "offset": 1}).json()
+    items = {item["id"]: item for item in page["items"] + following["items"]}
+    assert set(items) == {first["id"], second["id"]}
+    assert {item["locale"] for item in items[first["id"]]["translations"]} == {"en", "sv"}
+    assert {item["locale"] for item in items[second["id"]]["translations"]} == {"en"}
+    assert set(items[first["id"]]) == {"id", "translations"}
+    detail = client.get(f"/api/hikes/{first['id']}").json()
+    assert detail["available_translations"] == items[first["id"]]["translations"]
+    assert client.get("/api/discovery/hikes", params={"offset": 2}).json()["items"] == []
+    for query in [{"limit": 0}, {"limit": 101}, {"offset": -1}]:
+        assert client.get("/api/discovery/hikes", params=query).status_code == 422
+
+
+def test_discovery_has_no_urls_when_content_is_empty(client: TestClient) -> None:
+    assert client.get("/api/discovery/hikes").json() == {
+        "items": [],
+        "total": 0,
+        "limit": 100,
+        "offset": 0,
+    }

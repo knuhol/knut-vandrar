@@ -542,6 +542,66 @@ export const openapi = {
         }
       }
     },
+    "/api/discovery/hikes": {
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "Discover Hikes",
+        "operationId": "discover_hikes_api_discovery_hikes_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Maximum entries to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum entries to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of entries to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of entries to skip"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_HikeDiscoveryRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/hikes": {
       "get": {
         "tags": [
@@ -3289,6 +3349,28 @@ export const openapi = {
         "title": "HealthUnavailable",
         "description": "Error response when the database cannot be reached."
       },
+      "HikeDiscoveryRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "translations": {
+            "items": {
+              "$ref": "#/components/schemas/HikeSlugRead"
+            },
+            "type": "array",
+            "title": "Translations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "translations"
+        ],
+        "title": "HikeDiscoveryRead"
+      },
       "HikeEnglishContent": {
         "properties": {
           "title": {
@@ -3646,6 +3728,13 @@ export const openapi = {
           "translation": {
             "$ref": "#/components/schemas/HikeLocalizedRead"
           },
+          "available_translations": {
+            "items": {
+              "$ref": "#/components/schemas/HikeSlugRead"
+            },
+            "type": "array",
+            "title": "Available Translations"
+          },
           "cards": {
             "items": {
               "oneOf": [
@@ -3717,12 +3806,31 @@ export const openapi = {
           "duration_days",
           "cover_image_url",
           "translation",
+          "available_translations",
           "cards",
           "achievements",
           "created_at",
           "updated_at"
         ],
         "title": "HikeRead"
+      },
+      "HikeSlugRead": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "title": "Locale"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "locale",
+          "slug"
+        ],
+        "title": "HikeSlugRead"
       },
       "HikeStatus": {
         "type": "string",
@@ -4671,6 +4779,37 @@ export const openapi = {
           "offset"
         ],
         "title": "Page[AchievementRead]"
+      },
+      "Page_HikeDiscoveryRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HikeDiscoveryRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[HikeDiscoveryRead]"
       },
       "Page_HikeSummaryRead_": {
         "properties": {

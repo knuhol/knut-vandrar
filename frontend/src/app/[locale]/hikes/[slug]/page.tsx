@@ -24,6 +24,11 @@ import { routing } from '@/i18n/routing'
 import { getHike, getPhotos } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation } from '@/hiking/presentation'
+import { pageMetadata } from '@/seo/metadata'
+import { metadataDescription } from '@/seo/text'
+import { hikeLanguages, hikePath } from '@/seo/urls'
+import { hikeData } from '@/seo/structuredData'
+import { StructuredData } from '@/components/StructuredData'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -36,7 +41,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const hike = await getHike(locale, slug)
 
-  return { title: hike?.translation.title, description: hike?.translation.summary_markdown }
+  if (!hike) {
+    notFound()
+  }
+  const t = await getTranslations({ locale, namespace: 'Site' })
+
+  return pageMetadata({
+    locale,
+    title: hike.translation.title,
+    description: metadataDescription(hike.translation.summary_markdown, t('metadataDescription')),
+    path: hikePath(locale, hike.translation.slug),
+    languages: hikeLanguages(hike.available_translations),
+    image: hike.cover_image_url ? imageUrl(hike.cover_image_url) : undefined,
+    imageAlt: hike.cover_image_url ? hike.translation.title : t('sharingImageAlt'),
+    article: true,
+  })
 }
 
 export default async function HikePage({ params }: Props) {
@@ -84,6 +103,14 @@ export default async function HikePage({ params }: Props) {
 
   return (
     <div className="pt-6.25 pb-15">
+      <StructuredData
+        data={hikeData(
+          locale,
+          hike,
+          t('hikes'),
+          hike.cover_image_url ? imageUrl(hike.cover_image_url) : undefined,
+        )}
+      />
       <Container>
         <nav
           className="mb-6.25 flex flex-wrap gap-3 text-sm [&_a]:text-forest"

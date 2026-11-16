@@ -157,6 +157,16 @@ class HikeLocalizedRead(BaseModel):
     is_outdated: bool
 
 
+class HikeSlugRead(BaseModel):
+    locale: str
+    slug: str
+
+
+class HikeDiscoveryRead(BaseModel):
+    id: UUID
+    translations: list[HikeSlugRead]
+
+
 class HikeRead(HikeExtra):
     id: UUID
     location: LocationRead | None
@@ -172,6 +182,7 @@ class HikeRead(HikeExtra):
     duration_days: int | None
     cover_image_url: str | None
     translation: HikeLocalizedRead
+    available_translations: list[HikeSlugRead]
     cards: list[InfoCard]
     achievements: list[AchievementRead]
     created_at: datetime
@@ -193,11 +204,6 @@ class HikeSummaryRead(BaseModel):
     duration_days: int | None
     cover_image_url: str | None
     translation: HikeLocalizedRead
-
-
-class HikeSlugRead(BaseModel):
-    locale: str
-    slug: str
 
 
 class TranslationReviewWrite(BaseModel):

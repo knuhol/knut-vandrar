@@ -1,10 +1,12 @@
 import 'server-only'
 
 import { createClient, type NormalizeOAS } from 'fets'
+import { cache } from 'react'
 
 import { serverConfig } from '@/config/server'
 import type { openapi } from '@/generated/openapi'
 import type { Locale } from '@/i18n/routing'
+import { collectionPageSize } from '@/hiking/pagination'
 
 const client = createClient<NormalizeOAS<typeof openapi>>({
   endpoint: serverConfig.apiBaseUrl,
@@ -13,17 +15,17 @@ const client = createClient<NormalizeOAS<typeof openapi>>({
   },
 })
 
-const pageSize = 6
-
-export async function getHikes(locale: Locale, offset = 0) {
-  const response = await client['/api/hikes'].get({ query: { locale, limit: pageSize, offset } })
+export const getHikes = cache(async (locale: Locale, offset = 0) => {
+  const response = await client['/api/hikes'].get({
+    query: { locale, limit: collectionPageSize, offset },
+  })
   if (!response.ok) {
     throw new Error('Could not load hikes')
   }
   return response.json()
-}
+})
 
-export async function getHike(locale: Locale, slug: string) {
+export const getHike = cache(async (locale: Locale, slug: string) => {
   const response = await client['/api/hikes/{locale}/{slug}'].get({ params: { locale, slug } })
 
   if (response.status === 404) {
@@ -34,21 +36,13 @@ export async function getHike(locale: Locale, slug: string) {
   }
 
   return response.json()
-}
+})
 
-export async function getHikeAlternative(locale: Locale, id: string) {
-  const response = await client['/api/hikes/{hike_id}'].get({
-    params: { hike_id: id },
-    query: { locale },
-  })
-
-  if (response.status === 404) {
-    return undefined
-  }
+export async function getHikeDiscovery(offset = 0, limit = 100) {
+  const response = await client['/api/discovery/hikes'].get({ query: { offset, limit } })
   if (!response.ok) {
-    throw new Error('Could not load hike language')
+    throw new Error('Could not load hike URLs')
   }
-
   return response.json()
 }
 

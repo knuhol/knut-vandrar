@@ -188,7 +188,7 @@ test('admin authentication, proxy security, uploads, and session lifecycle', asy
     // Password must never appear in HTML
     expect(html.includes(password)).toBe(false)
     // Admin must render
-    expect(html.includes('knut-vandrar')).toBe(true)
+    expect(html).toContain('Knut vandrar')
     expect((await call('/api/admin/auth', 'DELETE', undefined, cookie)).status).toBe(200)
     expect((await call('/api/admin/backend/hikes', 'GET', undefined, cookie)).status).toBe(401)
     const second = await call('/api/admin/auth', 'POST', { password })

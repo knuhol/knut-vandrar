@@ -1,5 +1,8 @@
 # VPS deployment
 
+See [search and sharing](search-and-sharing.md) for `SITE_URL`, production indexing,
+the Google/Bing launch checklist, and sitemap and sharing-image configuration.
+
 The CI workflow deploys successful `dev` commits to `dev.vandrar.se` and successful `main` commits to `knut.vandrar.se`. The production workflow is ready before DNS is moved; the domain will begin resolving to the VPS only after its DNS record is changed.
 
 ## VPS preparation

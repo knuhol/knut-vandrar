@@ -1,10 +1,10 @@
 """FastAPI application configuration."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from knut_vandrar_backend.api.auth import READ_METHODS, require_write_auth
@@ -13,6 +13,7 @@ from knut_vandrar_backend.api.authored import (
     regions_router,
     translation_router,
 )
+from knut_vandrar_backend.api.discovery import router as discovery_router
 from knut_vandrar_backend.api.health import router as health_router
 from knut_vandrar_backend.api.hikes import router as hikes_router
 from knut_vandrar_backend.api.locations import router as locations_router
@@ -63,7 +64,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def indexing_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    response = await call_next(request)
+    # Public image responses remain indexable; JSON endpoints are data, not pages.
+    if response.headers.get("content-type", "").startswith("application/json"):
+        response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
 app.include_router(photos_router)
+app.include_router(discovery_router)
 app.include_router(hikes_router)
 app.include_router(locations_router)
 app.include_router(health_router)

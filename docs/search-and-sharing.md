@@ -1,0 +1,113 @@
+# Search, crawlers, and sharing
+
+Knut vandrar publishes personal long-distance hiking stories in Sweden by Knut
+Holm. English is the authoring source. Swedish is the public language fallback;
+the root URL honors a supported browser language or saved language choice.
+Explicit `/sv`, `/en`, and `/cs` URLs retain their language.
+
+## Configuration
+
+- `frontend/src/config/site.ts` owns the brand, author, social profiles, default
+  production origin, and sharing-image dimensions.
+- `SITE_URL` is the server-only canonical **website origin**. It is independent of
+  `NEXT_PUBLIC_API_URL` (browser API URL) and `INTERNAL_API_URL` (server API URL).
+  When absent, it defaults to `https://knut.vandrar.se`. Production requires HTTPS.
+  The root `.env` supplies local configuration; VPS templates include this key.
+- `DEPLOYMENT_ENVIRONMENT=prod` explicitly enables indexing and discovery.
+  `local`, `dev`, and an unset environment remain non-indexable even when
+  `NODE_ENV=production`. Public pages emit `noindex` metadata and response headers.
+  Preview robots disallow crawling; preview sitemaps and `llms.txt` return 404.
+- Admin pages and frontend API responses always send `X-Robots-Tag: noindex,
+  nofollow`. Backend JSON sends `noindex`; public image responses remain
+  crawlable. These instructions are not access controls.
+
+Keep the permanent redirect from `vandrar.se` to `knut.vandrar.se`, preserving
+paths and queries. The existing external redirect is managed outside this repo.
+
+## Metadata and discovery
+
+`frontend/src/seo` owns URL construction, page metadata, structured data, crawler
+policies, and sitemap sources. Public pages have localized titles, plain-text
+descriptions, canonical URLs, translated alternates, and Open Graph/Twitter cards.
+Hikes use their cover image when available; other previews use the corresponding
+homepage screenshot. Social platform caches can take time to refresh.
+
+Only stored hike translations appear in alternate links and sitemaps. Unreviewed
+and outdated translations remain public. Missing translations are omitted;
+translated pages are not canonicalized to English. Native section identifiers
+such as `#resources` remain stable across languages. Canonicals omit fragments.
+
+The production `/sitemap.xml` is an index. `/sitemaps/pages-0.xml` contains public
+homepages, and `/sitemaps/hikes-N.xml` contains at most 1,000 hikes per file (up to
+three language URLs per hike). The lightweight, public `/api/discovery/hikes`
+endpoint pages through URL records without loading stories or photo collections.
+Sitemap responses permit shared caching for five minutes.
+
+Publication dates and sitemap `lastmod` are intentionally omitted. Database
+creation times, hiking dates, translation generation times, and deployment times
+do not reliably describe editorial publication or all significant page updates.
+Add accurate editorial timestamps before exposing them as search metadata.
+
+`/llms.txt` is a supplementary, generated directory of localized collections and
+author profiles. It is not a special ranking signal or permission mechanism.
+
+## New pages and edits
+
+For a new public page type:
+
+1. Add its localized routes to `frontend/src/i18n/routing.ts` and language-switch
+   behavior to `frontend/src/i18n/destinations.ts`.
+2. Use `pageMetadata` and appropriate structured data matching visible content.
+3. Register its URLs in the sitemap source registry in `frontend/src/seo/sitemaps.ts`.
+4. Link to it from the public site and add copy to all three locale message sets.
+
+Adding an existing content type, or editing a typo, needs no webmaster-tool
+reconfiguration. Google and Bing discover new and changed URLs through crawling
+and the sitemap. A request to recrawl an important correction is optional and
+does not guarantee immediate indexing. Google commonly takes days to weeks.
+IndexNow notifications are not currently implemented.
+
+## Homepage sharing images
+
+The checked-in `frontend/public/brand/sharing/{sv,en,cs}.png` files are real homepage
+screenshots, resized to 1200 × 630. Regenerate them after major homepage or brand
+changes, rather than having social crawlers render the page on every request.
+
+Capture each localized homepage at a 1440 × 1000 CSS-pixel viewport with its fonts
+and images rendered. Capture the top-left 1440 × 756 region, excluding browser
+chrome and developer controls, then resize to 1200 × 630 without changing the
+aspect ratio. Verify all three images before replacing the checked-in files.
+
+## AI policy
+
+The centralized policy allows search and user-requested retrieval, including
+OpenAI, Claude, and Perplexity search agents. It disallows named training crawlers,
+including GPTBot, ClaudeBot, Google-Extended, CCBot, and Applebot-Extended.
+Policies should be reviewed as providers change their crawler documentation.
+
+Google-Extended also controls some Gemini grounding uses. Blocking it does not
+block ordinary Google Search, including its AI search features, but can restrict
+those other uses. Robots preferences cannot prevent a crawler that ignores them.
+
+## Search Console and Bing setup
+
+The owner can complete verification before launch; verification does not itself
+make a `noindex` page indexable.
+
+1. In [Google Search Console](https://search.google.com/search-console/), add a
+   Domain property for `vandrar.se` and verify the supplied DNS TXT record. This
+   covers the apex and subdomains. Add a URL-prefix property for
+   `https://knut.vandrar.se/` for a focused production view.
+2. In [Bing Webmaster Tools](https://www.bing.com/webmasters/), add
+   `https://knut.vandrar.se/`. Import its verified Search Console property when
+   available, or complete Bing's offered ownership verification method.
+3. At launch, confirm production uses `DEPLOYMENT_ENVIRONMENT=prod` and the correct
+   `SITE_URL`; submit `https://knut.vandrar.se/sitemap.xml` to both services.
+4. Inspect the homepage and a hike in each language for successful indexing
+   eligibility, correct canonical URLs, and accessible sharing images. Validate
+   JSON-LD using the Schema Markup Validator or Google's Rich Results Test.
+5. Check missing URLs, redirects, mobile presentation, and page performance after
+   deployment. Future pages under the same origin remain covered automatically.
+
+Actual verification records come from the owner's accounts. No invented tokens,
+analytics trackers, or external account configuration are included in this change.
