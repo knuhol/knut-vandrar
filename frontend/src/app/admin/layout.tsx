@@ -7,6 +7,7 @@ import { AdminTheme } from './ui/AdminTheme'
 import { EnvironmentBanner } from './ui/EnvironmentBanner'
 
 import { serverConfig } from '@/config/server'
+import messages from '@/admin/messages/en.json'
 
 const roboto = Roboto({
   subsets: ['latin', 'latin-ext'],
@@ -16,7 +17,7 @@ const roboto = Roboto({
 })
 
 export const metadata: Metadata = {
-  title: 'Admin | knut-vandrar',
+  title: messages.knutVandrarAdmin,
   robots: { index: false, follow: false },
 }
 

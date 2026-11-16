@@ -99,6 +99,7 @@ services:
       API_WRITE_TOKEN: ${API_WRITE_TOKEN:-}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       ADMIN_ORIGIN: ${ADMIN_ORIGIN:-}
+      SITE_URL: ${SITE_URL:-}
       ADMIN_SESSION_DATABASE: /admin-data/sessions.sqlite
       INTERNAL_API_URL: http://backend:${API_PORT}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}

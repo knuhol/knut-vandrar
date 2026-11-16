@@ -25,6 +25,7 @@ from knut_vandrar_backend.api.schemas.hike import (
     HikeEnglishContent,
     HikeLocalizedRead,
     HikeRead,
+    HikeSlugRead,
     HikeSummaryRead,
     HikeWrite,
     InfoCard,
@@ -356,6 +357,10 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
             else None
         ),
         translation=_localized(db, translation),
+        available_translations=[
+            HikeSlugRead(locale=item.locale_code, slug=item.slug)
+            for item in sorted(hike.translations, key=lambda item: item.locale_code)
+        ],
         cards=cards,
         achievements=[
             AchievementRead.model_validate(

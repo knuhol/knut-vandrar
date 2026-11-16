@@ -2,7 +2,7 @@
   "name": "knut-vandrar",
   "version": "1.0.0",
   "private": true,
-  "description": "Knut vandrar - Full-stack travel companion monorepo",
+  "description": "Personal long-distance hiking stories in Sweden by Knut Holm",
   "workspaces": [
     "frontend",
     "backend"
@@ -17,11 +17,11 @@
     "translations:retranslate": "./scripts/compose.sh exec -T backend python -m knut_vandrar_backend.translations.cli"
   },
   "keywords": [
-    "travel",
-    "nextjs",
-    "fastapi",
-    "postgresql"
+    "hiking",
+    "long-distance hiking",
+    "Sweden",
+    "Knut vandrar"
   ],
-  "author": "",
+  "author": "Knut Holm",
   "license": "MIT"
 }

@@ -16,7 +16,7 @@ Use `ButtonLink stretched` inside a positioned card to extend the link's click a
 
 Shared interactions live in `src/styles/interactions.css`. The `card-interactive` utility preserves HikeCard's lift-and-shadow hover effect for all interactive cards without changing background or border colors. Existing global focus outlines remain on their actual links and buttons. Text links share green text and a green underline on hover and keyboard focus while retaining their resting styles. `data-link-kind` identifies button, pill, brand, and whole-card links so the global text-link treatment does not decorate those entire controls; a card's `data-link-label` receives it instead. The common underline offset comes from `src/styles/tokens.css`.
 
-The homepage requests one API page of at most 10 hikes and preserves the API's ordering and pagination metadata. Previous/Next links change the `offset` URL parameter and return to the hike collection. They do not prefetch additional pages. Collection-wide filtering is deferred to the archive.
+The homepage requests one API page of at most 6 hikes and preserves the API's ordering and pagination metadata. Previous/Next links change the `offset` URL parameter and return to the hike collection. They do not prefetch additional pages. Collection-wide filtering is deferred to the archive.
 
 ESLint uses the current stable ESLint and Unicorn releases. `@eslint/compat` preserves the React, accessibility, and import plugins while they migrate APIs removed in ESLint 10. The root `.npmrc` enables `legacy-peer-deps` for plugins whose peer declarations still exclude ESLint 10; the Docker build copies that configuration into the frontend image. Renamed Unicorn rules retain their configured severity and options.
 

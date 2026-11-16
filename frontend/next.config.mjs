@@ -28,6 +28,18 @@ const nextConfig = {
     : __dirname,
   // This is intentionally public and contains no credentials.
   env: { NEXT_PUBLIC_API_URL: publicApiUrl },
+  async headers() {
+    return [
+      {
+        source: '/admin/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/api/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+    ]
+  },
 }
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')

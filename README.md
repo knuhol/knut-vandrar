@@ -1,6 +1,8 @@
 # knut-vandrar
 
-A Docker-first starter for a travel companion application. The stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, FastAPI, SQLAlchemy 2, Alembic, and PostgreSQL 18.
+Knut vandrar publishes personal long-distance hiking stories in Sweden by Knut Holm. The stack is Next.js 16, React 19, TypeScript, Tailwind CSS 4, FastAPI, SQLAlchemy 2, Alembic, and PostgreSQL 18.
+
+See the [search and sharing guide](docs/search-and-sharing.md) for production metadata, crawler policies, sitemap discovery, sharing screenshots, and Google/Bing ownership setup.
 
 Runtime versions are defined only in `.nvmrc` and `.python-version`, and CI reads those files. Docker builds use the official Node Alpine and Python slim images with the versions from those files. `./scripts/compose.sh` exports `NODE_VERSION` and `PYTHON_VERSION` for Compose; use it because the Compose files require both build arguments. Use `nvm install` and `nvm use` locally; Python version managers such as pyenv can read `.python-version`.
 

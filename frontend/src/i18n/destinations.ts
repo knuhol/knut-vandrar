@@ -3,7 +3,7 @@ import 'server-only'
 import type { getPathname } from './navigation'
 import type { routing, Locale } from './routing'
 
-import { getHike, getHikeAlternative } from '@/api/hikes'
+import { getHike } from '@/api/hikes'
 
 type Destination = Parameters<typeof getPathname>[0]['href']
 type Route = keyof typeof routing.pathnames
@@ -23,10 +23,10 @@ const destinations = {
     }
 
     const hike = await getHike(locale, params.slug)
-    const alternative = hike && (await getHikeAlternative(target, hike.id))
+    const alternative = hike?.available_translations.find((item) => item.locale === target)
 
     return alternative
-      ? { pathname: '/hikes/[slug]', params: { slug: alternative.translation.slug } }
+      ? { pathname: '/hikes/[slug]', params: { slug: alternative.slug } }
       : undefined
   },
 } satisfies Record<Route, ResolveDestination>
