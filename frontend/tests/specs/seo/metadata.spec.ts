@@ -1,9 +1,11 @@
 import { pageMetadata } from '@/seo/metadata'
 import { homePath, homeLanguages, hikeLanguages } from '@/seo/urls'
+import { staticPageMetadata } from '@/content/pages'
 import { robotsText } from '@/seo/crawlers'
 import { collectionOffset } from '@/hiking/pagination'
 
 jest.mock('server-only', () => ({}))
+jest.mock('@/api/pages', () => ({ getPage: jest.fn() }))
 jest.mock('@/config/server', () => ({
   serverConfig: { deploymentEnvironment: 'prod', siteOrigin: 'https://knut.vandrar.se' },
 }))
@@ -87,5 +89,27 @@ describe('public URL and crawler metadata', () => {
     ['9007199254740992', 0],
   ] as const)('normalizes collection offset %p', (value, expected) => {
     expect(collectionOffset(value as string | string[] | undefined)).toBe(expected)
+  })
+})
+
+test('privacy policy uses localized canonical URLs and noindex metadata', () => {
+  const metadata = staticPageMetadata({
+    page_key: 'privacy-policy',
+    locale: 'en',
+    indexable: false,
+    available_locales: ['sv', 'en', 'cs'],
+    content: {
+      type: 'standard',
+      eyebrow: 'Privacy',
+      title: 'Privacy policy',
+      introduction: 'Cookies and privacy',
+      body_markdown: 'Content',
+    },
+  })
+  expect(metadata.robots).toMatchObject({ index: false })
+  expect(metadata.alternates?.canonical).toBe('https://knut.vandrar.se/en/privacy-policy')
+  expect(metadata.alternates?.languages).toMatchObject({
+    sv: 'https://knut.vandrar.se/sv/integritetspolicy',
+    cs: 'https://knut.vandrar.se/cs/ochrana-soukromi',
   })
 })

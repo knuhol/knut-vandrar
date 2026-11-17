@@ -5260,7 +5260,8 @@ export const openapi = {
         "type": "string",
         "enum": [
           "about",
-          "czech-translation-notes"
+          "czech-translation-notes",
+          "privacy-policy"
         ],
         "title": "PageKey"
       },

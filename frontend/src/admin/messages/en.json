@@ -203,7 +203,7 @@
   "galleryManualOnSave": "Will be saved as a manual translation.",
   "galleryTranslationMissing": "No translation yet. Enter text to create a manual translation.",
   "pages": "Pages",
-  "pagesHelp": "Each locale is authored and published independently. Choose the about template for About and the standard template for translation notes. No fallback or automatic translations. About body placeholders: [current_age] and [years_in_sweden]. Indexable only takes effect on the production site.",
+  "pagesHelp": "Each locale is authored and published independently. Choose the about template for About and the standard template for translation notes and the privacy policy. No fallback or automatic translations. About body placeholders: [current_age] and [years_in_sweden]. Indexable only takes effect on the production site.",
   "published": "Published",
   "draft": "Draft"
 }

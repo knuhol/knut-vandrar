@@ -6,7 +6,7 @@
   --color-cream: #faf4e5;
   --color-beige: #e8dec4;
   --color-forest: #2f4f3e;
-  --color-forest-dark: color-mix(in srgb, var(--color-forest) 80%, var(--color-ink));
+  --color-forest-dark: color-mix(in srgb, var(--color-forest) 50%, var(--color-ink));
   --color-forest-soft: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper));
   --color-forest-outline: color-mix(in srgb, var(--color-forest) 28%, var(--color-forest-soft));
   --color-orange-soft: color-mix(in srgb, var(--color-orange) 10%, transparent);
@@ -15,6 +15,9 @@
   --color-ink: #222222;
   --color-muted: #6b6b6b;
   --color-paper: color-mix(in srgb, var(--color-cream) 25%, white);
+
+  --color-panel-glass: color-mix(in srgb, var(--color-paper) 78%, transparent);
+  --blur-panel: 16px;
 
   --spacing: 4px;
   --container-page: 1240px;

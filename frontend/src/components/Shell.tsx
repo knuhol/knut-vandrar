@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
 
 import { Navigation } from './Navigation/Navigation'
@@ -31,18 +32,25 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   )
 }
 
-export async function Footer() {
+export async function Footer({ children }: { children?: ReactNode }) {
   const t = await getTranslations('Site')
 
   return (
     <footer className="bg-forest text-cream">
       <Container>
-        <div className="flex flex-col items-center justify-between gap-2 py-7.5 text-center text-sm tablet:flex-row tablet:gap-5 tablet:text-left">
-          <Link data-link-kind="brand" href="/" className="mb-1.5 md:mb-0">
+        <div className="flex flex-col items-center justify-between gap-4 py-7.5 text-center text-sm desktop:grid desktop:grid-cols-3">
+          <Link
+            data-link-kind="brand"
+            href="/"
+            className="mb-1.5 md:mb-0 desktop:justify-self-start"
+          >
             <Logo size="compact" variant="monochromatic" />
           </Link>
-          <p>{t('footer')}</p>
-          <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+          <div className="desktop:text-center">
+            <p>{t('footer')}</p>
+            <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+          </div>
+          <div className="desktop:justify-self-end">{children}</div>
         </div>
       </Container>
     </footer>

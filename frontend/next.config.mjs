@@ -23,6 +23,9 @@ if (!publicApiUrl) {
 }
 
 const nextConfig = {
+  // Let next-intl resolve the original localized URL before rewriting it.
+  // Normalizing first can redirect rewritten routes back to their public URL.
+  skipProxyUrlNormalize: true,
   outputFileTracingRoot: fs.existsSync(path.join(path.resolve(__dirname, '..'), 'frontend'))
     ? path.resolve(__dirname, '..')
     : __dirname,

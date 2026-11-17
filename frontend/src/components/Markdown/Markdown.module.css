@@ -14,7 +14,7 @@
 }
 
 .prose a {
-  @apply text-forest underline;
+  @apply text-forest link-dotted;
 }
 
 .prose ul,

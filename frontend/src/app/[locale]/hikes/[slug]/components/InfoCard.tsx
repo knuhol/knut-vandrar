@@ -10,6 +10,7 @@ export function InfoCard({
   message,
   inactive = false,
   onClick,
+  onActivate,
   expanded,
   variant = 'default',
 }: {
@@ -19,6 +20,7 @@ export function InfoCard({
   action?: string
   message?: string
   inactive?: boolean
+  onActivate?: () => void
   onClick?: () => void
   expanded?: boolean
   variant?: 'default' | 'video'
@@ -32,7 +34,23 @@ export function InfoCard({
       target={interactive && !onClick ? '_blank' : undefined}
       rel={interactive && !onClick ? 'noopener noreferrer' : undefined}
       type={onClick ? 'button' : undefined}
-      onClick={interactive ? onClick : undefined}
+      onClick={
+        interactive
+          ? () => {
+              onActivate?.()
+              onClick?.()
+            }
+          : undefined
+      }
+      onAuxClick={
+        interactive && href && !onClick
+          ? (event) => {
+              if (event.button === 1) {
+                onActivate?.()
+              }
+            }
+          : undefined
+      }
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}

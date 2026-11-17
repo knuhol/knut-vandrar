@@ -3,6 +3,7 @@ import { Montserrat, Source_Sans_3, Barlow_Condensed } from 'next/font/google'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { Analytics } from './components/Analytics/Analytics'
 import { ImageMotion } from '@/components/ImageMotion'
 
 import '../globals.css'
@@ -12,6 +13,7 @@ import { routing } from '@/i18n/routing'
 import { StructuredData } from '@/components/StructuredData'
 import { identityData } from '@/seo/structuredData'
 import { isIndexable, siteOrigin } from '@/seo/urls'
+import { serverConfig } from '@/config/server'
 import { siteIdentity } from '@/config/site'
 
 const heading = Montserrat({
@@ -92,7 +94,9 @@ export default async function LocaleLayout({
           <main id="content" className="flex min-w-0 flex-1 flex-col">
             {children}
           </main>
-          <Footer />
+          <Footer>
+            <Analytics measurementId={serverConfig.analyticsMeasurementId} />
+          </Footer>
         </NextIntlClientProvider>
       </body>
     </html>

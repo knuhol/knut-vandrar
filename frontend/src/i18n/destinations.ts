@@ -24,6 +24,8 @@ const destinations = {
     (await getPage(PageKey.CzechTranslationNotes, target))
       ? staticPages[PageKey.CzechTranslationNotes].href
       : '/',
+  '/privacyPolicy': async (_locale, target) =>
+    (await getPage(PageKey.PrivacyPolicy, target)) ? staticPages[PageKey.PrivacyPolicy].href : '/',
   '/about': async (_locale, target) =>
     (await getPage(PageKey.About, target)) ? staticPages[PageKey.About].href : '/',
   '/hikes/[slug]': async (locale, target, params) => {

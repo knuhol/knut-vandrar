@@ -25,7 +25,16 @@ function websiteOrigin() {
   return origin.origin
 }
 
+function analyticsMeasurementId() {
+  const id = process.env.GOOGLE_ANALYTICS_ID?.trim() || null
+  if (id && !/^G-[A-Z0-9]+$/.test(id)) {
+    throw new Error('GOOGLE_ANALYTICS_ID must be a GA4 Measurement ID')
+  }
+  return environment === 'prod' ? id : null
+}
+
 export const serverConfig = {
+  analyticsMeasurementId: analyticsMeasurementId(),
   deploymentEnvironment: environment,
   apiBaseUrl: (process.env.INTERNAL_API_URL || publicConfig.apiBaseUrl).replace(/\/$/, ''),
   siteOrigin: websiteOrigin(),
