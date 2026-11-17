@@ -80,6 +80,12 @@ describe('sitemap discovery', () => {
 
 test('includes only indexable pages and their real indexed language alternatives', async () => {
   jest.mocked(getPageDiscovery).mockResolvedValue([
+    {
+      page_key: 'privacy-policy',
+      locale: 'en',
+      indexable: false,
+      available_locales: ['en', 'sv', 'cs'],
+    },
     { page_key: 'about', locale: 'en', indexable: true, available_locales: ['en', 'sv'] },
     { page_key: 'about', locale: 'sv', indexable: false, available_locales: ['en', 'sv'] },
     {
@@ -94,4 +100,5 @@ test('includes only indexable pages and their real indexed language alternatives
   expect(xml).toContain('https://knut.vandrar.se/cs/poznamky-k-prekladum')
   expect(xml).not.toContain('/sv/om-mig')
   expect(xml).not.toContain('/en/translationNotes')
+  expect(xml).not.toContain('privacy-policy')
 })

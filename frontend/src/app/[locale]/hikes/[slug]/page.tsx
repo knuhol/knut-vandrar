@@ -155,7 +155,7 @@ export default async function HikePage({ params }: Props) {
           <div className="grid gap-12 tablet:gap-16">
             {isActive && cards.length > 0 && (
               <HikeSection id="resources" title={t('followHike')} variant="contrast">
-                <InfoCards cards={cards} />
+                <InfoCards cards={cards} hikeId={hike.id} locale={locale} />
               </HikeSection>
             )}
             <HikeSection id="story" title={t('about')} as="article">
@@ -182,7 +182,7 @@ export default async function HikePage({ params }: Props) {
             )}
             {!isActive && cards.length > 0 && (
               <HikeSection id="resources" title={t('hikeResources')} variant="contrast">
-                <InfoCards cards={cards} />
+                <InfoCards cards={cards} hikeId={hike.id} locale={locale} />
               </HikeSection>
             )}
             <HikeGallery key={hike.id} hikeId={hike.id} locale={locale} initialPage={galleryPage} />

@@ -17,6 +17,8 @@ import { VideoModal } from './VideoModal/VideoModal'
 import { InfoCard } from './InfoCard'
 import { TrackingPassword } from './TrackingPassword'
 
+import { trackHikeInteraction } from '@/analytics/hikeEvents'
+import type { Locale } from '@/i18n/routing'
 import type { Hike } from '@/api/hikes'
 
 const icons = {
@@ -39,7 +41,15 @@ function youtubeId(url: string) {
   return parsed.searchParams.get('v') ?? parsed.pathname.split('/').at(-1)
 }
 
-export function InfoCards({ cards }: { cards: Hike['cards'] }) {
+export function InfoCards({
+  cards,
+  hikeId,
+  locale,
+}: {
+  cards: Hike['cards']
+  hikeId: string
+  locale: Locale
+}) {
   const t = useTranslations('Site')
   const [playing, setPlaying] = useState<{ key: string; id: string }>()
 
@@ -68,6 +78,9 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
                   key={key}
                   icon={<Play aria-hidden="true" />}
                   title={t('youtube_video')}
+                  onActivate={() => {
+                    trackHikeInteraction({ name: 'video_open', hikeId, locale })
+                  }}
                   href={card.url}
                   action={t('video')}
                 />
@@ -84,6 +97,7 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
                   if (playing?.key === key) {
                     return
                   }
+                  trackHikeInteraction({ name: 'video_open', hikeId, locale })
                   setPlaying({ key, id })
                 }}
                 expanded={playing?.key === key}
@@ -101,6 +115,14 @@ export function InfoCards({ cards }: { cards: Hike['cards'] }) {
               title={t(card.type)}
               inactive={inactive}
               message={inactive ? t('inactive') : undefined}
+              onActivate={() => {
+                trackHikeInteraction({
+                  name: 'hike_resource_click',
+                  hikeId,
+                  locale,
+                  resourceType: card.type,
+                })
+              }}
               href={card.url ?? undefined}
               action={t(`cardActions.${card.type}`)}
             />

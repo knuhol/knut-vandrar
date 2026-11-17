@@ -28,10 +28,12 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     engine = create_engine(f"sqlite:///{tmp_path / 'pages.db'}")
     config = Config()
     config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
-    migration = ScriptDirectory.from_config(config).get_revision("012_manual_pages")
-    assert migration is not None
+    scripts = ScriptDirectory.from_config(config)
     with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-        migration.module.upgrade()
+        for revision in ("012_manual_pages", "013_privacy_policy"):
+            migration = scripts.get_revision(revision)
+            assert migration is not None
+            migration.module.upgrade()
     sessions = sessionmaker[Session](engine)
 
     def db() -> Iterator[Session]:
@@ -63,7 +65,7 @@ def test_migrated_content_and_no_locale_fallback(client: TestClient) -> None:
     for locale in ("sv", "en"):
         assert client.get(f"/api/pages/czech-translation-notes?locale={locale}").status_code == 404
     assert client.get("/api/pages/about?locale=de").status_code == 422
-    assert len(client.get("/api/pages").json()) == 4
+    assert len(client.get("/api/pages").json()) == 7
 
 
 def test_admin_reads_are_private_and_publication_is_independent(client: TestClient) -> None:
@@ -79,7 +81,7 @@ def test_admin_reads_are_private_and_publication_is_independent(client: TestClie
     assert client.get(f"/api/page-locales/{entity_id}").status_code == 401
     assert client.get("/api/pages/about?locale=sv").status_code == 404
     assert client.get("/api/pages/about?locale=en").json()["available_locales"] == ["cs", "en"]
-    assert len(client.get("/api/pages").json()) == 3
+    assert len(client.get("/api/pages").json()) == 6
     row["published"] = True
     row["indexable"] = False
     assert (
@@ -121,3 +123,26 @@ def test_manual_locale_create_update_delete_and_template_validation(client: Test
     )
     assert client.delete(f"/api/page-locales/{entity_id}", headers=HEADERS).status_code == 204
     assert client.get("/api/pages/czech-translation-notes?locale=sv").status_code == 404
+
+
+def test_privacy_policy_is_published_editable_and_not_indexable(client: TestClient) -> None:
+    for locale in ("sv", "en", "cs"):
+        response = client.get(f"/api/pages/privacy-policy?locale={locale}")
+        assert response.status_code == 200
+        page = response.json()
+        assert page["content"]["type"] == "standard"
+        assert page["indexable"] is False
+        assert page["available_locales"] == ["cs", "en", "sv"]
+        assert "Google Analytics 4" in page["content"]["body_markdown"]
+        assert "knut-analytics-consent" in page["content"]["body_markdown"]
+    rows = client.get("/api/page-locales", headers=HEADERS).json()["items"]
+    row = next(row for row in rows if row["page_key"] == "privacy-policy" and row["locale"] == "en")
+    entity_id = row.pop("id")
+    row["content"]["title"] = "Updated privacy policy"
+    assert (
+        client.put(f"/api/page-locales/{entity_id}", json=row, headers=HEADERS).status_code == 200
+    )
+    assert (
+        client.get("/api/pages/privacy-policy?locale=en").json()["content"]["title"]
+        == "Updated privacy policy"
+    )

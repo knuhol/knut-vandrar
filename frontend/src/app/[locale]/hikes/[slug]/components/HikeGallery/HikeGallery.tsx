@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRef, useState } from 'react'
 import { HikeSection } from '../HikeSection/HikeSection'
 
+import { trackHikeInteraction } from '@/analytics/hikeEvents'
 import { Button } from '@/components/Button'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
 import { MediaModal } from '@/components/MediaModal/MediaModal'
@@ -201,6 +202,7 @@ export function HikeGallery({
             aria-label={t('open', { number: index + 1, description: photo.alt })}
             aria-haspopup="dialog"
             onClick={() => {
+              trackHikeInteraction({ name: 'gallery_open', hikeId, locale })
               setSelectedIndex(index)
             }}
           >

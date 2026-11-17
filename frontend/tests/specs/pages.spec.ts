@@ -36,8 +36,9 @@ test('a missing locale switches to the target home without English fallback', as
 })
 
 test('available page locales preserve their explicit route when switching language', async () => {
-  fetchMock.mockResolvedValue(Response.json({ content: { type: 'about' } }))
+  fetchMock.mockImplementation(() => Promise.resolve(Response.json({ content: { type: 'about' } })))
   expect(await resolveLanguageDestination('/about', 'en', 'cs', {})).toBe('/about')
+  expect(await resolveLanguageDestination('/privacyPolicy', 'en', 'cs', {})).toBe('/privacyPolicy')
 })
 
 test('API failures surface as errors instead of pretending content is missing', async () => {

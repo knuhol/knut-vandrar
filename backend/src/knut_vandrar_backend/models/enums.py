@@ -93,6 +93,7 @@ class AchievementIcon(StrEnum):
 class PageKey(StrEnum):
     ABOUT = "about"
     CZECH_TRANSLATION_NOTES = "czech-translation-notes"
+    PRIVACY_POLICY = "privacy-policy"
 
 
 class PageTemplate(StrEnum):
