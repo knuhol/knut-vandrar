@@ -14,3 +14,11 @@ export const siteIdentity = Object.freeze({
   },
   sharingImage: { width: 1200, height: 630 },
 })
+
+export function headerLogoVariant(host: string | null) {
+  const hostname = host ? new URL(`http://${host}`).hostname : ''
+  if (['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
+    return 'monochromaticForest'
+  }
+  return hostname === 'dev.vandrar.se' ? 'monochromaticOrange' : 'standard'
+}

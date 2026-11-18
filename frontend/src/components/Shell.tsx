@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
+import { headers } from 'next/headers'
 
 import { Navigation } from './Navigation/Navigation'
 import { SiteHeader } from './SiteHeader'
@@ -10,16 +11,11 @@ import type { UIComponentProps } from './uiComponentProps'
 
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { serverConfig } from '@/config/server'
-
-const headerLogoVariants = {
-  local: 'monochromaticForest',
-  dev: 'monochromaticOrange',
-  prod: 'standard',
-} as const
+import { headerLogoVariant } from '@/config/site'
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   const t = await getTranslations('Site')
+  const logoVariant = headerLogoVariant((await headers()).get('host'))
 
   return (
     <>
@@ -29,7 +25,7 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
       <SiteHeader>
         <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
           <Link data-link-kind="brand" className="min-w-0 flex-1 tablet:flex-none" href="/">
-            <Logo variant={headerLogoVariants[serverConfig.deploymentEnvironment]} />
+            <Logo variant={logoVariant} />
           </Link>
           <Navigation locale={locale} />
           <LanguageSwitcher locale={locale} />
