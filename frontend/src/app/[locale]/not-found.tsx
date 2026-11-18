@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
-import { MessagePage } from './components/MessagePage/MessagePage'
+import { MessagePage } from '@/components/MessagePage/MessagePage'
 
 import { ButtonLink } from '@/components/Button'
 

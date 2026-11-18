@@ -563,7 +563,7 @@ export default typescriptEslint.config(
     rules: { 'no-restricted-exports': 'off' },
   },
   {
-    files: ['src/app/**/not-found.tsx'],
+    files: ['src/app/**/{not-found,global-not-found}.tsx'],
     rules: { 'unicorn/filename-case': 'off' },
   },
 

@@ -1,10 +1,11 @@
-import { ImageResponse } from 'next/og'
 import { hasLocale } from 'next-intl'
 
 import { getHike } from '@/api/hikes'
 import { serverConfig } from '@/config/server'
-import { siteIdentity } from '@/config/site'
 import { routing } from '@/i18n/routing'
+import { sharingImage } from '@/seo/sharingImage'
+
+export const runtime = 'nodejs'
 
 export async function GET(
   _request: Request,
@@ -31,21 +32,15 @@ export async function GET(
   if (!type?.startsWith('image/')) {
     return new Response(null, { status: 502 })
   }
-  const data = Buffer.from(await response.arrayBuffer()).toString('base64')
-
-  return new ImageResponse(
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        backgroundImage: `url(data:${type};base64,${data})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    />,
-    {
-      ...siteIdentity.sharingImage,
-      headers: { 'Cache-Control': 'public, max-age=300' },
-    },
-  )
+  try {
+    const output = await sharingImage(new Uint8Array(await response.arrayBuffer()))
+    return new Response(new Uint8Array(output), {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=300',
+      },
+    })
+  } catch {
+    return new Response(null, { status: 502 })
+  }
 }
