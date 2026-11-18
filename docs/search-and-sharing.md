@@ -21,8 +21,10 @@ Explicit `/sv`, `/en`, and `/cs` URLs retain their language.
   nofollow`. Backend JSON sends `noindex`; public image responses remain
   crawlable. These instructions are not access controls.
 
-Keep the permanent redirect from `vandrar.se` to `knut.vandrar.se`, preserving
-paths and queries. The existing external redirect is managed outside this repo.
+Production Traefik redirects `vandrar.se` and `www.vandrar.se` to
+`https://knut.vandrar.se` with HTTP 301, preserving paths and queries. Routing and
+TLS certificate configuration live in `docker-compose.vps.prod.yml`. See the VPS
+deployment guide for moving these domains from Vercel to the VPS.
 
 ## Metadata and discovery
 

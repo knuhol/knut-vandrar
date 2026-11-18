@@ -39,6 +39,40 @@ Run these steps as the account that owns Docker deployments. Replace `<repositor
 
 5. Confirm the DNS A/AAAA record for `dev.vandrar.se` points to the VPS. Production DNS for `knut.vandrar.se` can remain unchanged until ready.
 
+## Apex and www redirects
+
+`docker-compose.vps.prod.yml` configures permanent HTTP 301 redirects from both
+`vandrar.se` and `www.vandrar.se` to `https://knut.vandrar.se`. Paths, percent-encoded
+characters, and query strings are preserved. For example:
+
+```text
+https://www.vandrar.se/en/hikes/trail?source=instagram
+→ https://knut.vandrar.se/en/hikes/trail?source=instagram
+```
+
+The HTTP router uses the Traefik `web` entrypoint (port 80); the HTTPS router uses
+the existing `websecure` entrypoint (port 443). Ensure the shared Traefik instance
+has both entrypoints. A global HTTP-to-HTTPS entrypoint redirect may add a hop
+before the hostname redirect. The existing `myresolver` certificate resolver
+requests a certificate covering `vandrar.se` and `www.vandrar.se`.
+
+To replace the current Vercel redirect:
+
+1. Prepare the production deployment with these routing labels. Confirm
+   `knut.vandrar.se` already serves the production website from the VPS.
+2. At STRATO, point the apex domain's A record at the VPS IPv4 address. Point
+   `www` at the VPS too, using an A record or a CNAME to `vandrar.se`. Any AAAA
+   records must point at the VPS's working IPv6 address, or be removed if IPv6 is
+   not served. Preserve unrelated DNS records, including mail records.
+3. Once DNS reaches the VPS, let Traefik obtain the source domains' certificates.
+   The source domains need valid HTTPS certificates before they can redirect an
+   HTTPS visit. The normal deployment loads the labels; do not configure a second
+   forwarding rule at STRATO.
+4. Verify HTTP and HTTPS for both hostnames, including a path and query string.
+   Then remove the obsolete Vercel domain/redirect configuration.
+
+These rules are production-only and do not redirect `dev.vandrar.se` or localhost.
+
 ## Private development preview
 
 Only `dev.vandrar.se` has a branded, English-only password gate. The development routing overlay
@@ -64,8 +98,8 @@ local pages. The page remains unavailable on production.
 
 Successful entry sets an eight-hour, Secure, HttpOnly, host-only cookie and returns
 to the requested page. Changing the hash invalidates existing cookies. Login
-attempts are limited to ten per fifteen minutes across the preview, independently
-of admin login, with a persistent SQLite file in the existing `admin_sessions`
+attempts are limited to ten per fifteen minutes across the preview; a successful
+login resets the counter. The limit is independent of admin login, with a persistent SQLite file in the existing `admin_sessions`
 volume. Clearing the browser's `__Host-dev_access` cookie locks that browser again.
 This setup uses the current single frontend instance.
 

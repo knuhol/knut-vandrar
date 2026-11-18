@@ -22,3 +22,19 @@ services:
       - traefik.http.routers.knut-vandrar-prod-web.tls.certresolver=myresolver
       - traefik.http.routers.knut-vandrar-prod-web.priority=10
       - traefik.http.services.knut-vandrar-prod-web.loadbalancer.server.port=${FRONTEND_INTERNAL_PORT}
+      # Canonical-domain redirects, including the original path and query string.
+      - traefik.http.middlewares.knut-vandrar-prod-canonical.redirectregex.regex=^https?://[^/]+/(.*)
+      - traefik.http.middlewares.knut-vandrar-prod-canonical.redirectregex.replacement=https://knut.vandrar.se/$${1}
+      - traefik.http.middlewares.knut-vandrar-prod-canonical.redirectregex.permanent=true
+      - traefik.http.routers.knut-vandrar-prod-alias-http.rule=Host(`vandrar.se`) || Host(`www.vandrar.se`)
+      - traefik.http.routers.knut-vandrar-prod-alias-http.entrypoints=web
+      - traefik.http.routers.knut-vandrar-prod-alias-http.middlewares=knut-vandrar-prod-canonical@docker
+      - traefik.http.routers.knut-vandrar-prod-alias-http.service=noop@internal
+      - traefik.http.routers.knut-vandrar-prod-alias-https.rule=Host(`vandrar.se`) || Host(`www.vandrar.se`)
+      - traefik.http.routers.knut-vandrar-prod-alias-https.entrypoints=websecure
+      - traefik.http.routers.knut-vandrar-prod-alias-https.middlewares=knut-vandrar-prod-canonical@docker
+      - traefik.http.routers.knut-vandrar-prod-alias-https.service=noop@internal
+      - traefik.http.routers.knut-vandrar-prod-alias-https.tls=true
+      - traefik.http.routers.knut-vandrar-prod-alias-https.tls.certresolver=myresolver
+      - traefik.http.routers.knut-vandrar-prod-alias-https.tls.domains[0].main=vandrar.se
+      - traefik.http.routers.knut-vandrar-prod-alias-https.tls.domains[0].sans=www.vandrar.se

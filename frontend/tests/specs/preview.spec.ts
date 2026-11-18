@@ -141,6 +141,16 @@ test('denies invalid passwords, cross-origin requests, oversized bodies, and mis
   expect((await check('/')).status).toBe(303)
 })
 
+test('successful logins reset the counter, including earlier incorrect attempts', async () => {
+  for (let index = 0; index < 9; index++) {
+    await submit('wrong')
+  }
+  for (let index = 0; index < 12; index++) {
+    const response = await submit(password)
+    expect(response.headers.get('set-cookie')).toContain('__Host-dev_access=')
+  }
+})
+
 test('throttle persists across requests and releases after fifteen minutes', () => {
   for (let index = 0; index < 10; index++) {
     expect(allowPreviewLogin()).toBe(true)
