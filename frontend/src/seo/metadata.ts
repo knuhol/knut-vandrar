@@ -15,6 +15,7 @@ export function pageMetadata({
   languages,
   image,
   imageAlt,
+  imageSize,
   article = false,
   indexable = true,
 }: {
@@ -25,18 +26,26 @@ export function pageMetadata({
   languages: Record<string, string>
   image?: string
   imageAlt: string
+  imageSize?: { width: number; height: number }
   article?: boolean
   indexable?: boolean
 }): Metadata {
   const url = absoluteUrl(path)
   const socialImage = image
-    ? { url: image, alt: imageAlt }
+    ? { url: image, alt: imageAlt, ...imageSize }
     : {
         url: absoluteUrl(`/brand/sharing/${locale}.png`),
         alt: imageAlt,
         ...siteIdentity.sharingImage,
       }
   const fullTitle = `${title} · ${siteIdentity.name}`
+  const socialDescription =
+    description.length > 125
+      ? `${description
+          .slice(0, 124)
+          .replace(/\s+\S*$/, '')
+          .trimEnd()}…`
+      : description
 
   return {
     title: { absolute: fullTitle },
@@ -52,7 +61,7 @@ export function pageMetadata({
       : { index: false, follow: false },
     openGraph: {
       title: fullTitle,
-      description,
+      description: socialDescription,
       url,
       siteName: siteIdentity.name,
       locale: socialLocales[locale],
@@ -64,6 +73,11 @@ export function pageMetadata({
         ? { type: 'article', authors: [absoluteUrl(getPathname({ locale, href: '/about' }))] }
         : { type: 'website' }),
     },
-    twitter: { card: 'summary_large_image', title: fullTitle, description, images: [socialImage] },
+    twitter: {
+      card: 'summary_large_image',
+      title: fullTitle,
+      description: socialDescription,
+      images: [socialImage],
+    },
   }
 }

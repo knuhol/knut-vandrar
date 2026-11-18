@@ -76,6 +76,33 @@ describe('public URL and crawler metadata', () => {
     )
   })
 
+  test('bounds social descriptions without shortening the search description', () => {
+    const description = 'A quiet journey through forests and lakes. '.repeat(4)
+    const metadata = pageMetadata({
+      locale: 'en',
+      title: 'Hiking',
+      description,
+      path: '/en',
+      languages: {},
+      image: 'https://knut.vandrar.se/brand/hikes/en/hiking',
+      imageSize: { width: 1200, height: 630 },
+      imageAlt: 'Forest',
+    })
+    expect(metadata.description).toBe(description)
+    const social = metadata.openGraph as { description: string; images: unknown[] }
+    expect(social.description.length).toBeLessThanOrEqual(125)
+    expect(social.description.endsWith('…')).toBe(true)
+    expect(metadata.twitter).toMatchObject({ description: social.description })
+    expect(social.images).toEqual([
+      {
+        url: 'https://knut.vandrar.se/brand/hikes/en/hiking',
+        width: 1200,
+        height: 630,
+        alt: 'Forest',
+      },
+    ])
+  })
+
   test.each([
     [undefined, 0],
     ['0', 0],

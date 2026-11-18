@@ -13,4 +13,4 @@ export default function proxy(request: NextRequest) {
   }
   return response
 }
-export const config = { matcher: ['/((?!admin(?:/|$)|api|_next|brand|.*\\..*).*)'] }
+export const config = { matcher: ['/((?!admin(?:/|$)|preview(?:/|$)|api|_next|brand|.*\\..*).*)'] }

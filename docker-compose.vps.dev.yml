@@ -3,16 +3,23 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=vandrar_web-net
-      - traefik.http.routers.knut-vandrar-dev-api.rule=Host(`dev.vandrar.se`) && PathPrefix(`/api`) && !PathPrefix(`/api/admin`) && !Path(`/api/language`)
+      - traefik.http.routers.knut-vandrar-dev-api.rule=Host(`dev.vandrar.se`) && PathPrefix(`/api`) && !PathPrefix(`/api/admin`) && !Path(`/api/language`) && !PathPrefix(`/api/preview`)
       - traefik.http.routers.knut-vandrar-dev-api.entrypoints=websecure
       - traefik.http.routers.knut-vandrar-dev-api.tls=true
       - traefik.http.routers.knut-vandrar-dev-api.tls.certresolver=myresolver
       - traefik.http.routers.knut-vandrar-dev-api.priority=100
+      - traefik.http.routers.knut-vandrar-dev-api.middlewares=knut-vandrar-dev-access@docker
       - traefik.http.services.knut-vandrar-dev-api.loadbalancer.server.port=${API_PORT}
 
   frontend:
     environment:
       DEPLOYMENT_ENVIRONMENT: dev
+      DEV_GATE_PASSWORD_HASH: ${DEV_GATE_PASSWORD_HASH:-}
+      DEV_GATE_DATABASE: /admin-data/preview-attempts.sqlite
+    networks:
+      traefik:
+        aliases:
+          - knut-vandrar-dev-preview
     labels:
       - traefik.enable=true
       - traefik.docker.network=vandrar_web-net
@@ -21,4 +28,8 @@ services:
       - traefik.http.routers.knut-vandrar-dev-web.tls=true
       - traefik.http.routers.knut-vandrar-dev-web.tls.certresolver=myresolver
       - traefik.http.routers.knut-vandrar-dev-web.priority=10
+      - traefik.http.routers.knut-vandrar-dev-web.middlewares=knut-vandrar-dev-access@docker
+      - traefik.http.middlewares.knut-vandrar-dev-access.forwardauth.address=http://knut-vandrar-dev-preview:${FRONTEND_INTERNAL_PORT}/api/preview/access
+      - traefik.http.middlewares.knut-vandrar-dev-access.forwardauth.trustForwardHeader=false
+      - traefik.http.middlewares.knut-vandrar-dev-access.forwardauth.authRequestHeaders=Cookie
       - traefik.http.services.knut-vandrar-dev-web.loadbalancer.server.port=${FRONTEND_INTERNAL_PORT}

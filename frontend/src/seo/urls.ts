@@ -19,6 +19,10 @@ export function hikePath(locale: Locale, slug: string) {
   return getPathname({ locale, href: { pathname: '/hikes/[slug]', params: { slug } } })
 }
 
+export function hikeSharingImage(locale: Locale, slug: string) {
+  return absoluteUrl(`/brand/hikes/${locale}/${encodeURIComponent(slug)}`)
+}
+
 export function homeLanguages(offset = 0) {
   return Object.fromEntries(
     routing.locales.map((locale) => [locale, absoluteUrl(homePath(locale, offset))]),

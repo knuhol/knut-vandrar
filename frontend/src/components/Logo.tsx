@@ -5,7 +5,7 @@ import type { SVGProps } from 'react'
 import type { UIComponentProps } from './uiComponentProps'
 
 type LogoProps = UIComponentProps<Omit<SVGProps<SVGSVGElement>, 'children'>> & {
-  variant?: 'standard' | 'light' | 'monochromatic'
+  variant?: 'standard' | 'light' | 'monochromatic' | 'monochromaticOrange' | 'monochromaticForest'
   size?: 'default' | 'compact'
 }
 
@@ -23,6 +23,16 @@ export function Logo({ variant = 'standard', size = 'default', ...props }: LogoP
       accent: 'var(--color-orange)',
     },
     monochromatic: { forest: 'currentColor', sage: 'currentColor', accent: 'currentColor' },
+    monochromaticOrange: {
+      forest: 'var(--color-orange-dark)',
+      sage: 'var(--color-orange-dark)',
+      accent: 'var(--color-orange-dark)',
+    },
+    monochromaticForest: {
+      forest: 'var(--color-forest-dark)',
+      sage: 'var(--color-forest-dark)',
+      accent: 'var(--color-forest-dark)',
+    },
   }[variant]
 
   return (

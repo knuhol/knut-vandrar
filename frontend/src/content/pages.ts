@@ -8,6 +8,7 @@ import { staticPages, type PageKey } from './staticPages'
 import { getPage, type PublicPage } from '@/api/pages'
 import { getPathname } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
+import { messages } from '@/i18n/messages'
 import { pageMetadata } from '@/seo/metadata'
 import { absoluteUrl } from '@/seo/urls'
 
@@ -40,7 +41,6 @@ export function staticPageMetadata(page: PublicPage) {
         absoluteUrl(getPathname({ locale: language, href })),
       ]),
     ),
-    imageAlt: content.type === 'about' ? content.portrait_alt : content.title,
-    ...(content.type === 'about' ? { image: absoluteUrl('/knut.webp') } : {}),
+    imageAlt: messages[locale].Site.sharingImageAlt,
   })
 }

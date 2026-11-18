@@ -29,11 +29,11 @@ export function HikeSection({
     >
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
         <div
-          className={`flex min-w-0 items-start gap-3 ${variant === 'plain' ? 'border-l-4 border-orange-dark pl-4 tablet:pl-7' : ''}`}
+          className={`flex min-w-0 items-center gap-3 ${variant === 'plain' ? 'border-l-4 border-orange-dark pl-4 tablet:pl-7' : ''}`}
         >
           <span
             aria-hidden="true"
-            className={`mt-1 grid size-10 shrink-0 place-items-center rounded-sm ${variant === 'contrast' ? 'bg-cream/15 text-orange' : 'bg-orange/15 text-forest'}`}
+            className={`grid size-10 shrink-0 place-items-center rounded-sm ${variant === 'contrast' ? 'bg-cream/15 text-orange' : 'bg-orange/15 text-forest'}`}
           >
             <Icon className="size-6" />
           </span>

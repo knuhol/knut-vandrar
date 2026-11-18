@@ -208,6 +208,17 @@ export const messages = {
 
   en: {
     Site: {
+      previewAccess: {
+        title: 'A glimpse of the next step.',
+        description:
+          'This is a private development version of Knut vandrar. Enter the password to continue.',
+        eyebrow: 'Private preview',
+        password: 'Password',
+        submit: 'Open the preview',
+        invalid: 'Incorrect password. Please try again.',
+        limited: 'Too many attempts. Please try again in 15 minutes.',
+        unavailable: 'The preview is currently unavailable.',
+      },
       analytics: {
         settings: 'Cookie settings',
         title: 'Cookies on this website',

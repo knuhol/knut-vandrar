@@ -2,10 +2,15 @@ import { randomBytes, scryptSync } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 
+const preview = process.argv[3] === '--dev-gate'
+const key = preview ? 'DEV_GATE_PASSWORD_HASH' : 'ADMIN_PASSWORD_HASH'
+
 if (!process.stdin.isTTY) {
   throw new Error('Run this command in an interactive terminal')
 }
-process.stdout.write('New admin password (hidden, at least 24 characters): ')
+process.stdout.write(
+  `New ${preview ? 'preview' : 'admin'} password (hidden, at least 24 characters): `,
+)
 spawnSync('stty', ['-echo'], { stdio: 'inherit' })
 let input = ''
 try {
@@ -29,7 +34,7 @@ const output = process.argv[2]
 if (!output) {
   throw new Error('Provide an output filename for the password hash')
 }
-writeFileSync(output, `ADMIN_PASSWORD_HASH=${hash}\n`, { flag: 'wx', mode: 0o600 })
+writeFileSync(output, `${key}=${hash}\n`, { flag: 'wx', mode: 0o600 })
 process.stdout.write(
-  'Hash saved. Copy its ADMIN_PASSWORD_HASH entry to the root .env, then delete this file.\n',
+  `Hash saved. Copy its ${key} entry to the environment file, then delete this file.\n`,
 )

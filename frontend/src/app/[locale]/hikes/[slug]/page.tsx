@@ -26,7 +26,8 @@ import { getHike, getPhotos } from '@/api/hikes'
 import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
 import { metadataDescription } from '@/seo/text'
-import { hikeLanguages, hikePath } from '@/seo/urls'
+import { hikeLanguages, hikePath, hikeSharingImage } from '@/seo/urls'
+import { siteIdentity } from '@/config/site'
 import { hikeData } from '@/seo/structuredData'
 import { StructuredData } from '@/components/StructuredData'
 
@@ -52,7 +53,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: metadataDescription(hike.translation.summary_markdown, t('metadataDescription')),
     path: hikePath(locale, hike.translation.slug),
     languages: hikeLanguages(hike.available_translations),
-    image: hike.cover_image_url ? imageUrl(hike.cover_image_url) : undefined,
+    image: hike.cover_image_url ? hikeSharingImage(locale, hike.translation.slug) : undefined,
+    imageSize: siteIdentity.sharingImage,
     imageAlt: hike.cover_image_url ? hike.translation.title : t('sharingImageAlt'),
     article: true,
   })
