@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Montserrat, Source_Sans_3, Barlow_Condensed } from 'next/font/google'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -7,6 +6,7 @@ import { Analytics } from './components/Analytics/Analytics'
 import { ImageMotion } from '@/components/ImageMotion'
 
 import '../globals.css'
+import { heading, body, numbers } from '@/styles/fonts'
 import { PageMotion } from '@/components/PageMotion'
 import { Footer, Header } from '@/components/Shell'
 import { routing } from '@/i18n/routing'
@@ -15,24 +15,6 @@ import { identityData } from '@/seo/structuredData'
 import { isIndexable, siteOrigin } from '@/seo/urls'
 import { serverConfig } from '@/config/server'
 import { siteIdentity } from '@/config/site'
-
-const heading = Montserrat({
-  subsets: ['latin', 'latin-ext'],
-  variable: '--font-heading',
-  weight: ['700'],
-  display: 'swap',
-})
-const body = Source_Sans_3({
-  subsets: ['latin', 'latin-ext'],
-  variable: '--font-body',
-  display: 'swap',
-})
-const numbers = Barlow_Condensed({
-  subsets: ['latin', 'latin-ext'],
-  variable: '--font-numbers',
-  weight: ['500', '600'],
-  display: 'swap',
-})
 
 export async function generateMetadata({
   params,

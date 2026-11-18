@@ -1,16 +1,21 @@
-import { useTranslations } from 'next-intl'
-
 import type { SVGProps } from 'react'
 
 import type { UIComponentProps } from './uiComponentProps'
+import { messages } from '@/i18n/messages'
+import { routing, type Locale } from '@/i18n/routing'
 
 type LogoProps = UIComponentProps<Omit<SVGProps<SVGSVGElement>, 'children'>> & {
   variant?: 'standard' | 'light' | 'monochromatic' | 'monochromaticOrange' | 'monochromaticForest'
   size?: 'default' | 'compact'
+  locale?: Locale
 }
 
-export function Logo({ variant = 'standard', size = 'default', ...props }: LogoProps) {
-  const t = useTranslations('Site')
+export function Logo({
+  variant = 'standard',
+  size = 'default',
+  locale = routing.defaultLocale,
+  ...props
+}: LogoProps) {
   const colors = {
     standard: {
       forest: 'var(--color-forest)',
@@ -41,7 +46,7 @@ export function Logo({ variant = 'standard', size = 'default', ...props }: LogoP
       width={654}
       height={73}
       role="img"
-      aria-label={t('brand')}
+      aria-label={messages[locale].Site.brand}
       {...props}
       className={`block h-auto ${size === 'compact' ? 'w-48 max-w-full tablet:w-64' : 'w-full max-w-47.5 tablet:w-80 tablet:max-w-none'}`}
     >

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 
-import { MessagePage } from './components/MessagePage/MessagePage'
+import { MessagePage } from '@/components/MessagePage/MessagePage'
 
 import { Button } from '@/components/Button'
 

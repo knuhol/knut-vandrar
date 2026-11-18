@@ -23,6 +23,7 @@ if (!publicApiUrl) {
 }
 
 const nextConfig = {
+  experimental: { globalNotFound: true },
   // Let next-intl resolve the original localized URL before rewriting it.
   // Normalizing first can redirect rewritten routes back to their public URL.
   skipProxyUrlNormalize: true,

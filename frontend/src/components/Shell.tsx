@@ -14,7 +14,7 @@ import type { Locale } from '@/i18n/routing'
 import { headerLogoVariant } from '@/config/site'
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
-  const t = await getTranslations('Site')
+  const t = await getTranslations({ locale, namespace: 'Site' })
   const logoVariant = headerLogoVariant((await headers()).get('host'))
 
   return (
@@ -24,8 +24,13 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
       </a>
       <SiteHeader>
         <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
-          <Link data-link-kind="brand" className="min-w-0 flex-1 tablet:flex-none" href="/">
-            <Logo variant={logoVariant} />
+          <Link
+            data-link-kind="brand"
+            className="min-w-0 flex-1 tablet:flex-none"
+            href="/"
+            locale={locale}
+          >
+            <Logo variant={logoVariant} locale={locale} />
           </Link>
           <Navigation locale={locale} />
           <LanguageSwitcher locale={locale} />
@@ -35,8 +40,10 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   )
 }
 
-export async function Footer({ children }: { children?: ReactNode }) {
-  const t = await getTranslations('Site')
+export async function Footer({ children, locale }: { children?: ReactNode; locale?: Locale }) {
+  const t = locale
+    ? await getTranslations({ locale, namespace: 'Site' })
+    : await getTranslations('Site')
 
   return (
     <footer className="bg-forest text-cream">
@@ -45,9 +52,10 @@ export async function Footer({ children }: { children?: ReactNode }) {
           <Link
             data-link-kind="brand"
             href="/"
+            locale={locale}
             className="mb-1.5 md:mb-0 desktop:justify-self-start"
           >
-            <Logo size="compact" variant="monochromatic" />
+            <Logo size="compact" variant="monochromatic" locale={locale} />
           </Link>
           <div className="desktop:text-center">
             <p>{t('footer')}</p>
