@@ -31,7 +31,14 @@ export function Markdown({
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[collapsibleSections]}
-          components={{ details: ({ children: content }) => <Chapter>{content}</Chapter> }}
+          components={{
+            details: ({ children: content }) => <Chapter>{content}</Chapter>,
+            table: ({ children: content }) => (
+              <div className={styles.tableScroll}>
+                <table>{content}</table>
+              </div>
+            ),
+          }}
         >
           {children}
         </ReactMarkdown>

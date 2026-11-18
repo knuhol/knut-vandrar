@@ -9,7 +9,7 @@ export const messages = {
         accept: 'Acceptera kakor',
         reject: 'Neka kakor',
         storageError:
-          'Ditt val kunde inte sparas. Analys förblir avstängd om inget giltigt samtycke redan finns. Kontrollera webbläsarens lagringsinställningar.',
+          'Ditt val kunde inte sparas. Webbanalysen förblir avstängd om inget giltigt samtycke redan finns. Kontrollera webbläsarens lagringsinställningar.',
         privacyPolicy: 'Läs integritetspolicyn',
       },
       gallery: {
@@ -30,9 +30,9 @@ export const messages = {
       },
       accommodation: {
         tent: 'Tält',
-        freeShelter: 'Gratis vindskydd / stuga',
+        freeShelter: 'Vindskydd / stuga (gratis)',
         mountainHut: 'Fjällstuga (mot avgift)',
-        paidAccommodation: 'Annat betalt boende',
+        paidAccommodation: 'Övrigt betalt boende',
       },
       journey: {
         title: 'Rutt och övernattningar',
@@ -48,7 +48,7 @@ export const messages = {
         westbound: 'WBO · Västerut',
         clockwise: 'CW · Medurs',
         counterclockwise: 'CCW · Moturs',
-        stages: 'Etapp {from, number}–{to, number}',
+        stages: 'Etapper {from, number}–{to, number}',
         plannedNights: 'Planerade övernattningar',
         overnights: 'Övernattningar',
       },
@@ -66,7 +66,7 @@ export const messages = {
           campingRestrictions:
             'Lokala tältrestriktioner kan gälla. Kontrollera reglerna där du ska övernatta.',
           bookingRequired: 'Vissa boenden kan kräva förbokning.',
-          feesMayApply: 'Boende och vissa faciliteter kan kosta extra.',
+          feesMayApply: 'Avgifter kan förekomma för boende och vissa faciliteter.',
         },
       },
       brand: 'Knut vandrar',
@@ -119,7 +119,7 @@ export const messages = {
         difficulty: {
           label: 'Svårighetsgrad',
           description:
-            'En samlad bedömning av terräng, avskildhet, utsatthet för väder och hur mycket vandringserfarenhet som behövs. 0 stjärnor betyder lätt och nybörjarvänligt; 5 betyder mycket krävande, avlägset och utsatt, med behov av stor erfarenhet och god förberedelse.',
+            'En samlad bedömning av terrängen, hur avlägsen leden är, hur utsatt den är för väder och hur mycket vandringserfarenhet som behövs. 0 stjärnor betyder en lätt och nybörjarvänlig led; 5 betyder en mycket krävande, avlägsen och väderutsatt led som kräver stor erfarenhet och goda förberedelser.',
         },
         facilities: {
           label: 'Faciliteter',
@@ -237,8 +237,8 @@ export const messages = {
       },
       accommodation: {
         tent: 'Tent',
-        freeShelter: 'Free shelter / hut',
-        mountainHut: 'Fjällstuga (paid hut)',
+        freeShelter: 'Shelter / hut (free)',
+        mountainHut: 'Mountain hut (paid)',
         paidAccommodation: 'Other paid accommodation',
       },
       journey: {
@@ -256,8 +256,8 @@ export const messages = {
         clockwise: 'CW · Clockwise',
         counterclockwise: 'CCW · Counterclockwise',
         stages: 'Stages {from, number}–{to, number}',
-        plannedNights: 'Planned overnights',
-        overnights: 'Overnights',
+        plannedNights: 'Planned overnight stays',
+        overnights: 'Overnight stays',
       },
       practicalities: {
         season: 'Suggested hiking months',
@@ -273,7 +273,7 @@ export const messages = {
           campingRestrictions:
             'Local camping restrictions may apply. Check the rules where you plan to stay.',
           bookingRequired: 'Some accommodation may require advance booking.',
-          feesMayApply: 'Accommodation and facilities may have fees.',
+          feesMayApply: 'You may need to pay for accommodation and some facilities.',
         },
       },
       brand: 'Knut vandrar',
@@ -343,7 +343,7 @@ export const messages = {
             'How easy it is to reach and leave the trail by train or bus, considering distance, frequency and connections. A high rating means convenient transport links.',
         },
         resupplies: {
-          label: 'Resupplies',
+          label: 'Resupply options',
           description:
             'Opportunities to buy food and fuel along the way, considering distance, selection and opening hours. A high rating means it is easy to replenish supplies.',
         },
@@ -418,16 +418,16 @@ export const messages = {
         settings: 'Nastavení cookies',
         title: 'Cookies na tomto webu',
         description:
-          'Tento web používá nezbytné cookies a místní úložiště pro správné fungování. S tvým souhlasem používám také analytické cookies, které mi pomáhají pochopit, jak lidé web používají, a zlepšovat jeho výkon. Svoji volbu můžeš kdykoli změnit v Nastavení cookies.',
+          'Tento web používá nezbytné cookies a místní úložiště, aby správně fungoval. S tvým souhlasem používám také analytické cookies, které mi pomáhají pochopit, jak lidé web používají, a zlepšovat jeho výkon. Svoji volbu můžeš kdykoli změnit v Nastavení cookies.',
         accept: 'Přijmout cookies',
         reject: 'Odmítnout cookies',
         storageError:
-          'Vaši volbu se nepodařilo uložit. Analytika zůstane vypnutá, pokud již neexistuje platný souhlas. Zkontrolujte nastavení úložiště prohlížeče.',
+          'Tvou volbu se nepodařilo uložit. Analytické měření zůstane vypnuté, pokud už neexistuje platný souhlas. Zkontroluj nastavení úložiště prohlížeče.',
         privacyPolicy: 'Přečíst zásady ochrany soukromí',
       },
       gallery: {
         defaultAlt: 'Fotka z hiku',
-        loadError: 'Fotky se nepodařilo načíst. Zkuste to znovu.',
+        loadError: 'Fotky se nepodařilo načíst. Zkus to znovu.',
         title: 'Fotky z hiku',
         count: '{count, plural, one {# fotka} few {# fotky} other {# fotek}}',
         open: 'Otevřít fotku {number}: {description}',
@@ -439,12 +439,12 @@ export const messages = {
       },
       achievements: {
         title: 'Milníky',
-        goals: 'Cíle pro tento hike',
+        goals: 'Cíle pro tenhle hike',
       },
       accommodation: {
         tent: 'Stan',
-        freeShelter: 'Přístřešek / chata zdarma',
-        mountainHut: 'Fjällstuga (placená chata)',
+        freeShelter: 'Přístřešek / chata (zdarma)',
+        mountainHut: 'Horská chata (placená)',
         paidAccommodation: 'Jiné placené ubytování',
       },
       journey: {
@@ -466,18 +466,18 @@ export const messages = {
         overnights: 'Noclehy',
       },
       practicalities: {
-        season: 'Doporučené měsíce na hiking',
+        season: 'Kdy vyrazit na hike',
         seasonNote:
-          'Jde o pěší hiky, ne o zimní přechody nebo lyžování. Podmínky se rok od roku liší.',
-        inSeason: '{month}: doporučený měsíc na hiking',
-        outsideSeason: '{month}: mimo doporučenou hikingovou sezónu',
+          'Platí pro pěší hiky, ne pro zimní aktivity jako lyžování. Podmínky se rok od roku liší.',
+        inSeason: '{month}: doporučený měsíc na hike',
+        outsideSeason: '{month}: mimo doporučenou sezónu pro hiking',
         water: 'Zdroje vody',
         waterSources: { tap: 'Voda z kohoutku', shop: 'Obchody', natural: 'Přírodní zdroje vody' },
         overnights: 'Možnosti přenocování',
         restrictionsLabel: 'Na co si dát pozor při nocování',
         restrictions: {
           campingRestrictions:
-            'Mohou platit místní omezení táboření. Ověřte si pravidla v místě noclehu.',
+            'Mohou platit místní omezení stanování. Ověř si pravidla tam, kde chceš přenocovat.',
           bookingRequired: 'Někde může být potřeba rezervace předem.',
           feesMayApply: 'Za ubytování a některé služby se může platit.',
         },
@@ -511,7 +511,7 @@ export const messages = {
       planned: 'Plánovaný',
       ongoing: 'Probíhající',
       completed: 'Dokončený',
-      aborted: 'Nedokončený',
+      aborted: 'Předčasně ukončený',
       days: '{count, plural, one {# den} few {# dny} other {# dní}}',
       ascent: 'Nastoupáno',
       translationNoticeLabel: 'Automatický překlad z angličtiny',
@@ -534,7 +534,7 @@ export const messages = {
         difficulty: {
           label: 'Obtížnost',
           description:
-            'Hodnotím terén, odlehlost, vystavení počasí a to, kolik zkušeností s hikingem je potřeba. 0 hvězdiček znamená snadný trail vhodný pro začátečníky; 5 hvězdiček velmi náročný, odlehlý a exponovaný trail, který vyžaduje hodně zkušeností a dobrou přípravu.',
+            'Při hodnocení beru v úvahu terén, odlehlost trailu, nakolik je vystavený počasí a jaké zkušenosti s hikingem vyžaduje. 0 hvězdiček znamená snadný trail vhodný pro začátečníky; 5 hvězdiček velmi náročný, odlehlý a exponovaný trail, který vyžaduje hodně zkušeností a dobrou přípravu.',
         },
         facilities: {
           label: 'Zázemí',
@@ -544,7 +544,7 @@ export const messages = {
         maintenance: {
           label: 'Údržba',
           description:
-            'Stav stezek, značení, rozcestníků, mostů a povalových chodníků. Vysoké hodnocení znamená dobře udržovaný trail, na kterém se snadno orientuje.',
+            'Stav stezek, značení, rozcestníků, mostů a dřevěných chodníků. Vysoké hodnocení znamená dobře udržovaný trail, kde se dá snadno držet trasy.',
         },
         publicTransport: {
           label: 'Veřejná doprava',
@@ -564,7 +564,7 @@ export const messages = {
         coastal: 'Pobřeží',
         loop: 'Okruh',
         aboveArcticCircle: 'Severně od polárního kruhu',
-        crossesArcticCircle: 'Přechází polární kruh',
+        crossesArcticCircle: 'Protíná polární kruh',
         waymarked: 'Značená trasa',
         partlyWaymarked: 'Částečně značená',
         unmarked: 'Neznačená',
@@ -572,8 +572,8 @@ export const messages = {
       trailOrArea: 'Trail / oblast',
       hikeStats: 'Hike v číslech',
       hikeFacts: 'Tenhle hike',
-      followHike: 'Sledujte hike',
-      hikeResources: 'Více z tohoto hiku',
+      followHike: 'Sledovat hike',
+      hikeResources: 'Více z tohohle hiku',
       name: 'Název',
       countries: 'Země',
       start: 'Start',
@@ -599,14 +599,14 @@ export const messages = {
         gpx_collection: 'Zobrazit na Plotaroute',
         progress: 'Sledovat průběh hiku',
         live_position: 'Sledovat polohu na mapě',
-        equipment: 'Zobrazit výbavu',
+        equipment: 'Zobrazit seznam vybavení',
         social_feed: 'Fotky a novinky z trailu',
       },
       trackingPassword: 'Heslo pro sledování polohy',
       copyTrackingPassword: 'Kopírovat heslo',
       trackingPasswordCopied: 'Zkopírováno!',
       trackingPasswordCopyFailed:
-        'Automatické kopírování se nezdařilo. Označte heslo a zkopírujte ho ručně.',
+        'Heslo se nepodařilo automaticky zkopírovat. Označ ho a zkopíruj ručně.',
       inactive: 'Sledování polohy není aktivní',
       video: 'Přehrát film na YouTube',
       videoLoading: 'Načítání přehrávače…',
@@ -615,7 +615,7 @@ export const messages = {
       error: 'Hiky se nepodařilo načíst.',
       retry: 'Zkusit znovu',
       pageNotFound: 'Stránka nebyla nalezena',
-      pageNotFoundMessage: 'Stránka, kterou hledáte, neexistuje nebo byla přesunuta.',
+      pageNotFoundMessage: 'Stránka, kterou hledáš, neexistuje nebo byla přesunuta.',
       unavailable: 'Dočasně nedostupné',
       read: 'Zobrazit hike',
     },

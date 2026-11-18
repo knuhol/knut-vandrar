@@ -4,7 +4,7 @@ Direct GA4 integration; Google Tag Manager is not used. Set `GOOGLE_ANALYTICS_ID
 
 ## Consent
 
-The non-modal banner and footer settings control share the Swedish, English, and Czech messages in `frontend/src/i18n/messages.ts`. The banner links to a localized, non-indexable privacy policy using the standard page template. Migration `013_privacy_policy` creates the editable entity and its three published translations; run the normal Alembic upgrade on deployment. Localized page routes use Next.js `skipProxyUrlNormalize` so next-intl receives the original path and avoids rewrite/redirect loops. The initial policy uses the existing Instagram profile as a contact channel; review contact details and actual hosting/GA4 retention settings before publishing. The site remains usable without accepting.
+The non-modal banner and footer settings control share the Swedish, English, and Czech messages in `frontend/src/i18n/messages.ts`. The banner links to a localized, non-indexable privacy policy using the standard page template. Migration `013_privacy_policy` creates the editable entity and its three published translations; run the normal Alembic upgrade on deployment. Localized page routes use Next.js `skipProxyUrlNormalize` so next-intl receives the original path and avoids rewrite/redirect loops. The site remains usable without accepting.
 
 A versioned localStorage choice expires after 180 days. Missing, expired, malformed or unavailable storage never grants consent. Choices synchronize across tabs and are checked before each event. No Google script or request is initiated until acceptance. Only analytics consent is granted; advertising storage, user data, personalization and Google signals stay disabled.
 
