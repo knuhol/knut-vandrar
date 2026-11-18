@@ -39,6 +39,42 @@ Run these steps as the account that owns Docker deployments. Replace `<repositor
 
 5. Confirm the DNS A/AAAA record for `dev.vandrar.se` points to the VPS. Production DNS for `knut.vandrar.se` can remain unchanged until ready.
 
+## Private development preview
+
+Only `dev.vandrar.se` has a branded, English-only password gate. The development routing overlay
+attaches the same Traefik ForwardAuth middleware to both web and API routers, so
+page URLs, backend reads, media, sharing images, and admin cannot bypass it.
+Production and localhost routing are unchanged. The existing admin password is
+still required separately after unlocking the preview.
+
+Generate a separate preview password hash locally (use at least 24 characters):
+
+```sh
+node frontend/scripts/admin-password.mjs /tmp/knut-preview-password.env --dev-gate
+```
+
+Copy the generated `DEV_GATE_PASSWORD_HASH` entry into
+`/etc/knut-vandrar/development.env`, then delete the temporary file. Do not reuse
+the admin password. The next authorized development deployment loads this setting;
+no manual Traefik configuration is required. A missing or invalid hash leaves the
+preview locked. Authentication endpoints are unavailable outside the dev
+hostname/environment. Locally, `/preview` is available on localhost or loopback
+addresses as a visual-only preview, with the form inert and no gate applied to
+local pages. The page remains unavailable on production.
+
+Successful entry sets an eight-hour, Secure, HttpOnly, host-only cookie and returns
+to the requested page. Changing the hash invalidates existing cookies. Login
+attempts are limited to ten per fifteen minutes across the preview, independently
+of admin login, with a persistent SQLite file in the existing `admin_sessions`
+volume. Clearing the browser's `__Host-dev_access` cookie locks that browser again.
+This setup uses the current single frontend instance.
+
+The only unauthenticated paths are `/preview`, its login POST, Next.js static
+scripts/styles/fonts, `/brand/forest.svg`, and the restrictive `robots.txt`.
+Responses from the gate are private/non-cacheable and non-indexable. The hostname
+check on the ForwardAuth endpoint relies on Traefik's generated forwarded headers;
+the middleware explicitly uses `trustForwardHeader=false`.
+
 ## Gallery media storage (`/media`)
 
 The current deployment uses a Docker-managed named volume for gallery files. No

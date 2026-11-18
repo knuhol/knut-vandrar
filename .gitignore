@@ -50,6 +50,7 @@ temp/
 
 # Private admin session state
 .admin/
+.preview/
 
 # Private uploaded image files
 .media/

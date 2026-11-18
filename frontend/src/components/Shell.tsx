@@ -10,6 +10,13 @@ import type { UIComponentProps } from './uiComponentProps'
 
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
+import { serverConfig } from '@/config/server'
+
+const headerLogoVariants = {
+  local: 'monochromaticForest',
+  dev: 'monochromaticOrange',
+  prod: 'standard',
+} as const
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   const t = await getTranslations('Site')
@@ -22,7 +29,7 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
       <SiteHeader>
         <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
           <Link data-link-kind="brand" className="min-w-0 flex-1 tablet:flex-none" href="/">
-            <Logo />
+            <Logo variant={headerLogoVariants[serverConfig.deploymentEnvironment]} />
           </Link>
           <Navigation locale={locale} />
           <LanguageSwitcher locale={locale} />
