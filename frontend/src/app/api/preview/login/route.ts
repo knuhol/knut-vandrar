@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 
 import { boundedBody } from '@/admin/body'
 import { previewConfig, previewDestination, previewHeaders, previewHost } from '@/preview/config'
-import { allowPreviewLogin, previewSession, verifyPreviewPassword } from '@/preview/security'
+import {
+  allowPreviewLogin,
+  previewSession,
+  resetPreviewLoginAttempts,
+  verifyPreviewPassword,
+} from '@/preview/security'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +39,7 @@ export async function POST(request: Request) {
     gate.searchParams.set('error', error)
     return NextResponse.redirect(gate, { status: 303, headers: previewHeaders })
   }
+  resetPreviewLoginAttempts()
   const response = NextResponse.redirect(new URL(next, previewConfig.origin), {
     status: 303,
     headers: previewHeaders,

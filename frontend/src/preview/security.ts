@@ -71,6 +71,15 @@ export function allowPreviewLogin() {
   }
 }
 
+export function resetPreviewLoginAttempts() {
+  const database = new DatabaseSync(previewConfig.database)
+  try {
+    database.exec('PRAGMA busy_timeout = 5000; DELETE FROM attempts;')
+  } finally {
+    database.close()
+  }
+}
+
 export function publicPreviewAsset(uri: string, method: string) {
   if (method === 'POST') {
     return uri === '/api/preview/login'
