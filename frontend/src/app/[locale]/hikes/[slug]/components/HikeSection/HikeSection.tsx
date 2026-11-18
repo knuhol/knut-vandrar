@@ -29,7 +29,7 @@ export function HikeSection({
     >
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
         <div
-          className={`flex min-w-0 items-start gap-3 ${variant === 'plain' ? 'border-l-4 border-orange pl-4 tablet:pl-7' : ''}`}
+          className={`flex min-w-0 items-start gap-3 ${variant === 'plain' ? 'border-l-4 border-orange-dark pl-4 tablet:pl-7' : ''}`}
         >
           <span
             aria-hidden="true"

@@ -57,8 +57,12 @@ MEDIA_REMOTE_CHECKOUTS_DIR=/srv/knut-vandrar
 `MEDIA_REMOTE_CHECKOUTS_DIR` selects the VPS repository location used to run commands.
 `MEDIA_ROOT=/media` selects gallery storage inside the backend container.
 
-`--ssh` and `--remote-checkouts-dir` override these defaults. SSH uses batch authentication and
+`--ssh` and `--remote-checkouts-dir` override these defaults. By default, SSH uses batch authentication and
 strict host-key checking; configure keys, ports, and host aliases in `~/.ssh/config`.
+For interactive password authentication, add `--ssh-password`. SSH prompts in the
+local terminal; the password is not stored in configuration or passed as an argument.
+The server must allow password authentication for the selected account. Key-based
+batch authentication remains the default. Archive streaming still uses stdin/stdout.
 No passwords or tokens are included in the archive or command output.
 
 Without an SSH host, dev/prod commands run on the current host, using the same Compose
@@ -81,7 +85,7 @@ A hike selection includes its cover, gallery, and associated location logo. A lo
 selection includes its logo and all its hikes' images. Multiple filters form a union.
 Unknown filter IDs fail the export. Omitting the output path creates a timestamped
 archive under ignored `backups/`; existing archives are never overwritten. `-` writes
-an export to stdout or reads an import from stdin. All command messages use stderr.
+an export to stdout or reads an import from stdin. Import progress and its summary use stdout, with immediate stage messages and periodic byte/image counts. Export progress uses stderr to keep archive stdout clean. Errors use stderr.
 
 Hikes and locations must already exist at the destination. UUIDs are matched exactly;
 names and slugs are never used to guess associations. When records were created

@@ -7,7 +7,7 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/media-common.sh
 source "$script_dir/media-common.sh"
 
-[[ $# -ge 2 ]] || media_error 'Usage: media-import.sh <local|dev|prod> <archive.tar|-|--recover> [--dry-run] [--replace] [--ssh HOST] [--remote-checkouts-dir DIR]'
+[[ $# -ge 2 ]] || media_error 'Usage: media-import.sh <local|dev|prod> <archive.tar|-|--recover> [--dry-run] [--replace] [--ssh HOST] [--ssh-password] [--remote-checkouts-dir DIR]'
 environment="$1"
 archive="$2"
 shift 2
