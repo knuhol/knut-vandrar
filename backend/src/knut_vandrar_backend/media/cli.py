@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from knut_vandrar_backend.media.archive import MediaError, export_archive
+from knut_vandrar_backend.media.progress import Progress
 from knut_vandrar_backend.media.recovery import recover_transfers, transfer_lock
 from knut_vandrar_backend.media.schema import DEFAULT_MAX_BYTES
 from knut_vandrar_backend.media.transfer import import_archive
@@ -56,6 +57,8 @@ def main() -> int:
     from knut_vandrar_backend.database.session import SessionLocal
     from knut_vandrar_backend.settings import settings
 
+    progress_stream = sys.stderr if args.command == "export" else sys.stdout
+    progress = Progress(lambda message: print(message, file=progress_stream, flush=True))
     try:
         if args.command == "export":
             with transfer_lock(settings.media_root) as transfers, SessionLocal.begin() as db:
@@ -67,6 +70,7 @@ def main() -> int:
                     sys.stdout.buffer,
                     hikes=tuple(args.hike),
                     locations=tuple(args.location),
+                    progress=progress,
                 )
             print(f"Exported {count} images.", file=sys.stderr)
         elif args.command == "recover":
@@ -83,6 +87,7 @@ def main() -> int:
                 max_bytes=args.max_bytes,
                 hike_map=_unique_mapping(args.map_hike),
                 location_map=_unique_mapping(args.map_location),
+                progress=progress,
             )
             prefix = (
                 "Dry run" if args.dry_run else "Import blocked" if report.conflicts else "Imported"
@@ -91,7 +96,7 @@ def main() -> int:
                 f"{report.counts[key]} {key}"
                 for key in ("add", "replace", "repair", "skip", "conflict")
             )
-            print(f"{prefix}: {counts}.", file=sys.stderr)
+            print(f"{prefix}: {counts}.", flush=True)
             for conflict in report.conflicts:
                 print(conflict, file=sys.stderr)
             if report.counts["conflict"]:

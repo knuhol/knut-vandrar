@@ -26,8 +26,10 @@ media_parse_transport() {
   media_remote_host="${MEDIA_SSH_HOST:-}"
   media_remote_checkouts_dir="${MEDIA_REMOTE_CHECKOUTS_DIR:-/srv/knut-vandrar}"
   media_arguments=()
+  media_ssh_password=false
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --ssh-password) media_ssh_password=true; shift ;;
       --ssh|--remote-checkouts-dir)
         [[ $# -ge 2 && -n "$2" ]] || media_error "$1 requires a value."
         if [[ "$1" == --ssh ]]; then media_remote_host="$2"; else media_remote_checkouts_dir="$2"; fi
@@ -77,14 +79,16 @@ media_quote() {
 
 media_run() {
   local environment="$1"
+  local remote_host=""
   shift
   media_validate_environment "$environment"
-  printf 'Media target/source: %s (%s)\n' "$environment" "${media_remote_host:-this host}" >&2
-  if [[ "$environment" == local || -z "$media_remote_host" ]]; then
+  if [[ "$environment" != local ]]; then remote_host="$media_remote_host"; fi
+  printf 'Media target/source: %s (%s)\n' "$environment" "${remote_host:-this host}" >&2
+  if [[ -z "$remote_host" ]]; then
     media_exec_backend "$environment" "$@"
     return
   fi
-  [[ "$media_remote_host" != -* && "$media_remote_host" =~ ^[A-Za-z0-9_.@:-]+$ ]] \
+  [[ "$remote_host" != -* && "$remote_host" =~ ^[A-Za-z0-9_.@:-]+$ ]] \
     || media_error 'Invalid SSH host; configure SSH options in ~/.ssh/config.'
   [[ "$media_remote_checkouts_dir" == /* ]] || media_error '--remote-checkouts-dir must be an absolute directory.'
   local command argument
@@ -95,7 +99,11 @@ media_run() {
     media_quote "$argument"
     command+=" $media_quoted"
   done
-  ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes -- "$media_remote_host" "$command"
+  local -a authentication=(-o BatchMode=yes)
+  if [[ "$media_ssh_password" == true ]]; then
+    authentication=(-o BatchMode=no -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive)
+  fi
+  ssh -T "${authentication[@]}" -o StrictHostKeyChecking=yes -- "$remote_host" "$command"
 }
 
 # SSH invokes this entry point inside the destination checkout, without recursion.

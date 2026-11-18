@@ -75,12 +75,16 @@ def test_local_export_is_private_atomic_and_refuses_overwrites(
     scripts: tuple[Path, dict[str, str], Path],
 ) -> None:
     root, environment, log = scripts
+    (root / ".env").write_text("MEDIA_SSH_HOST=deploy@example.test\n")
     output = root / "output.tar"
     result = _run(root, environment, "media-export.sh", "local", str(output), "--hike", "example")
     assert result.returncode == 0, result.stderr.decode()
+    assert b"Media target/source: local (this host)\n" in result.stderr
+    assert b"deploy@example.test" not in result.stderr
     assert output.read_bytes() == b"tar-stream"
     assert output.stat().st_mode & 0o777 == 0o600
     command = json.loads(log.read_text())
+    assert command["tool"] == "docker"
     assert command["args"][-3:] == ["export", "--hike", "example"]
     assert command["args"][command["args"].index("exec") :][:3] == ["exec", "-T", "backend"]
     result = _run(root, environment, "media-export.sh", "local", str(output))
@@ -100,7 +104,7 @@ def test_failed_export_never_publishes_partial_archive(
     assert not list(root.glob("*.tmp.*"))
 
 
-@pytest.mark.parametrize("transport", ["arguments", "env"])
+@pytest.mark.parametrize("transport", ["arguments", "env", "password"])
 def test_remote_import_streams_archive_and_quotes_paths_and_arguments(
     scripts: tuple[Path, dict[str, str], Path],
     tmp_path: Path,
@@ -109,7 +113,7 @@ def test_remote_import_streams_archive_and_quotes_paths_and_arguments(
     root, environment, log = scripts
     remote_checkouts_dir = tmp_path / "remote ' checkouts"
     shutil.copytree(root, remote_checkouts_dir / "dev")
-    if transport == "arguments":
+    if transport != "env":
         transport_args = [
             "--ssh",
             "deploy@example.test",
@@ -121,6 +125,8 @@ def test_remote_import_streams_archive_and_quotes_paths_and_arguments(
         (root / ".env").write_text(
             f'MEDIA_SSH_HOST=deploy@example.test\nMEDIA_REMOTE_CHECKOUTS_DIR="{remote_checkouts_dir}"\n'
         )
+    if transport == "password":
+        transport_args.append("--ssh-password")
     archive = root / "input.tar"
     archive.write_bytes(b"private archive contents")
     argument = "source=target'; touch injected; '"
@@ -137,7 +143,13 @@ def test_remote_import_streams_archive_and_quotes_paths_and_arguments(
     )
     assert result.returncode == 0, result.stderr.decode()
     commands = [json.loads(line) for line in log.read_text().splitlines()]
+    assert b"Media target/source: dev (deploy@example.test)\n" in result.stderr
     assert commands[0]["tool"] == "ssh"
+    if transport == "password":
+        assert "BatchMode=no" in commands[0]["args"]
+        assert "PubkeyAuthentication=no" in commands[0]["args"]
+    else:
+        assert "BatchMode=yes" in commands[0]["args"]
     docker = commands[1]
     assert docker["data"] == archive.read_bytes().hex()
     assert docker["args"][-4:] == ["import", "--dry-run", "--map-hike", argument]

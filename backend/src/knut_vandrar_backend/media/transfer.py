@@ -28,6 +28,7 @@ from knut_vandrar_backend.media.archive import (
     schema_revision,
     unpack_archive,
 )
+from knut_vandrar_backend.media.progress import Progress
 from knut_vandrar_backend.media.recovery import (
     publish_photo,
     recover_transfers,
@@ -169,7 +170,9 @@ def _database_image(db: Session, kind: str, owner: UUID) -> LocationLogo | HikeC
     )
 
 
-def _plan(db: Session, index: sqlite3.Connection, media_root: Path, replace: bool) -> ImportReport:
+def _plan(
+    db: Session, index: sqlite3.Connection, media_root: Path, replace: bool, progress: Progress
+) -> ImportReport:
     report = ImportReport()
     locales = set(db.scalars(select(Language.code)))
     for row_id, value in index.execute(
@@ -227,6 +230,7 @@ def _plan(db: Session, index: sqlite3.Connection, media_root: Path, replace: boo
         else:
             report.counts[action] += 1
         index.execute("UPDATE assets SET action=? WHERE rowid=?", (action, row_id))
+        progress.report(f"Checked {sum(report.counts.values())} destination images...", force=False)
     index.commit()
     return report
 
@@ -296,7 +300,10 @@ def import_archive(
     max_bytes: int = DEFAULT_MAX_BYTES,
     hike_map: dict[UUID, UUID] | None = None,
     location_map: dict[UUID, UUID] | None = None,
+    progress: Progress | None = None,
 ) -> ImportReport:
+    progress = progress or Progress()
+    progress.report("Preparing media import...")
     with transfer_lock(media_root) as transfers:
         if dry_run and any(path.name != "lock" for path in transfers.iterdir()):
             raise MediaError(
@@ -311,17 +318,26 @@ def import_archive(
         staging = work / "staging"
         staging.mkdir(mode=0o700)
         try:
-            manifest = unpack_archive(source, staging, max_bytes)
+            progress.report("Receiving and extracting archive...")
+            manifest = unpack_archive(source, staging, max_bytes, progress)
             with closing(sqlite3.connect(work / "index.sqlite")) as index:
-                index_archive(staging, index)
-                for asset in read_assets(index):
+                progress.report("Verifying archive checksums and metadata...")
+                index_archive(staging, index, progress)
+                total = index.execute("SELECT COUNT(*) FROM assets").fetchone()[0]
+                progress.report(f"Validating {total} images...")
+                for count, asset in enumerate(read_assets(index), start=1):
                     _validate_images(asset, staging)
+                    progress.report(f"Validated {count}/{total} images...", force=False)
                 _remap(index, hike_map or {}, location_map or {})
                 with factory.begin() as db:
                     if manifest.schema_revision != schema_revision(db):
                         raise MediaError("Source and destination Alembic revisions must match")
+                    progress.report(
+                        "Checking destination records (waiting for database locks if needed)..."
+                    )
                     _lock_owners(db, index)
-                    report = _plan(db, index, media_root, replace)
+                    report = _plan(db, index, media_root, replace, progress)
+                    progress.report(f"Destination check complete: {total} images.")
                     if (
                         report.counts["conflict"]
                         or dry_run
@@ -329,9 +345,13 @@ def import_archive(
                     ):
                         # Planning never changes SQL records or published image files.
                         return report
-                    for source_id, value, action in index.execute(
-                        "SELECT id, data, action FROM assets WHERE action != 'skip' "
-                        "ORDER BY owner, sort_order, id"
+                    progress.report("Applying image changes...")
+                    for applied, (source_id, value, action) in enumerate(
+                        index.execute(
+                            "SELECT id, data, action FROM assets WHERE action != 'skip' "
+                            "ORDER BY owner, sort_order, id"
+                        ),
+                        start=1,
                     ):
                         asset = Asset.model_validate_json(value)
                         if asset.kind == "photo":
@@ -352,7 +372,10 @@ def import_archive(
                             image.content_type = asset.content_type
                             image.sha256 = asset.files["image"].sha256
                             db.flush()
+                        progress.report(f"Applied {applied} image changes...", force=False)
+                    progress.report("Committing database changes...")
                     db.add(MediaImportReceipt(id=transfer_id))
+            progress.report("Cleaning up committed import...")
             recover_transfers(factory, media_root, transfers)
             return report
         except BaseException:

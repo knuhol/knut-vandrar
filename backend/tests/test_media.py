@@ -143,7 +143,16 @@ def environments(tmp_path: Path) -> Iterator[tuple[Environment, Environment]]:
 def _export(environment: Environment, **filters: tuple[UUID, ...]) -> bytes:
     output = BytesIO()
     with environment.factory.begin() as db:
-        assert export_archive(db, environment.media, output, **filters) >= 0
+        assert (
+            export_archive(
+                db,
+                environment.media,
+                output,
+                hikes=filters.get("hikes", ()),
+                locations=filters.get("locations", ()),
+            )
+            >= 0
+        )
     return output.getvalue()
 
 
@@ -517,3 +526,33 @@ def test_crash_journal_uses_database_commit_receipt(
         assert db.scalar(select(func.count()).select_from(Photo)) == (2 if committed else 0)
         assert db.scalar(select(func.count()).select_from(MediaImportReceipt)) == 0
     assert bool(list((destination.media / "photos").glob("*/versions/*"))) == committed
+
+
+def test_progress_reports_export_and_dry_run_stages(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from knut_vandrar_backend.media.progress import Progress
+
+    source, destination = environments
+    messages: list[str] = []
+    archive = BytesIO()
+    with source.factory.begin() as db:
+        export_archive(db, source.media, archive, progress=Progress(messages.append))
+    assert messages[0] == "Exporting images and metadata..."
+    assert messages[-1] == "Archive complete: 4 images."
+    messages.clear()
+    archive.seek(0)
+    report = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        archive,
+        dry_run=True,
+        progress=Progress(messages.append),
+    )
+    assert report.counts == {"add": 4}
+    assert messages[0] == "Preparing media import..."
+    assert any(message.startswith("Archive received:") for message in messages)
+    assert "Verifying archive checksums and metadata..." in messages
+    assert "Validating 4 images..." in messages
+    assert messages[-1] == "Destination check complete: 4 images."
+    assert "Applying image changes..." not in messages
