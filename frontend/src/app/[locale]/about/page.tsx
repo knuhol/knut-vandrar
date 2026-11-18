@@ -20,6 +20,7 @@ import { PageKey } from '@/content/staticPages'
 import { resolvePage, staticPageMetadata, type PageProps } from '@/content/pages'
 import { profileData } from '@/seo/structuredData'
 import { StructuredData } from '@/components/StructuredData'
+import { SocialLinks } from '@/components/SocialLinks'
 
 export async function generateMetadata({ params }: PageProps) {
   const { page } = await resolvePage(PageKey.About, params)
@@ -60,20 +61,14 @@ export default async function AboutPage({ params }: PageProps) {
               sizes="(min-width: 1001px) 50vw, (min-width: 641px) 400px, 100vw"
               alt={content.portrait_alt}
               preload
-              className="aspect-square w-full rounded-lg object-cover shadow-lg ring-2 ring-orange/50"
+              className="aspect-square w-full rounded-lg object-cover shadow-sm"
             />
             <figcaption className="mt-4 text-sm text-muted">{content.caption}</figcaption>
           </figure>
         }
       >
-        <div className="mt-8 flex flex-wrap gap-5">
-          {profiles.map(({ key, href, Icon }) => (
-            <a key={key} href={href} className="inline-flex items-center gap-2 font-semibold">
-              <Icon className="size-5" aria-hidden="true" />
-              {site(`social.${key}`)}
-              <IconArrowUpRight className="size-4" aria-hidden="true" />
-            </a>
-          ))}
+        <div className="mt-8">
+          <SocialLinks profiles={['instagram', 'youtube', 'plotaroute']} />
         </div>
       </PageHeader>
       <Container>

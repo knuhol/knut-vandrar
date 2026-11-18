@@ -40,13 +40,18 @@
   @apply mt-0;
 }
 
+.tableScroll {
+  @apply mb-5 overflow-x-auto;
+}
+
 .prose table {
-  @apply block overflow-x-auto border-collapse;
+  @apply w-full border-collapse;
+  overflow-wrap: normal;
 }
 
 .prose td,
 .prose th {
-  @apply border border-beige p-2;
+  @apply min-w-32 border border-beige p-2;
 }
 
 .prose blockquote {
