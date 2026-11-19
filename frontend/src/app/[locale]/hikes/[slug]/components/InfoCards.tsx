@@ -44,10 +44,12 @@ function youtubeId(url: string) {
 export function InfoCards({
   cards,
   hikeId,
+  hikeTitle,
   locale,
 }: {
   cards: Hike['cards']
   hikeId: string
+  hikeTitle: string | null
   locale: Locale
 }) {
   const t = useTranslations('Site')
@@ -79,7 +81,7 @@ export function InfoCards({
                   icon={<Play aria-hidden="true" />}
                   title={t('youtube_video')}
                   onActivate={() => {
-                    trackHikeInteraction({ name: 'video_open', hikeId, locale })
+                    trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
                   }}
                   href={card.url}
                   action={t('video')}
@@ -97,7 +99,7 @@ export function InfoCards({
                   if (playing?.key === key) {
                     return
                   }
-                  trackHikeInteraction({ name: 'video_open', hikeId, locale })
+                  trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
                   setPlaying({ key, id })
                 }}
                 expanded={playing?.key === key}
@@ -119,6 +121,7 @@ export function InfoCards({
                 trackHikeInteraction({
                   name: 'hike_resource_click',
                   hikeId,
+                  hikeTitle,
                   locale,
                   resourceType: card.type,
                 })

@@ -26,8 +26,15 @@
 }
 
 @utility link-interaction {
-  @apply text-forest underline decoration-forest;
+  @apply underline;
+  color: var(--link-interaction-color, var(--color-forest));
+  text-decoration-color: var(--link-interaction-color, var(--color-forest));
   text-decoration-thickness: auto;
+}
+
+/* Set on a dark surface so nested text links retain readable interaction colors. */
+@utility links-on-dark {
+  --link-interaction-color: var(--color-cream);
 }
 
 @utility link-dotted {
@@ -40,7 +47,7 @@ a[data-link-kind='card'] [data-link-label] {
   text-underline-offset: var(--link-underline-offset);
 }
 
-/* Text links share their active appearance regardless of their resting styles. */
+/* Text links share their active appearance, with contrast supplied by the surface. */
 a[href]:not([data-link-kind]):not([aria-current]):is(:hover, :focus-visible),
 a[data-link-kind='card']:is(:hover, :focus-visible) [data-link-label] {
   @apply link-interaction;

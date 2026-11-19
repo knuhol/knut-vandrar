@@ -1,17 +1,7 @@
 export const messages = {
   sv: {
     Site: {
-      analytics: {
-        settings: 'Inställningar för kakor',
-        title: 'Kakor på den här webbplatsen',
-        description:
-          'Den här webbplatsen använder nödvändiga kakor och lokal lagring för att fungera korrekt. Med ditt samtycke använder jag också analyskakor för att förstå hur webbplatsen används och förbättra dess prestanda. Du kan när som helst ändra dina val i Inställningar för kakor.',
-        accept: 'Acceptera kakor',
-        reject: 'Neka kakor',
-        storageError:
-          'Ditt val kunde inte sparas. Webbanalysen förblir avstängd om inget giltigt samtycke redan finns. Kontrollera webbläsarens lagringsinställningar.',
-        privacyPolicy: 'Läs integritetspolicyn',
-      },
+      privacyPolicy: 'Integritetspolicy',
       gallery: {
         defaultAlt: 'Bild från vandringen',
         loadError: 'Bilderna kunde inte laddas. Försök igen.',
@@ -219,17 +209,7 @@ export const messages = {
         limited: 'Too many attempts. Please try again in 15 minutes.',
         unavailable: 'The preview is currently unavailable.',
       },
-      analytics: {
-        settings: 'Cookie settings',
-        title: 'Cookies on this website',
-        description:
-          'This website uses essential cookies and local storage to work properly. With your permission, I also use analytics cookies to understand how the site is used and improve its performance. You can change your preferences at any time in Cookie settings.',
-        accept: 'Accept cookies',
-        reject: 'Reject cookies',
-        storageError:
-          'Your choice could not be saved. Analytics stays off unless valid consent already exists. Please check your browser storage settings.',
-        privacyPolicy: 'Read the privacy policy',
-      },
+      privacyPolicy: 'Privacy policy',
       gallery: {
         defaultAlt: 'Photo from the hike',
         loadError: 'Could not load photos. Please try again.',
@@ -425,17 +405,7 @@ export const messages = {
 
   cs: {
     Site: {
-      analytics: {
-        settings: 'Nastavení cookies',
-        title: 'Cookies na tomto webu',
-        description:
-          'Tento web používá nezbytné cookies a místní úložiště, aby správně fungoval. S tvým souhlasem používám také analytické cookies, které mi pomáhají pochopit, jak lidé web používají, a zlepšovat jeho výkon. Svoji volbu můžeš kdykoli změnit v Nastavení cookies.',
-        accept: 'Přijmout cookies',
-        reject: 'Odmítnout cookies',
-        storageError:
-          'Tvou volbu se nepodařilo uložit. Analytické měření zůstane vypnuté, pokud už neexistuje platný souhlas. Zkontroluj nastavení úložiště prohlížeče.',
-        privacyPolicy: 'Přečíst zásady ochrany soukromí',
-      },
+      privacyPolicy: 'Zásady ochrany soukromí',
       gallery: {
         defaultAlt: 'Fotka z hiku',
         loadError: 'Fotky se nepodařilo načíst. Zkus to znovu.',

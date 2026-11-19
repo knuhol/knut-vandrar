@@ -344,6 +344,9 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
     cards = [card_adapter.validate_python(item.data) for item in ordered_cards]
     return HikeRead(
         id=hike.id,
+        english_title=next(
+            (item.title for item in hike.translations if item.locale_code == SOURCE_LOCALE), None
+        ),
         location=read_location(db, hike.location, request, translation.locale_code)
         if hike.location
         else None,

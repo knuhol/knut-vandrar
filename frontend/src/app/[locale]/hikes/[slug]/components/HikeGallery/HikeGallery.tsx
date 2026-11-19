@@ -145,10 +145,12 @@ function PhotoViewer({
 export function HikeGallery({
   initialPage,
   hikeId,
+  hikeTitle,
   locale,
 }: {
   initialPage: GalleryPage
   hikeId: string
+  hikeTitle: string | null
   locale: Locale
 }) {
   const t = useTranslations('Site.gallery')
@@ -202,7 +204,7 @@ export function HikeGallery({
             aria-label={t('open', { number: index + 1, description: photo.alt })}
             aria-haspopup="dialog"
             onClick={() => {
-              trackHikeInteraction({ name: 'gallery_open', hikeId, locale })
+              trackHikeInteraction({ name: 'gallery_open', hikeId, hikeTitle, locale })
               setSelectedIndex(index)
             }}
           >

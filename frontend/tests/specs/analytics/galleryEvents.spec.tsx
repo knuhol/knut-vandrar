@@ -20,6 +20,7 @@ test('records gallery openings, but not navigation between photos', () => {
     <NextIntlClientProvider locale="en" messages={messages.en}>
       <HikeGallery
         hikeId="123"
+        hikeTitle="Kungsleden"
         locale="en"
         initialPage={{
           items: [1, 2].map((id) => ({
@@ -46,6 +47,7 @@ test('records gallery openings, but not navigation between photos', () => {
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'gallery_open',
     hikeId: '123',
+    hikeTitle: 'Kungsleden',
     locale: 'en',
   })
   fireEvent.click(screen.getByRole('button', { name: 'Next photo' }))

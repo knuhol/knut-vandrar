@@ -181,6 +181,7 @@ class HikeDiscoveryRead(BaseModel):
 
 class HikeRead(HikeExtra):
     id: UUID
+    english_title: str | None
     location: LocationRead | None
     status: HikeStatus
     planned_start_at: datetime | None

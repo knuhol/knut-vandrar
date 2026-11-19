@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { headers } from 'next/headers'
 
@@ -12,6 +11,7 @@ import type { UIComponentProps } from './uiComponentProps'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { headerLogoVariant } from '@/config/site'
+import { PageKey, staticPages } from '@/content/staticPages'
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   const t = await getTranslations({ locale, namespace: 'Site' })
@@ -40,13 +40,13 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
   )
 }
 
-export async function Footer({ children, locale }: { children?: ReactNode; locale?: Locale }) {
+export async function Footer({ locale }: { locale?: Locale }) {
   const t = locale
     ? await getTranslations({ locale, namespace: 'Site' })
     : await getTranslations('Site')
 
   return (
-    <footer className="bg-forest text-cream">
+    <footer className="links-on-dark bg-forest text-cream">
       <Container>
         <div className="flex flex-col items-center justify-between gap-4 py-7.5 text-center text-sm desktop:grid desktop:grid-cols-3">
           <Link
@@ -61,7 +61,15 @@ export async function Footer({ children, locale }: { children?: ReactNode; local
             <p>{t('footer')}</p>
             <span>{t('copyright', { year: new Date().getFullYear() })}</span>
           </div>
-          <div className="desktop:justify-self-end">{children}</div>
+          <div className="desktop:justify-self-end">
+            <Link
+              href={staticPages[PageKey.PrivacyPolicy].href}
+              locale={locale}
+              className="link-dotted"
+            >
+              {t('privacyPolicy')}
+            </Link>
+          </div>
         </div>
       </Container>
     </footer>
