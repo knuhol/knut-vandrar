@@ -9,6 +9,6 @@ export async function sharingImage(input: Uint8Array) {
       fit: 'cover',
       position: 'centre',
     })
-    .png()
+    .jpeg({ quality: 82, mozjpeg: true })
     .toBuffer()
 }
