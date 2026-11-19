@@ -76,9 +76,8 @@ export default async function LocaleLayout({
           <main id="content" className="flex min-w-0 flex-1 flex-col">
             {children}
           </main>
-          <Footer>
-            <Analytics measurementId={serverConfig.analyticsMeasurementId} />
-          </Footer>
+          <Footer locale={locale} />
+          <Analytics config={serverConfig.analytics} />
         </NextIntlClientProvider>
       </body>
     </html>

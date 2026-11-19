@@ -4086,6 +4086,17 @@ export const openapi = {
             "format": "uuid",
             "title": "Id"
           },
+          "english_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "English Title"
+          },
           "location": {
             "anyOf": [
               {
@@ -4285,6 +4296,7 @@ export const openapi = {
         "type": "object",
         "required": [
           "id",
+          "english_title",
           "location",
           "status",
           "planned_start_at",

@@ -1,21 +1,23 @@
 /** @jest-environment node */
 import { renderToString } from 'react-dom/server'
-import { NextIntlClientProvider } from 'next-intl'
-
 import { Analytics } from '@/app/[locale]/components/Analytics/Analytics'
-import { messages } from '@/i18n/messages'
 
 jest.mock('next/navigation', () => ({ usePathname: () => '/en' }))
-jest.mock('next/web-vitals', () => ({ useReportWebVitals: jest.fn() }))
 
-test('server HTML waits for browser consent storage without rendering the banner or Google script', () => {
+test('disabled analytics produces no server HTML', () => {
+  expect(renderToString(<Analytics config={null} />)).toBe('')
+})
+
+test('configured analytics renders without browser storage or consent controls', () => {
   const html = renderToString(
-    <NextIntlClientProvider locale="en" messages={messages.en}>
-      <Analytics measurementId="G-TEST123" />
-    </NextIntlClientProvider>,
+    <Analytics
+      config={{
+        websiteId: 'b5e90f9a-26ed-4dc7-a4eb-241b22c5ca5d',
+        scriptUrl: 'https://umami.vandrar.se/script.js',
+      }}
+    />,
   )
   expect(html).not.toContain('<section')
-  expect(html).not.toContain('googletagmanager.com')
-  expect(html).toContain('Cookie settings')
-  expect(html).toContain('aria-expanded="false"')
+  expect(html).not.toContain('Cookie settings')
+  expect(html).not.toContain('analytics-consent')
 })

@@ -8,3 +8,4 @@
 **/.env
 **/.env.*
 **/*.dump
+backups/

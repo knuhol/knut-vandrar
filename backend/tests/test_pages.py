@@ -30,7 +30,11 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
     scripts = ScriptDirectory.from_config(config)
     with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-        for revision in ("012_manual_pages", "013_privacy_policy"):
+        for revision in (
+            "012_manual_pages",
+            "013_privacy_policy",
+            "014_umami_privacy_policy",
+        ):
             migration = scripts.get_revision(revision)
             assert migration is not None
             migration.module.upgrade()
@@ -133,8 +137,12 @@ def test_privacy_policy_is_published_editable_and_not_indexable(client: TestClie
         assert page["content"]["type"] == "standard"
         assert page["indexable"] is False
         assert page["available_locales"] == ["cs", "en", "sv"]
-        assert "Google Analytics 4" in page["content"]["body_markdown"]
-        assert "knut-analytics-consent" in page["content"]["body_markdown"]
+        assert "umami.vandrar.se" in page["content"]["body_markdown"]
+        assert "knut-analytics-consent" not in page["content"]["body_markdown"]
+        assert "Google Analytics" not in page["content"]["body_markdown"]
+        assert "**Cookie settings**" not in page["content"]["body_markdown"]
+        assert "**Inställningar för kakor**" not in page["content"]["body_markdown"]
+        assert "**Nastavení cookies**" not in page["content"]["body_markdown"]
     rows = client.get("/api/page-locales", headers=HEADERS).json()["items"]
     row = next(row for row in rows if row["page_key"] == "privacy-policy" and row["locale"] == "en")
     entity_id = row.pop("id")

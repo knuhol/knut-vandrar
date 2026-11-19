@@ -1,94 +1,73 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import { NextIntlClientProvider } from 'next-intl'
+import { act, render, screen } from '@testing-library/react'
 import { Analytics } from '@/app/[locale]/components/Analytics/Analytics'
-import { stopAnalytics } from '@/analytics/googleAnalytics'
-import { messages } from '@/i18n/messages'
-import { consentKey, consentLifetime, saveConsent } from '@/analytics/consent'
+import { stopAnalytics } from '@/analytics/umami'
 
-jest.mock('next/navigation', () => ({ usePathname: () => '/en' }))
-jest.mock('next/web-vitals', () => ({ useReportWebVitals: jest.fn() }))
+let mockPathname = '/en'
+let mockReady: (() => void) | undefined
+
+jest.mock('next/navigation', () => ({ usePathname: () => mockPathname }))
 jest.mock('next/script', () => ({
   __esModule: true,
-  default: ({ src }: { src: string }) => <span data-src={src} data-testid="ga-script" />,
+  default: ({ src, onReady, ...props }: { src: string; onReady: () => void }) => {
+    mockReady = onReady
+    return <span data-src={src} data-testid="umami-script" {...props} />
+  },
 }))
 
-beforeEach(() => {
-  window.localStorage.clear()
-})
-
-afterEach(() => {
-  stopAnalytics()
-})
-
-function mount(measurementId: string | null = null, locale: keyof typeof messages = 'en') {
-  return render(
-    <NextIntlClientProvider locale={locale} messages={messages[locale]}>
-      <Analytics measurementId={measurementId} />
-    </NextIntlClientProvider>,
-  )
+const config = {
+  websiteId: 'b5e90f9a-26ed-4dc7-a4eb-241b22c5ca5d',
+  scriptUrl: 'https://umami.vandrar.se/script.js',
 }
 
-test.each(['sv', 'en', 'cs'] as const)(
-  'renders translated choices and persists rejection in %s',
-  (locale) => {
-    mount(null, locale)
-    const text = messages[locale].Site.analytics
-    expect(screen.getByRole('heading', { name: text.title })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: text.privacyPolicy })).toHaveAttribute(
-      'href',
-      { sv: '/sv/integritetspolicy', en: '/en/privacy-policy', cs: '/cs/ochrana-soukromi' }[locale],
-    )
-    expect(screen.queryByText('Close')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('ga-script')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: text.reject }))
-    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: text.settings }))
-    expect(screen.getByRole('heading', { name: text.title })).toBeInTheDocument()
-  },
-)
-
-test('local review remains script-free even after accepting', () => {
-  mount()
-  fireEvent.click(screen.getByRole('button', { name: 'Accept cookies' }))
-  expect(screen.queryByTestId('ga-script')).not.toBeInTheDocument()
+beforeEach(() => {
+  stopAnalytics()
+  delete window.umami
+  window.localStorage.clear()
+  mockPathname = '/en'
+  window.history.replaceState(null, '', '/en')
 })
 
-test('loads the Google script only after acceptance', () => {
-  const view = mount('G-TEST123')
-  expect(screen.queryByTestId('ga-script')).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Accept cookies' }))
-  expect(screen.getByTestId('ga-script')).toHaveAttribute(
-    'data-src',
-    'https://www.googletagmanager.com/gtag/js?id=G-TEST123',
-  )
-  view.unmount()
+test('disabled analytics renders neither a tracker nor consent controls', () => {
+  const { container } = render(<Analytics config={null} />)
+  expect(container).toBeEmptyDOMElement()
 })
 
-test('reopens the banner when an open tab choice expires', () => {
-  jest.useFakeTimers()
-  saveConsent('rejected')
-  mount()
+test('loads the tracker without consent, sends one initial pageview when ready and follows routes', () => {
+  const view = render(<Analytics config={config} />)
+  expect(screen.getByTestId('umami-script')).toHaveAttribute('data-src', config.scriptUrl)
+  expect(screen.getByTestId('umami-script')).not.toHaveAttribute('data-auto-track')
+  expect(screen.getByTestId('umami-script')).toHaveAttribute('data-auto-pageview', 'false')
+  expect(screen.getByTestId('umami-script')).toHaveAttribute('data-performance', 'true')
+  expect(screen.getByTestId('umami-script')).toHaveAttribute('data-website-id', config.websiteId)
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
   expect(screen.queryByRole('heading')).not.toBeInTheDocument()
-  window.localStorage.setItem(
-    consentKey,
-    JSON.stringify({ version: 1, choice: 'rejected', savedAt: Date.now() - consentLifetime }),
-  )
+  window.umami = { track: jest.fn() }
   act(() => {
-    jest.advanceTimersByTime(1000)
+    mockReady?.()
   })
-  expect(screen.getByRole('heading')).toBeInTheDocument()
-  jest.useRealTimers()
+  act(() => {
+    mockReady?.()
+  })
+  expect(window.umami.track).toHaveBeenCalledTimes(1)
+  window.history.pushState(null, '', '/en/about')
+  mockPathname = '/en/about'
+  view.rerender(<Analytics config={config} />)
+  expect(window.umami.track).toHaveBeenCalledTimes(2)
+  const lateReady = mockReady
+  view.rerender(<Analytics config={null} />)
+  act(() => {
+    lateReady?.()
+  })
+  expect(window.umami.track).toHaveBeenCalledTimes(2)
+  expect(window.umamiBeforeSend?.('event', {})).toBe(false)
 })
 
-test.each(['accepted', 'rejected'] as const)(
-  'keeps the banner hidden for a saved %s choice and allows reopening settings',
-  (choice) => {
-    saveConsent(choice)
-    mount()
-    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Cookie settings' }))
-    expect(
-      screen.getByRole('heading', { name: messages.en.Site.analytics.title }),
-    ).toBeInTheDocument()
-  },
-)
+test('legacy consent and unavailable storage do not gate cookie-free analytics', () => {
+  window.localStorage.setItem('knut-analytics-consent', JSON.stringify({ choice: 'rejected' }))
+  const storage = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    throw new Error('Storage unavailable')
+  })
+  render(<Analytics config={config} />)
+  expect(screen.getByTestId('umami-script')).toBeInTheDocument()
+  expect(storage).not.toHaveBeenCalled()
+})

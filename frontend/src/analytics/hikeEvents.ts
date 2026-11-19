@@ -1,8 +1,8 @@
-import { analyticsUrl, sendAnalyticsEvent } from './googleAnalytics'
+import { analyticsUrl, sendAnalyticsEvent } from './umami'
 import type { Hike } from '@/api/hikes'
 import type { Locale } from '@/i18n/routing'
 
-type HikeInteraction = { hikeId: string; locale: Locale } & (
+type HikeInteraction = { hikeId: string; hikeTitle: Hike['english_title']; locale: Locale } & (
   | {
       name: 'hike_resource_click'
       resourceType: Exclude<Hike['cards'][number]['type'], 'youtube_video'>
@@ -14,6 +14,7 @@ export function trackHikeInteraction(event: HikeInteraction) {
   // Explicit fields prevent resource URLs, passwords and captions entering analytics.
   sendAnalyticsEvent(event.name, {
     hike_id: event.hikeId,
+    ...(event.hikeTitle ? { hike_title: event.hikeTitle } : {}),
     locale: event.locale,
     page_location: analyticsUrl(window.location.href),
     ...(event.name === 'hike_resource_click' ? { resource_type: event.resourceType } : {}),

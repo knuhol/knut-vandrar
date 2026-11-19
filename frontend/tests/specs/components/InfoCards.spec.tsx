@@ -17,7 +17,7 @@ jest.mock('@/app/[locale]/hikes/[slug]/components/VideoModal/VideoModal', () => 
 function renderCards(cards: Hike['cards']) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
-      <InfoCards cards={cards} hikeId="hike-123" locale="en" />
+      <InfoCards cards={cards} hikeId="hike-123" hikeTitle="Kungsleden" locale="en" />
     </NextIntlClientProvider>,
   )
 }
@@ -109,6 +109,7 @@ test('resource activation sends stable context and preserves native link behavio
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'hike_resource_click',
     hikeId: 'hike-123',
+    hikeTitle: 'Kungsleden',
     locale: 'en',
     resourceType: 'live_position',
   })
@@ -129,6 +130,7 @@ test('opening and reopening a video records one event per opening', () => {
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'video_open',
     hikeId: 'hike-123',
+    hikeTitle: 'Kungsleden',
     locale: 'en',
   })
   expect(trackHikeInteraction).toHaveBeenCalledTimes(1)
@@ -143,6 +145,7 @@ test('external video fallback records an opening without changing the link into 
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'video_open',
     hikeId: 'hike-123',
+    hikeTitle: 'Kungsleden',
     locale: 'en',
   })
 })

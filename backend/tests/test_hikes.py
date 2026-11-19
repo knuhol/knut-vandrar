@@ -1755,3 +1755,29 @@ def test_live_tracking_public_password(client: TestClient, password: str | None)
     fetched = client.get(f"/api/hikes/{hike['id']}")
     assert fetched.status_code == 200
     assert fetched.json()["cards"][0]["password"] == password
+
+
+@pytest.mark.parametrize("locale", ["sv", "cs"])
+def test_localized_hike_detail_includes_the_english_source_title(
+    client: TestClient, locale: str
+) -> None:
+    created = client.post("/api/hikes", json=_planned_payload()).json()
+    hike_id = UUID(created["id"])
+    assert created["english_title"] == "Hike through the Highlands"
+    with app.state.testing_session_local.begin() as db:
+        db.add(
+            HikeTranslation(
+                hike_id=hike_id,
+                locale_code=locale,
+                title="Localized hike title",
+                summary_markdown="Localized summary",
+                slug="localized-hike",
+                source_revision=1,
+                profile_fingerprint="test",
+                review_status="unreviewed",
+            )
+        )
+    response = client.get(f"/api/hikes/{locale}/localized-hike")
+    assert response.status_code == 200
+    assert response.json()["translation"]["title"] == "Localized hike title"
+    assert response.json()["english_title"] == "Hike through the Highlands"

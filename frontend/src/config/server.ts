@@ -25,16 +25,24 @@ function websiteOrigin() {
   return origin.origin
 }
 
-function analyticsMeasurementId() {
-  const id = process.env.GOOGLE_ANALYTICS_ID?.trim() || null
-  if (id && !/^G-[A-Z0-9]+$/.test(id)) {
-    throw new Error('GOOGLE_ANALYTICS_ID must be a GA4 Measurement ID')
+function analyticsConfig() {
+  const websiteId = process.env.UMAMI_WEBSITE_ID?.trim() || null
+  const scriptUrl = process.env.UMAMI_SCRIPT_URL?.trim() || null
+  if (!websiteId) {
+    return null
   }
-  return environment === 'prod' ? id : null
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(websiteId)) {
+    throw new Error('UMAMI_WEBSITE_ID must be a website UUID')
+  }
+  const url = new URL(scriptUrl || '')
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
+    throw new Error('UMAMI_SCRIPT_URL must be an HTTPS URL without credentials, query, or fragment')
+  }
+  return environment === 'prod' ? { websiteId, scriptUrl: url.href } : null
 }
 
 export const serverConfig = {
-  analyticsMeasurementId: analyticsMeasurementId(),
+  analytics: analyticsConfig(),
   deploymentEnvironment: environment,
   apiBaseUrl: (process.env.INTERNAL_API_URL || publicConfig.apiBaseUrl).replace(/\/$/, ''),
   siteOrigin: websiteOrigin(),
