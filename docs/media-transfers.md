@@ -67,7 +67,7 @@ No passwords or tokens are included in the archive or command output.
 
 Without an SSH host, dev/prod commands run on the current host, using the same Compose
 projects and routing overlays as deployment. Environment files are read from
-`/etc/knut-vandrar/development.env` or `production.env` (override the directory with
+`/etc/knut-vandrar/development.env` or `../.env.vps.production` (override the directory with
 `DEPLOY_CONFIG_DIR`). If missing, the scripts use the checkout's ignored
 `.env.vps.development` or `.env.vps.production` file. Node and Python versions always
 come from that checkout's `.nvmrc` and `.python-version`.

@@ -36,7 +36,7 @@ export async function GET(
     const output = await sharingImage(new Uint8Array(await response.arrayBuffer()))
     return new Response(new Uint8Array(output), {
       headers: {
-        'Content-Type': 'image/png',
+        'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=300',
       },
     })

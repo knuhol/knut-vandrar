@@ -25,7 +25,7 @@ test('returns 404 for a missing hike or cover', async () => {
 })
 
 test.each(['png', 'jpeg', 'webp'] as const)(
-  'returns visible 1200 by 630 PNG pixels from a %s photo using only the configured media host',
+  'returns visible 1200 by 630 JPEG pixels from a %s photo using only the configured media host',
   async (format) => {
     jest.mocked(getHike).mockResolvedValue({
       cover_image_url: 'https://another-host.example/api/media/cover.webp',
@@ -46,9 +46,9 @@ test.each(['png', 'jpeg', 'webp'] as const)(
       expect.any(Object),
     )
     expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(response.headers.get('content-type')).toBe('image/jpeg')
     const image = sharp(Buffer.from(await response.arrayBuffer()))
-    expect(await image.metadata()).toMatchObject({ width: 1200, height: 630, format: 'png' })
+    expect(await image.metadata()).toMatchObject({ width: 1200, height: 630, format: 'jpeg' })
     const stats = await image.stats()
     expect(stats.isOpaque).toBe(true)
     expect(stats.channels[1].mean).toBeGreaterThan(100)
