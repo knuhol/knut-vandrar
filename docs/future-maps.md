@@ -1,13 +1,15 @@
 # Future project: hike maps and live tracking
 
-**Status: deferred. Do not implement until explicitly requested.**
+**Status:** static MapLibre/WebP generation is implemented; provider-backed validation
+and generation are complete for the five current local hikes. See [static maps](static-maps.md).
+Interactive maps and live tracking remain deferred.
 
 ## Goals
 
 Build a shared geographic-data foundation for hike maps, custom waypoints, and optional Garmin inReach live tracking. Support two independent presentations of the same data:
 
 - **Interactive hike maps:** MapLibre GL JS with OpenFreeMap as the initial basemap provider, showing planned routes, recorded tracks, waypoints, stages and (eventually) live progress.
-- **Static overview maps:** Optionally generate lightweight, branded SVG illustrations on the Python backend for overview contexts (cards, hero sections, social previews). These are not screenshots of the interactive basemap.
+- **Static overview maps:** Generate responsive WebP images with MapLibre and headless Chromium using the shared style and GPX geometry. Public display remains deferred. The separate SVG concept below is optional and superseded for this initial implementation.
 
 Keep geographic data and basemap choice independent so the provider can be replaced or supplemented (e.g. a Swedish topographic layer) without changing hikes or GPX tracks. Avoid self-hosting map tiles initially.
 
@@ -17,7 +19,7 @@ Keep geographic data and basemap choice independent so the provider can be repla
 - Keep readable place names and link them to coordinate-based Google Maps searches.
 - Start and finish coordinates are persisted optional hike fields, validated by the API and database.
 - Place names link to Google Maps when coordinates are available.
-- Static map generation, interactive maps, GPX processing and live tracking remain deferred.
+- GPX processing and the static generation pipeline are implemented; see [static maps](static-maps.md). Interactive maps and live tracking remain deferred.
 
 ## Shared geographic data model
 

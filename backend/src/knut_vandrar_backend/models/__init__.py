@@ -3,6 +3,7 @@
 from knut_vandrar_backend.models import (
     hike,
     location,
+    map,
     media,
     page,
     photo,
@@ -11,4 +12,4 @@ from knut_vandrar_backend.models import (
     translation,
 )
 
-__all__ = ["hike", "reference", "location", "translation", "photo", "media", "page", "track"]
+__all__ = ["hike", "reference", "location", "translation", "photo", "media", "page", "track", "map"]

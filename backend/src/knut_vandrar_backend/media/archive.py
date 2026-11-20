@@ -31,7 +31,7 @@ from knut_vandrar_backend.models.photo import Photo, PhotoTranslation
 
 FILE_PATH = re.compile(
     rf"(?:photo/[0-9a-f-]{{36}}/(?:{'|'.join(PHOTO_FILES)})"
-    r"|(?:cover|logo)/[0-9a-f-]{36}/image|gpx/[0-9a-f-]{36}/track)\Z"
+    r"|map/[0-9a-f-]{36}/[a-z][a-z0-9_-]{0,39}|(?:cover|logo)/[0-9a-f-]{36}/image|gpx/[0-9a-f-]{36}/track)\Z"
 )
 
 
@@ -140,6 +140,27 @@ def export_archive(
                     files={"image": ImageFile(sha256=digest, size=len(cover.content))},
                 )
                 _add_bytes(archive, asset.file_path("image"), cover.content)
+                write_asset(asset)
+            from knut_vandrar_backend.maps.assets import images, metadata
+
+            map_images = images(db, hike.id)
+            if map_images:
+                files = {}
+                for variant, image in map_images.items():
+                    digest = hashlib.sha256(image.content).hexdigest()
+                    if digest != image.sha256:
+                        raise MediaError(f"Map checksum mismatch: {hike.id}/{variant}")
+                    files[variant] = ImageFile(sha256=digest, size=len(image.content))
+                asset = Asset(
+                    kind="map",
+                    id=hike.id,
+                    owner_id=hike.id,
+                    content_type="image/webp",
+                    files=files,
+                    map_data=metadata(map_images),
+                )
+                for variant, image in map_images.items():
+                    _add_bytes(archive, asset.file_path(variant), image.content)
                 write_asset(asset)
             photos = (
                 select(Photo).where(Photo.hike_id == hike.id).order_by(Photo.sort_order, Photo.id)
@@ -371,7 +392,7 @@ def index_archive(
                 raise MediaError(f"Duplicate image record: {asset.id}") from error
     actual_files = sum(
         1
-        for kind in ("photo", "cover", "logo", "gpx")
+        for kind in ("photo", "cover", "logo", "gpx", "map")
         for path in (directory / kind).glob("*/*")
         if path.is_file()
     )

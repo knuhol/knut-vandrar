@@ -88,7 +88,37 @@ class OvernightWrite(BaseModel):
     night_count: int = Field(gt=0)
 
 
+class HikeMapRead(BaseModel):
+    variant: str
+    width: int
+    height: int
+    url: str
+    sha256: str
+    generated_at: datetime | None = None
+
+
 class HikeExtra(BaseModel):
+    stop_latitude: float | None = Field(
+        default=None,
+        ge=-90,
+        le=90,
+        allow_inf_nan=False,
+        description="Stopping latitude for an aborted hike. Clear both stopping coordinates to remove it.",
+    )
+    stop_longitude: float | None = Field(
+        default=None,
+        ge=-180,
+        le=180,
+        allow_inf_nan=False,
+        description="Stopping longitude; projected onto the selected GPX route during generation.",
+    )
+    stop_stage: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=40,
+        pattern=r"^\d+(?:[A-Za-z]+|(?:\.\d+)+)?$",
+        description="Optional GPX stage label, such as 11 or 11B, to disambiguate nearby stages.",
+    )
     start_latitude: float | None = Field(default=None, ge=-90, le=90)
     start_longitude: float | None = Field(default=None, ge=-180, le=180)
     end_latitude: float | None = Field(default=None, ge=-90, le=90)
@@ -103,12 +133,15 @@ class HikeExtra(BaseModel):
     @model_validator(mode="after")
     def validate_pairs(self) -> "HikeExtra":
         for left, right in [
+            (self.stop_latitude, self.stop_longitude),
             (self.start_latitude, self.start_longitude),
             (self.end_latitude, self.end_longitude),
             (self.start_stage, self.end_stage),
         ]:
             if (left is None) != (right is None):
                 raise ValueError("Coordinates and stage ranges must be supplied as pairs")
+        if self.stop_stage is not None and self.stop_latitude is None:
+            raise ValueError("A stopping stage requires stopping coordinates")
         if len({night.accommodation_type for night in self.overnights}) != len(self.overnights):
             raise ValueError("Overnight types must be unique")
         if self.overnights and self.overnights_recorded_at is None:

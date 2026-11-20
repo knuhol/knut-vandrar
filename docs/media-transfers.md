@@ -2,13 +2,14 @@
 
 Published GPX collections, route metadata, track files, and hike collection selections
 transfer in the same archive as pictures. Collections can belong to a trail or a hike;
-`--map-location` and `--map-hike` remap their respective owners. New archives use format 3;
-formats 1 and 2 remain readable when database revisions match. Draft reviews are
+`--map-location` and `--map-hike` remap their respective owners. Generated static hike maps and their rendering provenance also transfer with media.
+New archives use format 4;
+formats 1, 2 and 3 remain readable when database revisions match. Draft reviews are
 excluded. See [track imports](track-imports.md).
 
 Use `scripts/media-export.sh` and `scripts/media-import.sh` to transfer images between
 `local`, `dev`, and `prod` without replacing unrelated application content. Both
-environments need this code and migration `017_hike_collection_direction` applied
+environments need this code and migrations through `019_hike_stopping_point` applied
 through their normal deployment/startup process. The source and destination Alembic revisions must
 match. No additional dependencies, cloud storage, or API credentials are needed.
 
@@ -87,7 +88,7 @@ Export all images by omitting filters, or repeat `--hike` and/or `--location`:
 ./scripts/media-export.sh dev backups/location.tar --ssh deploy@your-vps --location <location-uuid>
 ```
 
-A hike selection includes its cover, gallery, and associated location logo. A location
+A hike selection includes its cover, gallery, generated maps, and associated location logo. A location
 selection includes its logo and all its hikes' images. Multiple filters form a union.
 Unknown filter IDs fail the export. Omitting the output path creates a timestamped
 archive under ignored `backups/`; existing archives are never overwritten. `-` writes

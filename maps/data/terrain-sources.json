@@ -1,0 +1,74 @@
+{
+  "checked": "2026-11-20",
+  "tileJSON": {
+    "tilejson": "3.0.0",
+    "scheme": "xyz",
+    "tiles": ["https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"],
+    "attribution": "<a href='https://mapterhorn.com/attribution'>© Mapterhorn</a>",
+    "bounds": [-180, -85.0511287, 180, 85.0511287],
+    "center": [0, 0, 6],
+    "encoding": "terrarium",
+    "tileSize": 512
+  },
+  "sources": [
+    {
+      "source": "glo30",
+      "name": "COPERNICUS GLO-30",
+      "website": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM",
+      "license": "COPERNICUS full, free and open license",
+      "producer": "DLR e.V. 2010-2014, Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA. All rights reserved. Accessed via OpenTopography and AWS Open Data.",
+      "license_pdf": "https://github.com/mapterhorn/mapterhorn/blob/main/source-catalog/glo30/LICENSE.pdf",
+      "resolution": 30,
+      "access_year": 2025,
+      "tarball_size": 306375178240,
+      "tarball_md5sum": "133453b85b63c4a04538d77956c314d3",
+      "tarball_url": "https://download.mapterhorn.com/sources/glo30.tar"
+    },
+    {
+      "source": "no",
+      "name": "Terrengmodellar (DTM)",
+      "website": "https://www.kartverket.no/api-og-data/terrengdata",
+      "license": "CC BY 4.0",
+      "producer": "Kartverket",
+      "license_pdf": "https://github.com/mapterhorn/mapterhorn/blob/main/source-catalog/no/LICENSE.pdf",
+      "resolution": 1,
+      "access_year": 2025,
+      "tarball_size": 437214433280,
+      "tarball_md5sum": "51a0263d347c686fbbe9c809dbd560a7",
+      "tarball_url": "https://download.mapterhorn.com/sources/no.tar"
+    },
+    {
+      "source": "se",
+      "name": "Markhöjdmodell Nedladdning",
+      "website": "https://www.lantmateriet.se/sv/geodata/vara-produkter/produktlista/markhojdmodell-nedladdning/",
+      "license": "CC0",
+      "producer": "Lantmäteriet",
+      "license_pdf": "https://github.com/mapterhorn/mapterhorn/blob/main/source-catalog/se/LICENSE.pdf",
+      "resolution": 1,
+      "access_year": 2025,
+      "tarball_size": 397607925760,
+      "tarball_md5sum": "06cd77feead620fc7da1fd10e9e59f0a",
+      "tarball_url": "https://download.mapterhorn.com/sources/se.tar"
+    }
+  ],
+  "coverageChecks": [
+    {
+      "name": "sweden",
+      "lat": 63.1,
+      "lon": 12.4,
+      "z": 12,
+      "x": 2189,
+      "y": 1115,
+      "status": 200
+    },
+    {
+      "name": "norway",
+      "lat": 63.1,
+      "lon": 11.9,
+      "z": 12,
+      "x": 2183,
+      "y": 1115,
+      "status": 200
+    }
+  ]
+}

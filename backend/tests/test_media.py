@@ -965,3 +965,53 @@ def test_import_target_lookup_matches_partial_names_and_titles_in_all_languages(
         assert [row[0] for row in find_targets(db, trail=None, hike="adven")] == [HIKE]
         assert find_targets(db, trail="%", hike=None) == []
         assert find_targets(db, trail=None, hike="_") == []
+
+
+def test_generated_maps_round_trip_remap_and_conflict(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from knut_vandrar_backend.maps.assets import Dimensions, MapData, images, persist
+
+    source, destination = environments
+    data = MapData(
+        fingerprint="a" * 64,
+        variants={
+            "mobile": Dimensions(width=20, height=10),
+            "wide": Dimensions(width=20, height=10),
+        },
+        provenance={"provider": "OpenFreeMap"},
+    )
+    content = {key: _image("green", "WEBP") for key in data.variants}
+    with source.factory.begin() as db:
+        db.execute(delete(Photo))
+        persist(db, HIKE, data, content)
+    archive = BytesIO()
+    with source.factory() as db:
+        export_archive(db, source.media, archive)
+    archive.seek(0)
+    report = transfer.import_archive(destination.factory, destination.media, archive)
+    assert not report.conflicts
+    with destination.factory() as db:
+        rows = images(db, HIKE)
+        assert {name: row.content for name, row in rows.items()} == content
+        assert all(row.fingerprint == "a" * 64 for row in rows.values())
+    archive.seek(0)
+    report = transfer.import_archive(destination.factory, destination.media, archive)
+    assert report.counts["add"] == report.counts["replace"] == 0
+    with destination.factory.begin() as db:
+        persist(db, HIKE, data.model_copy(update={"fingerprint": "b" * 64}), content)
+    archive.seek(0)
+    report = transfer.import_archive(destination.factory, destination.media, archive)
+    assert report.conflicts
+    archive.seek(0)
+    report = transfer.import_archive(destination.factory, destination.media, archive, replace=True)
+    assert not report.conflicts
+    remapped = uuid4()
+    with destination.factory.begin() as db:
+        db.add(Hike(id=remapped))
+    archive.seek(0)
+    transfer.import_archive(
+        destination.factory, destination.media, archive, hike_map={HIKE: remapped}, replace=True
+    )
+    with destination.factory() as db:
+        assert len(images(db, remapped)) == 2

@@ -98,6 +98,15 @@ def _validate_images(asset: Asset, staging: Path) -> None:
                         raise MediaError(f"Photo derivatives must be WebP: {asset.id}")
                     if variant == "fullscreen" and image.size != (asset.width, asset.height):
                         raise MediaError(f"Photo dimensions mismatch: {asset.id}")
+                if asset.kind == "map":
+                    from knut_vandrar_backend.maps.assets import MapData
+
+                    dimensions = MapData.model_validate(asset.map_data).variants[variant]
+                    if image.format != "WEBP" or image.size != (
+                        dimensions.width,
+                        dimensions.height,
+                    ):
+                        raise MediaError("Map variant format or dimensions mismatch")
                 image.load()
 
 
@@ -133,7 +142,7 @@ def _remap(
 def _lock_owners(db: Session, index: sqlite3.Connection) -> None:
     for condition, model in (
         (
-            "kind IN ('cover', 'photo', 'track_selection') OR (kind IN ('collection', 'gpx') AND json_extract(data, '$.track_owner')='hike')",
+            "kind IN ('cover', 'photo', 'track_selection', 'map') OR (kind IN ('collection', 'gpx') AND json_extract(data, '$.track_owner')='hike')",
             Hike,
         ),
         (
@@ -256,6 +265,21 @@ def _plan(
                     or Asset.model_validate_json(incoming[0]).track_owner != asset.track_owner
                 ):
                     raise MediaError("GPX archive requires its collection with the same owner")
+        elif asset.kind == "map":
+            from knut_vandrar_backend.maps.assets import images, metadata
+
+            existing = images(db, asset.owner_id)
+            if existing:
+                same = (
+                    set(existing) == set(asset.files)
+                    and metadata(existing) == asset.map_data
+                    and all(
+                        existing[key].sha256 == info.sha256
+                        and hashlib.sha256(existing[key].content).hexdigest() == info.sha256
+                        for key, info in asset.files.items()
+                    )
+                )
+                action = "skip" if same else "replace"
         elif asset.kind == "photo":
             for text in asset.translations:
                 if text.locale_code not in locales:
@@ -444,6 +468,18 @@ def import_archive(
                             from knut_vandrar_backend.tracks.transfer import apply
 
                             apply(db, asset, staging, media_root, source_id)
+                        elif asset.kind == "map":
+                            from knut_vandrar_backend.maps.assets import MapData, persist
+
+                            persist(
+                                db,
+                                asset.owner_id,
+                                MapData.model_validate(asset.map_data),
+                                {
+                                    variant: (staging / "map" / source_id / variant).read_bytes()
+                                    for variant in asset.files
+                                },
+                            )
                         elif asset.kind == "photo":
                             _apply_photo(
                                 db, asset, work, media_root, source_id, repair=action == "repair"

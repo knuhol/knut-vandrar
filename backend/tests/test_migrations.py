@@ -222,3 +222,61 @@ def test_hike_direction_migration_preserves_trail_direction_and_hike_selection()
         )
         assert rows == {"Trail": "backward", "Hike": "forward"}
     engine.dispose()
+
+
+def test_map_migration_preserves_hikes_and_has_unique_variants() -> None:
+    import sqlalchemy as sa
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    scripts = ScriptDirectory.from_config(config)
+    migration = scripts.get_revision("018_hike_map_images")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+        connection.execute(sa.text("CREATE TABLE hikes (id CHAR(32) PRIMARY KEY)"))
+        connection.execute(sa.text("INSERT INTO hikes VALUES ('00000000000000000000000000000001')"))
+        migration.module.upgrade()
+        columns = {column["name"] for column in inspect(connection).get_columns("hike_map_images")}
+        assert {"hike_id", "variant", "content", "fingerprint", "provenance"}.issubset(columns)
+        assert set(
+            inspect(connection).get_pk_constraint("hike_map_images")["constrained_columns"]
+        ) == {"hike_id", "variant"}
+        migration.module.downgrade()
+        assert connection.execute(sa.text("SELECT COUNT(*) FROM hikes")).scalar() == 1
+    engine.dispose()
+
+
+def test_stopping_point_migration_transfers_legacy_fix_and_preserves_hikes() -> None:
+    from uuid import UUID
+
+    import sqlalchemy as sa
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    migration = ScriptDirectory.from_config(config).get_revision("019_hike_stopping_point")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+        table = sa.Table("hikes", sa.MetaData(), sa.Column("id", sa.Uuid(), primary_key=True))
+        table.create(connection)
+        legacy = UUID("8275df26-f78b-45bb-8638-afee0da03c7e")
+        other = UUID("00000000-0000-0000-0000-000000000001")
+        connection.execute(table.insert(), [{"id": legacy}, {"id": other}])
+        migration.module.upgrade()
+        rows = connection.execute(
+            sa.text(
+                "SELECT stop_latitude,stop_longitude,stop_stage FROM hikes WHERE stop_stage IS NOT NULL"
+            )
+        ).all()
+        assert len(rows) == 1
+        assert tuple(rows[0]) == (59.84081, 15.96310, "11")
+        assert {c["name"] for c in inspect(connection).get_check_constraints("hikes")} == {
+            "ck_stop_coordinates_pair",
+            "ck_stop_coordinates_range",
+            "ck_stop_stage_coordinates",
+        }
+        migration.module.downgrade()
+        assert connection.execute(sa.text("SELECT COUNT(*) FROM hikes")).scalar() == 2
+        assert [c["name"] for c in inspect(connection).get_columns("hikes")] == ["id"]
+    engine.dispose()

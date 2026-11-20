@@ -1,0 +1,60 @@
+{
+  "provider": {
+    "name": "OpenFreeMap",
+    "tileOrigin": "https://tiles.openfreemap.org",
+    "assetOrigin": "https://assets.openfreemap.com",
+    "userAgent": "VandrarMaps/1.0 (https://knut.vandrar.se)",
+    "termsUrl": "https://openfreemap.org/tos/"
+  },
+  "attribution": "\u00a9 OpenMapTiles \u00b7 \u00a9 OpenStreetMap contributors \u00b7 openstreetmap.org/copyright",
+  "render": {
+    "pixelRatio": 2,
+    "padding": 48,
+    "maxZoom": 14,
+    "timeoutMs": 90000,
+    "webpQuality": 90,
+    "circularThresholdMetres": 50
+  },
+  "variants": {
+    "mobile": {
+      "width": 1280,
+      "height": 1280
+    },
+    "tablet": {
+      "width": 1600,
+      "height": 1200
+    },
+    "desktop": {
+      "width": 2400,
+      "height": 1600
+    },
+    "wide": {
+      "width": 2880,
+      "height": 1620
+    }
+  },
+  "overlay": {
+    "routeColorToken": "orange",
+    "outlineColorToken": "paper",
+    "startColorToken": "forest",
+    "finishColorToken": "orange-dark",
+    "routeWidth": 4,
+    "outlineWidth": 7,
+    "markerRadius": 7,
+    "markerStrokeWidth": 3
+  },
+  "illustration": {
+    "profile": "auto",
+    "insetWidth": 110,
+    "insetHeight": 180,
+    "insetMargin": 16,
+    "endpointFontSize": 14,
+    "labelPadding": 6,
+    "labelHalo": 3,
+    "stopSize": 12,
+    "detailTileZoom": 11,
+    "attributionGap": 16,
+    "detailLabelPadding": 18,
+    "detailPlacePadding": 32
+  }
+}

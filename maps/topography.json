@@ -1,0 +1,46 @@
+{
+  "provider": {
+    "name": "Mapterhorn",
+    "tileOrigin": "https://tiles.mapterhorn.com",
+    "url": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
+    "encoding": "terrarium",
+    "tileSize": 512,
+    "maxZoom": 12,
+    "attribution": "Terrain \u00a9 Mapterhorn \u00b7 mapterhorn.com/attribution",
+    "norwayAttribution": "\u00a9 Kartverket (CC BY 4.0)"
+  },
+  "hillshade": {
+    "enabled": true,
+    "exaggeration": 0.3,
+    "illuminationDirection": 315,
+    "shadowColorToken": "forest",
+    "highlightColorToken": "cream",
+    "accentColorToken": "beige"
+  },
+  "contours": {
+    "enabled": true,
+    "minZoom": 7,
+    "thresholds": {
+      "7": [100, 500],
+      "10": [50, 250],
+      "12": [20, 100],
+      "14": [10, 100]
+    },
+    "minorColorToken": "orange-dark",
+    "majorColorToken": "orange-dark",
+    "minorOpacity": 0.16,
+    "majorOpacity": 0.3,
+    "minorWidth": 0.45,
+    "majorWidth": 0.85,
+    "labelSize": 9,
+    "labelPadding": 14,
+    "labelOpacity": 0.65,
+    "labelAlignment": "viewport"
+  },
+  "peakLabels": {
+    "padding": 24,
+    "fontSize": 10,
+    "minimumElevation": 1000
+  },
+  "cacheSize": 128
+}

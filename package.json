@@ -23,5 +23,10 @@
     "Knut vandrar"
   ],
   "author": "Knut Holm",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "maplibre-gl": "6.19.0",
+    "playwright": "1.65.1",
+    "maplibre-contour": "0.1.1"
+  }
 }

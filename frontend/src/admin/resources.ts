@@ -67,6 +67,7 @@ export interface Schema {
   $ref?: string
   type?: string
   title?: string
+  description?: string
   format?: string
   default?: Json
   const?: Json
@@ -261,6 +262,9 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
         'start_longitude',
         'end_latitude',
         'end_longitude',
+        'stop_latitude',
+        'stop_longitude',
+        'stop_stage',
         'direction',
         'track_collection_id',
         'route_scope',
