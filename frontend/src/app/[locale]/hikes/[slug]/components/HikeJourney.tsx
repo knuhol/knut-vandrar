@@ -4,6 +4,8 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconRoute,
+  IconRepeat,
+  IconArrowUpRight,
   IconRotateClockwise,
   IconRotate,
 } from '@tabler/icons-react'
@@ -31,6 +33,7 @@ const directions = {
 export function hasHikeJourney(details: HikeDetails) {
   return Boolean(
     details.scope ||
+    details.isLoop ||
     details.direction ||
     details.stages ||
     details.achievements.length > 0 ||
@@ -44,6 +47,7 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
   const overnights = details.overnights.filter((stay) => stay.count > 0)
   const hasAchievements = details.achievements.length > 0
   const routeItems = [
+    ...(details.isLoop ? [{ id: 'loop', label: t('loop'), icon: <IconRepeat /> }] : []),
     ...(details.scope
       ? [{ id: 'scope', label: t(`scope.${details.scope}`), icon: <IconRoute /> }]
       : []),
@@ -76,6 +80,23 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
               </Heading>
             </div>
             <FactItems items={routeItems} />
+            {details.scope === 'named_hiking_route' && details.namedRoute && (
+              <p className="mt-4 text-base font-semibold text-forest">
+                {details.namedRoute.url ? (
+                  <a
+                    className="link-dotted inline-flex items-center gap-1.5"
+                    href={details.namedRoute.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {details.namedRoute.name}
+                    <IconArrowUpRight className="size-4 shrink-0" aria-hidden="true" />
+                  </a>
+                ) : (
+                  details.namedRoute.name
+                )}
+              </p>
+            )}
           </div>
         )}
         {overnights.length > 0 && (

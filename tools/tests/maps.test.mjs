@@ -227,3 +227,195 @@ test("unfinished endpoints share green while completed finishes use orange", asy
     finish: palette["orange-dark"],
   });
 });
+
+test("numeric label levels increase detail without changing automatic defaults", async () => {
+  const { labelLevel, labelProfile } =
+    await import("../../maps/illustration.mjs");
+  for (let n = 1; n <= 5; n++) {
+    assert.equal(labelLevel({ profile: String(n) }), n);
+    assert.equal(
+      labelProfile({ profile: String(n) }),
+      n < 3 ? "overview" : "detail",
+    );
+  }
+  assert.equal(labelLevel({ profile: "auto", terrainTypes: ["lowlands"] }), 2);
+  assert.equal(labelLevel({ profile: "auto", terrainTypes: ["mountains"] }), 3);
+  assert.throws(() => labelLevel({ profile: "6" }));
+});
+
+test("landmarks are sparse, named, outdoors, near the route and inside the frame", async () => {
+  const { selectContext } = await import("../../maps/detail.mjs");
+  const poi = (name, x, y, subclass = "shelter") => ({
+    type: "Feature",
+    properties: { name, class: "lodging", subclass },
+    geometry: { type: "Point", coordinates: [x, y] },
+  });
+  const options = {
+    kind: "pois",
+    limit: 2,
+    project: ([x, y]) => ({ x, y }),
+    lines: [
+      [
+        { x: 50, y: 150 },
+        { x: 550, y: 150 },
+      ],
+    ],
+    width: 600,
+    height: 400,
+    radius: 30,
+    spacing: 100,
+  };
+  const features = [
+    poi("Hut", 100, 155),
+    poi("Hut", 300, 160),
+    poi("Nearby duplicate", 120, 165),
+    poi("Waterfall", 450, 170, "waterfall"),
+    poi("Distant", 350, 300),
+    poi("Shop", 250, 155, "supermarket"),
+    poi("", 350, 155),
+    poi("Clipped", 10, 150),
+  ];
+  assert.deepEqual(
+    selectContext(features, options).map((f) => f.properties.name),
+    ["Hut", "Waterfall"],
+  );
+  assert.equal(selectContext(features, { ...options, limit: 0 }).length, 0);
+});
+
+test("area names deduplicate tile fragments and use a point anchor", async () => {
+  const { selectContext } = await import("../../maps/detail.mjs");
+  const park = {
+    type: "Feature",
+    properties: { name: "National park" },
+    geometry: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [100, 100],
+          [400, 100],
+          [400, 300],
+          [100, 300],
+          [100, 100],
+        ],
+      ],
+    },
+  };
+  const selected = selectContext([park, park], {
+    kind: "areas",
+    limit: 1,
+    project: ([x, y]) => ({ x, y }),
+    lines: [],
+    width: 600,
+    height: 400,
+    spacing: 100,
+  });
+  assert.equal(selected.length, 1);
+  assert.deepEqual(selected[0].geometry, {
+    type: "Point",
+    coordinates: [250, 200],
+  });
+});
+
+test("all five densities produce valid map styles including sparse area and landmark layers", async () => {
+  const { validateStyleMin } = await import("@maplibre/maplibre-gl-style-spec");
+  const { illustrationStyle, labelProfile } =
+    await import("../../maps/illustration.mjs");
+  const base = JSON.parse(
+    await readFile(new URL("../../maps/vandrar.json", import.meta.url)),
+  );
+  const brand = {
+    ...tokens,
+    sage: "#6b8f71",
+    beige: "#e8dec4",
+    cream: "#faf4e5",
+  };
+  for (let level = 1; level <= 5; level++) {
+    const settings = {
+      ...config.illustration,
+      profile: String(level),
+      labelLevel: level,
+    };
+    const style = illustrationStyle(
+      base,
+      brand,
+      labelProfile(settings),
+      settings,
+    );
+    assert.deepEqual(
+      validateStyleMin(style).map((error) => error.message),
+      [],
+    );
+    assert.equal(
+      style.layers.find((layer) => layer.id === "vandrar-area-context").layout[
+        "text-allow-overlap"
+      ],
+      false,
+    );
+  }
+});
+
+test("label density does not change terrain layers or expose wetland patterns", async () => {
+  const { illustrationStyle, labelProfile } =
+    await import("../../maps/illustration.mjs");
+  const base = JSON.parse(
+    await readFile(new URL("../../maps/vandrar.json", import.meta.url)),
+  );
+  const brand = {
+    ...tokens,
+    sage: "#6b8f71",
+    beige: "#e8dec4",
+    cream: "#faf4e5",
+  };
+  const terrain = (level) =>
+    illustrationStyle(base, brand, labelProfile({ profile: String(level) }), {
+      ...config.illustration,
+      labelLevel: level,
+    }).layers.filter((layer) => layer.type !== "symbol");
+  assert.deepEqual(terrain(5), terrain(1));
+  const wetland = terrain(5).find((layer) => layer.id === "landcover_wetland");
+  assert.equal(wetland.minzoom, 12);
+  assert.equal(wetland.paint["fill-pattern"], undefined);
+  const style = illustrationStyle(base, brand, "detail", config.illustration);
+  assert.equal(
+    style.layers.find((layer) => layer.id === "vandrar-area-context").layout[
+      "text-field"
+    ][0],
+    "upcase",
+  );
+  assert.equal(
+    style.layers.find((layer) => layer.id === "vandrar-river-context").layout[
+      "symbol-placement"
+    ],
+    "line",
+  );
+});
+
+test("river context retains line geometry, excludes drains and deduplicates names", async () => {
+  const { selectContext } = await import("../../maps/detail.mjs");
+  const river = (name, type = "river") => ({
+    type: "Feature",
+    properties: { name, class: type },
+    geometry: {
+      type: "LineString",
+      coordinates: [
+        [50, 100],
+        [250, 150],
+        [450, 200],
+      ],
+    },
+  });
+  const selected = selectContext(
+    [river("River"), river("River"), river("Drain", "drain")],
+    {
+      kind: "rivers",
+      limit: 2,
+      project: ([x, y]) => ({ x, y }),
+      lines: [],
+      width: 600,
+      height: 400,
+      spacing: 100,
+    },
+  );
+  assert.equal(selected.length, 1);
+  assert.equal(selected[0].geometry.type, "LineString");
+});

@@ -6,10 +6,11 @@ import { client } from './client'
 
 import type { Locale } from '@/i18n/routing'
 import { collectionPageSize } from '@/hiking/pagination'
+import type { HikeCategory } from '@/hiking/categories'
 
-export const getHikes = cache(async (locale: Locale, offset = 0) => {
+export const getHikes = cache(async (locale: Locale, offset = 0, category?: HikeCategory) => {
   const response = await client['/api/hikes'].get({
-    query: { locale, limit: collectionPageSize, offset },
+    query: { locale, limit: collectionPageSize, offset, ...(category ? { category } : {}) },
   })
   if (!response.ok) {
     throw new Error('Could not load hikes')

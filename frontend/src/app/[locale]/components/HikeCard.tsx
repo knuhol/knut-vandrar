@@ -13,9 +13,11 @@ import { Heading } from '@/components/Heading'
 import { ButtonLink } from '@/components/Button'
 import { imageUrl } from '@/api/images'
 import type { HikeSummary } from '@/api/hikes'
+import { hikeSeason } from '@/hiking/season'
 
 export function HikeCard({ hike }: { hike: HikeSummary }) {
   const t = useTranslations('Site')
+  const period = hikeSeason(hike)
 
   return (
     <article className="card-interactive relative isolate overflow-hidden rounded-lg border border-beige bg-cream">
@@ -37,6 +39,13 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
         <HikeStatus status={hike.status} className="absolute top-3.75 left-3.75" />
       </div>
       <div className="p-5.25">
+        {period && (
+          <p className="mb-2 text-sm text-muted">
+            <time dateTime={period.start}>
+              {t('hikeSeason', { season: t(`seasons.${period.season}`), year: period.year })}
+            </time>
+          </p>
+        )}
         <div className="mb-3">
           <Heading as="h3">{hike.translation.title}</Heading>
         </div>

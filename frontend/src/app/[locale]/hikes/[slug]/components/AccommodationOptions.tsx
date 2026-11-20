@@ -8,6 +8,7 @@ import type { AccommodationType } from '@/hiking/details'
 const icons = {
   tent: IconTent,
   freeShelter: IconHomeEco,
+  paidShelter: IconHomeEco,
   mountainHut: IconBuildingCottage,
   paidAccommodation: IconBed,
 } satisfies Record<AccommodationType, typeof IconTent>

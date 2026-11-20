@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from knut_vandrar_backend.media.storage import PHOTO_FILES
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
+from knut_vandrar_backend.tracks.sources import TRACK_SOURCE_ID_PATTERN
 
 FORMAT_VERSION: Literal[4] = 4
 MAX_RECORD_BYTES = 1024 * 1024
@@ -137,7 +138,7 @@ class Asset(Record):
 
 
 class CollectionData(Record):
-    source_id: str = Field(pattern=r"^[1-9][0-9]*$")
+    source_id: str = Field(pattern=TRACK_SOURCE_ID_PATTERN)
     name: str = Field(min_length=1, max_length=300)
     direction: Literal["forward", "backward"] | None
     details: dict[str, Any]
@@ -145,7 +146,7 @@ class CollectionData(Record):
 
 class RouteData(Record):
     collection_id: str = Field(pattern=r"^[0-9a-f-]{36}$")
-    source_id: str = Field(pattern=r"^[1-9][0-9]*$")
+    source_id: str = Field(pattern=TRACK_SOURCE_ID_PATTERN)
     details: dict[str, Any]
     overrides: dict[str, Any]
 

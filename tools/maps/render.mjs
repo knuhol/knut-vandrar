@@ -156,7 +156,10 @@ try {
         }
         setAttribution(terrain ? terrainAttribution(terrain.provider) : "");
         await document.fonts.ready;
-        if (illustration && job.illustration.profile === "auto") {
+        if (illustration) {
+          job.illustration.labelLevel = illustration.labelLevel(
+            job.illustration,
+          );
           job.illustration.profile = illustration.labelProfile(
             job.illustration,
           );
@@ -264,7 +267,7 @@ try {
             map.triggerRepaint();
           });
         }
-        if (job.illustration?.profile === "detail") {
+        if (job.illustration) {
           const { loadDetailContext } = await import("/detail.mjs");
           const detailReport = await loadDetailContext(Map, map, job);
           await new Promise((resolve, reject) => {

@@ -16,6 +16,10 @@ export function StarRating({
   const t = useTranslations('Site.starRating')
   const score = Math.round(Math.min(5, Math.max(0, value)) * 2) / 2
 
+  if (value === -1) {
+    return <p className="text-sm text-muted">{t('notApplicable')}</p>
+  }
+
   return (
     <div>
       <span className="sr-only">{t('score', { value: score })}</span>

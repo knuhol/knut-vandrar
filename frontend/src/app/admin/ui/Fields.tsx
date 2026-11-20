@@ -10,6 +10,7 @@ import { MonthField } from './MonthField'
 import { DateTimeField } from './DateTimeField'
 import { ReferenceField } from './ReferenceField'
 import messages from '@/admin/messages/en.json'
+import { fieldApplies, variantApplies, type FieldContext } from '@/admin/fieldConditions'
 
 import {
   orderedFields,
@@ -29,6 +30,7 @@ import {
 
 interface FieldProps {
   schema: Schema
+  context?: FieldContext
   references?: Record<string, ReferenceOptions>
   bare?: boolean
   reference?: string
@@ -49,8 +51,10 @@ export function Fields({
   references,
   required = false,
   bare = false,
+  context,
 }: FieldProps) {
   const field = nonNull(schema)
+  const root = context ?? { schema: field.title || '', value }
   const [preview, setPreview] = useState(false)
   const labelText = label.replaceAll('_', ' ')
   const scopedReference = references?.[label]
@@ -74,43 +78,48 @@ export function Fields({
     )
   }
   if (field.oneOf) {
-    const options = field.oneOf.map((option) => {
-      const resolved = resolve(option)
-      return {
-        ...resolved,
-        properties: Object.fromEntries(
-          Object.entries(resolved.properties || {}).map(([key, child]) => [key, resolve(child)]),
-        ),
-      }
-    })
+    const options = field.oneOf
+      .filter((option) => variantApplies(option, root, value))
+      .map((option) => {
+        const resolved = resolve(option)
+        return {
+          ...resolved,
+          properties: Object.fromEntries(
+            Object.entries(resolved.properties || {}).map(([key, child]) => [key, resolve(child)]),
+          ),
+        }
+      })
     const current = record(value)
     const selected =
       options.find((option) => option.properties.type.const === current.type) || options[0]
     return (
       <Stack spacing={2}>
-        <TextField
-          select
-          label={`${labelText} type`}
-          value={text(current.type || selected.properties.type.const || '')}
-          onChange={(event) => {
-            const next = options.find(
-              (option) => option.properties.type.const === event.target.value,
-            )
-            if (next) {
-              onChange(initialValue(next))
-            }
-          }}
-        >
-          {options.map((option) => (
-            <MenuItem
-              key={text(option.properties.type.const)}
-              value={text(option.properties.type.const)}
-            >
-              {text(option.properties.type.const).replaceAll('_', ' ')}
-            </MenuItem>
-          ))}
-        </TextField>
+        {options.length > 1 && (
+          <TextField
+            select
+            label={`${labelText} type`}
+            value={text(current.type || selected.properties.type.const || '')}
+            onChange={(event) => {
+              const next = options.find(
+                (option) => option.properties.type.const === event.target.value,
+              )
+              if (next) {
+                onChange(initialValue(next))
+              }
+            }}
+          >
+            {options.map((option) => (
+              <MenuItem
+                key={text(option.properties.type.const)}
+                value={text(option.properties.type.const)}
+              >
+                {text(option.properties.type.const).replaceAll('_', ' ')}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
         <Fields
+          context={root}
           references={references}
           schema={selected}
           value={value}
@@ -132,10 +141,18 @@ export function Fields({
           {groups.map((group) => {
             const properties = Object.fromEntries(
               group.fields
-                .filter((key) => field.properties && key in field.properties)
+                .filter(
+                  (key) =>
+                    field.properties &&
+                    key in field.properties &&
+                    fieldApplies(field, key, value, root),
+                )
                 .map((key) => [key, field.properties?.[key] || {}]),
             )
             const entries = Object.entries(properties)
+            if (entries.length === 0) {
+              return null
+            }
             const single =
               entries.length === 1 &&
               (nonNull(entries[0][1]).properties || nonNull(entries[0][1]).oneOf)
@@ -151,6 +168,7 @@ export function Fields({
                 }
               >
                 <Fields
+                  context={root}
                   references={references}
                   schema={
                     single ? single[1] : { type: 'object', properties, required: field.required }
@@ -178,7 +196,10 @@ export function Fields({
         }}
       >
         {orderedFields(field)
-          .filter(([, child]) => resolve(child).const === undefined)
+          .filter(
+            ([key, child]) =>
+              resolve(child).const === undefined && fieldApplies(field, key, value, root),
+          )
           .map(([key, child]) => (
             <Box
               key={key}
@@ -193,6 +214,7 @@ export function Fields({
               }}
             >
               <Fields
+                context={root}
                 references={references}
                 schema={child}
                 value={current[key] ?? null}
@@ -239,34 +261,44 @@ export function Fields({
     return (
       <Stack spacing={2}>
         {!bare && <Typography component="h3">{labelText}</Typography>}
-        {current.map((entry, index) => (
-          <Stack key={index} spacing={1}>
-            <Fields
-              references={references}
-              schema={items}
-              reference={relation}
-              value={entry}
-              label={`${labelText} ${text(index + 1)}`}
-              onChange={(next) => {
-                onChange(current.map((item, position) => (position === index ? next : item)))
-              }}
-              required
-            />
-            <Stack direction="row" spacing={1} alignItems="flex-start">
-              <Button
-                color="error"
-                variant="outlined"
-                onClick={() => {
-                  onChange(current.filter((_, position) => position !== index))
+        {current.map((entry, index) => {
+          const itemSchema = nonNull(items)
+          const selected = itemSchema.oneOf?.find(
+            (option) =>
+              resolve(resolve(option).properties?.type || {}).const === record(entry).type,
+          )
+          if (selected && !variantApplies(selected, root, entry)) {
+            return null
+          }
+          return (
+            <Stack key={index} spacing={1}>
+              <Fields
+                context={root}
+                references={references}
+                schema={items}
+                reference={relation}
+                value={entry}
+                label={`${labelText} ${text(index + 1)}`}
+                onChange={(next) => {
+                  onChange(current.map((item, position) => (position === index ? next : item)))
                 }}
-              >
-                {messages.remove}
-              </Button>
-              {index === current.length - 1 && addButton}
+                required
+              />
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Button
+                  color="error"
+                  variant="outlined"
+                  onClick={() => {
+                    onChange(current.filter((_, position) => position !== index))
+                  }}
+                >
+                  {messages.remove}
+                </Button>
+              </Stack>
             </Stack>
-          </Stack>
-        ))}
-        {current.length === 0 && <Stack direction="row">{addButton}</Stack>}
+          )
+        })}
+        <Stack direction="row">{addButton}</Stack>
       </Stack>
     )
   }

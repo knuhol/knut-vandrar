@@ -14,6 +14,7 @@ export const resources = [
     imageMaxBytes: uploadLimits.photo,
     imageLimitMessage: 'photoFileTooLarge' as const,
     gallery: true,
+    achievements: true,
   },
   {
     name: 'locations',
@@ -268,6 +269,9 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
         'direction',
         'track_collection_id',
         'route_scope',
+        'is_loop',
+        'named_route_name',
+        'named_route_url',
         'start_stage',
         'end_stage',
       ],
@@ -281,7 +285,17 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
       title: 'geography',
       fields: ['kind', 'country_codes', 'region_ids', 'arctic_circle_position'],
     },
-    { title: 'trail', fields: ['official_url', 'waymarking', 'is_loop', 'terrains'] },
+    {
+      title: 'trail',
+      fields: [
+        'official_url',
+        'waymarking',
+        'is_loop',
+        'terrains',
+        'is_national_park',
+        'boat_connection_required',
+      ],
+    },
     { title: 'season', fields: ['hiking_months', 'information_checked_at'] },
     { title: 'water', fields: ['water_sources_status', 'water_sources'] },
     {
@@ -335,4 +349,16 @@ export const gallerySection = { title: 'gallery' } as const
 export const galleryTextFields = {
   alt: { label: 'galleryDescription', maxLength: 1000 },
   caption: { label: 'galleryCaptionField', maxLength: 5000 },
+} as const
+
+export const achievementSection = { title: 'achievements' } as const
+export const achievementTextFields = {
+  title: {
+    label: 'achievementTitle',
+    maxLength: nonNull(schemaFor('AchievementEnglish').properties?.title || {}).maxLength,
+  },
+  description: {
+    label: 'achievementDescription',
+    maxLength: nonNull(schemaFor('AchievementEnglish').properties?.description || {}).maxLength,
+  },
 } as const

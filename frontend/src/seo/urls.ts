@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { serverConfig } from '@/config/server'
+import { collectionQuery } from '@/hiking/pagination'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
 
@@ -11,8 +12,12 @@ export function absoluteUrl(path: string) {
   return new URL(path, `${siteOrigin}/`).href
 }
 
-export function homePath(locale: Locale, offset = 0) {
-  return getPathname({ locale, href: offset > 0 ? { pathname: '/', query: { offset } } : '/' })
+export function homePath(locale: Locale, offset = 0, multiDayOffset = 0) {
+  const query = collectionQuery(offset, multiDayOffset)
+  return getPathname({
+    locale,
+    href: Object.keys(query).length > 0 ? { pathname: '/', query } : '/',
+  })
 }
 
 export function hikePath(locale: Locale, slug: string) {

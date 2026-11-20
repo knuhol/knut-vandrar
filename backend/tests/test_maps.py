@@ -176,7 +176,7 @@ def test_generation_is_atomic_idempotent_and_detects_changes(
     assert cli.generate(factory, root, hike_id) == "generated"
     assert cli.generate(factory, root, hike_id) == "up to date"
     assert len(calls) == 1
-    assert cli.generate(factory, root, hike_id, check=True, labels="overview") == "needs generation"
+    assert cli.generate(factory, root, hike_id, check=True, labels="2") == "needs generation"
     assert cli.generate(factory, root, hike_id, check=True, terrain="none") == "needs generation"
     cli.export_images(factory, hike_id, root / "review")
     assert len(list((root / "review" / str(hike_id)).glob("*.webp"))) == 4
@@ -337,7 +337,7 @@ def test_preview_preserves_database_and_tracks_presentation(
 
     def render(command: list[str], **kwargs: Any) -> None:
         job = json.loads(kwargs["input"])
-        assert job["illustration"]["profile"] == "overview"
+        assert job["illustration"]["profile"] == "2"
         assert job["topography"]["mode"] == "hillshade"
         assert job["country"]["type"] == "Feature"
         for name, size in job["config"]["variants"].items():
@@ -351,7 +351,7 @@ def test_preview_preserves_database_and_tracks_presentation(
         factory,
         root,
         hike_id,
-        labels="overview",
+        labels="2",
         terrain="hillshade",
         preview_output=root / "preview",
     )
@@ -485,3 +485,22 @@ def test_database_stop_controls_generation_and_freshness(
         hike = db.get(Hike, hike_id)
         hike.stop_latitude, hike.stop_longitude = Decimal("59.6"), Decimal("15.6")
     assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
+
+
+@pytest.mark.parametrize("level", ["auto", "1", "2", "3", "4", "5"])
+def test_label_density_cli_choices(level: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    monkeypatch.setattr(sys, "argv", ["maps-generate", "--all", "--check", "--labels", level])
+    assert cli.parse_args().labels == level
+
+
+@pytest.mark.parametrize("level", ["0", "6", "detail", "overview"])
+def test_label_density_rejects_old_or_invalid_options(
+    level: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    monkeypatch.setattr(sys, "argv", ["maps-generate", "--all", "--check", "--labels", level])
+    with pytest.raises(SystemExit):
+        cli.parse_args()

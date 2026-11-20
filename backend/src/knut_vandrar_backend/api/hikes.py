@@ -4,7 +4,7 @@ import hashlib
 from datetime import UTC, datetime
 from decimal import Decimal
 from math import ceil
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from knut_vandrar_backend.api.authored import read_authored
+from knut_vandrar_backend.api.hike_categories import long_distance_condition
 from knut_vandrar_backend.api.image_uploads import (
     IMAGE_RESPONSES,
     PhotoBody,
@@ -66,9 +67,13 @@ def list_hikes(
     locale: str = SOURCE_LOCALE,
     limit: Limit = 10,
     offset: Offset = 0,
+    category: Literal["long_distance", "multi_day"] | None = None,
 ) -> Page[HikeSummaryRead]:
     _require_locale(db, locale)
     query = select(HikeTranslation).join(Hike).where(HikeTranslation.locale_code == locale)
+    if category is not None:
+        long_distance = long_distance_condition()
+        query = query.where(long_distance if category == "long_distance" else ~long_distance)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     translations = db.scalars(
         query.order_by(
@@ -598,6 +603,9 @@ EXTRA_FIELDS = (
     "end_longitude",
     "direction",
     "route_scope",
+    "is_loop",
+    "named_route_name",
+    "named_route_url",
     "start_stage",
     "end_stage",
     "overnights_recorded_at",
@@ -608,7 +616,8 @@ def _replace_extra(db: Session, hike: Hike, payload: HikeWrite) -> None:
     from sqlalchemy import delete
 
     for key in EXTRA_FIELDS:
-        setattr(hike, key, getattr(payload, key))
+        value = getattr(payload, key)
+        setattr(hike, key, str(value) if key == "named_route_url" and value else value)
     db.execute(delete(HikeOvernight).where(HikeOvernight.hike_id == hike.id))
     for overnight in payload.overnights:
         db.add(HikeOvernight(hike_id=hike.id, **overnight.model_dump()))

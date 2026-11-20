@@ -17,6 +17,7 @@ from knut_vandrar_backend.models.track import TrackCollection, TrackDraft, Track
 from knut_vandrar_backend.tracks.bundle import BundleSource, collection_id, offer_download_cleanup
 from knut_vandrar_backend.tracks.gpx import store, track_path
 from knut_vandrar_backend.tracks.service import FIELDS, ingest, publish, save_draft
+from knut_vandrar_backend.tracks.sources import SingleGpxSource
 
 
 def choose(prompt: str, count: int) -> int:
@@ -89,7 +90,7 @@ def review(data: dict[str, Any], checkpoint: Any) -> bool:
         print(f"\nStage {current + 1} of {len(routes)} — {values['name']}")
         for index, field in enumerate(FIELDS, 1):
             print(f"{index}. {field}: {values.get(field) or '—'}")
-        print("Order in Plotaroute:", route["details"]["source_order"] + 1)
+        print("Order in source:", route["details"]["source_order"] + 1)
         source = values.get("source", {})
         print("Distance:", source.get("Distance", "—"), "Ascent:", source.get("Ascent", "—"))
         command = input("[e] Edit  [Enter] Accept/next  [b] Back  [q] Pause: ").strip().lower()
@@ -128,7 +129,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--name", type=collection_name, help="Collection name; prompted when omitted"
     )
-    parser.add_argument("--bundle", type=Path, help="JSON export from the browser extension")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--bundle", type=Path, help="JSON export from the browser extension")
+    source.add_argument("--gpx", type=Path, help="Single GPX 1.1 track or route file")
     parser.add_argument("--gpx-dir", type=Path, help="Directory containing the exported GPX files")
     parser.add_argument(
         "--direction",
@@ -138,6 +141,8 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.hike and args.direction is not None:
         parser.error("--direction applies only to --trail")
+    if args.gpx is not None and (args.collection is not None or args.gpx_dir is not None):
+        parser.error("--collection and --gpx-dir apply only to --bundle")
     return args
 
 
@@ -151,8 +156,23 @@ def complete_args(args: argparse.Namespace) -> argparse.Namespace:
         )
     if args.hike is not None and args.direction is not None:
         raise ValueError("--direction applies only to --trail")
-    if args.bundle is None:
-        args.bundle = Path(ask("Path to exported JSON bundle"))
+    if args.bundle is None and args.gpx is None:
+        path = Path(ask("Path to exported JSON bundle or single GPX file"))
+        if path.suffix.lower() == ".gpx":
+            args.gpx = path
+        else:
+            args.bundle = path
+    if args.gpx is not None:
+        if args.collection is not None or args.gpx_dir is not None:
+            raise ValueError("--collection and --gpx-dir apply only to --bundle")
+        args.gpx = args.gpx.expanduser()
+        args.bundle_source = SingleGpxSource(args.gpx)
+        args.collection = args.bundle_source.identifier
+        if args.trail is not None and args.direction is None:
+            args.direction = ask(
+                "Trail direction (forward/backward)", choices=("forward", "backward")
+            )
+        return args
     args.bundle = args.bundle.expanduser()
     if args.gpx_dir is not None:
         args.gpx_dir = args.gpx_dir.expanduser()
@@ -364,7 +384,9 @@ def run(
         shutil.rmtree(staging)
     except OSError:
         print("Could not remove temporary draft files; the collection is saved.")
-    if not data["errors"] and data.get("membership_complete", True):
+    if isinstance(source, SingleGpxSource):
+        print("Original GPX file kept.")
+    elif not data["errors"] and data.get("membership_complete", True):
         offer_download_cleanup(source, protected_root=media_root)
     else:
         print("Downloaded files kept so the incomplete import can be retried.")

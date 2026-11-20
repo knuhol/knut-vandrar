@@ -40,7 +40,7 @@ export function TrailFacts({
   const locationTags = [...new Set(tags)]
 
   return (
-    <HikeSection id="trail" title={t('trailOrArea')} variant="paper">
+    <HikeSection id="trail" title={t(`locationKind.${location.kind}`)} variant="paper">
       <div className="mb-8 grid items-center gap-8 tablet:grid-cols-2">
         <div className={location.logo_url ? 'min-w-0' : 'min-w-0 tablet:col-span-2'}>
           <dl className="grid gap-4.5 [&_dd]:text-base">

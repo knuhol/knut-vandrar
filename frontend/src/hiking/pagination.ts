@@ -6,3 +6,10 @@ export function collectionOffset(value: string | string[] | undefined) {
     ? Math.floor(offset / collectionPageSize) * collectionPageSize
     : 0
 }
+
+export function collectionQuery(offset = 0, multiDayOffset = 0) {
+  return {
+    ...(offset > 0 ? { offset } : {}),
+    ...(multiDayOffset > 0 ? { multiDayOffset } : {}),
+  }
+}

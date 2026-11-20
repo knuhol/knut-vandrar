@@ -37,8 +37,13 @@ export function identityData(locale: Locale) {
   }
 }
 
-export function collectionData(locale: Locale, page: HikesPage, title: string) {
-  const url = absoluteUrl(homePath(locale, page.offset))
+export function collectionData(
+  locale: Locale,
+  page: HikesPage,
+  title: string,
+  path = homePath(locale, page.offset),
+) {
+  const url = absoluteUrl(path)
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',

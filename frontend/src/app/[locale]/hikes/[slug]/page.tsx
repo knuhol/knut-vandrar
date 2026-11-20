@@ -102,7 +102,9 @@ export default async function HikePage({ params }: Props) {
     { id: 'story', label: t('about') },
     ...(maps.length > 0 ? [{ id: 'map' as const, label: t('map.title') }] : []),
     ...(hasJourney ? [{ id: 'journey' as const, label: t('journey.title') }] : []),
-    ...(hike.location ? [{ id: 'trail' as const, label: t('trailOrArea') }] : []),
+    ...(hike.location
+      ? [{ id: 'trail' as const, label: t(`locationKind.${hike.location.kind}`) }]
+      : []),
     ...(!isActive && cards.length > 0 ? [resourceItem] : []),
     ...(galleryPage.total > 0 ? [{ id: 'photos' as const, label: t('gallery.title') }] : []),
   ]

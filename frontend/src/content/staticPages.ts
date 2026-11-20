@@ -9,7 +9,10 @@ export const PageKey = {
 } as const satisfies Record<string, PageKey>
 
 export const staticPages = {
-  [PageKey.About]: { href: '/about' },
-  [PageKey.PrivacyPolicy]: { href: '/privacyPolicy' },
-  [PageKey.CzechTranslationNotes]: { href: '/translationNotes' },
-} as const satisfies Record<PageKey, { href: '/about' | '/translationNotes' | '/privacyPolicy' }>
+  [PageKey.About]: { href: '/about', template: 'about' },
+  [PageKey.PrivacyPolicy]: { href: '/privacyPolicy', template: 'standard' },
+  [PageKey.CzechTranslationNotes]: { href: '/translationNotes', template: 'standard' },
+} as const satisfies Record<
+  PageKey,
+  { href: '/about' | '/translationNotes' | '/privacyPolicy'; template: 'about' | 'standard' }
+>

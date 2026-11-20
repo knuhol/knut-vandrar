@@ -1,4 +1,4 @@
-# Importing Plotaroute collections
+# Importing GPX routes and Plotaroute collections
 
 Download a collection with the [browser extension](../tools/plotaroute-extension/README.md),
 using **GPX → Track** (POIs recommended), then review and import its JSON manifest
@@ -15,6 +15,38 @@ Apply migrations through `017_hike_collection_direction` using the normal
 deployment workflow before importing. The script does not start Docker or apply migrations.
 Source and destination must have matching database revisions for media transfers.
 
+## Import one GPX route directly
+
+A hike with just one route does not need a Plotaroute collection or browser export:
+
+```sh
+./scripts/tracks-import.sh local \
+  --hike "Muddus" \
+  --gpx /path/to/muddus.gpx
+```
+
+Select the matching hike, supply a name when asked (or pass `--name "Muddus route"`),
+then review the route and save with **s**. Saving selects the route for that hike;
+it is available to the existing maps and media-transfer workflow immediately.
+The original GPX file is always kept.
+
+GPX 1.1 files with one track or one route are supported, including multiple track
+segments, elevations and POIs. Route points are converted to track points for
+shared storage. Track names come from the GPX, falling back to its filename.
+Start/finish names use the description or the `Start - Finish` title format and
+can be edited during review. No collection ID, manifest or GPX directory is needed;
+`--collection` and `--gpx-dir` cannot be combined with `--gpx`.
+
+Rerunning for the same hike resumes an unfinished review. After publication,
+importing another file for that hike updates its single-route import, even if the
+filename changed. Manual corrections are retained; changed data requires review
+again. Existing Plotaroute collections are retained. Internally, the single route
+uses a one-item hike-owned collection so maps, admin selection and media transfers
+share the same storage and validation. No database migration is needed.
+
+You can also provide a `.gpx` path when prompted by the interactive importer.
+For trail-owned single routes, use `--trail` and supply the trail direction.
+
 ## Import and review
 
 Run without arguments to enter everything interactively:
@@ -23,8 +55,9 @@ Run without arguments to enter everything interactively:
 ./scripts/tracks-import.sh
 ```
 
-The script asks for the target type and partial name/title, bundle path, GPX
-folder, collection ID, and trail direction where applicable. After you select the
+The script asks for the target type and partial name/title, then a JSON bundle or
+single GPX file path. Bundle imports also ask for the GPX folder and collection ID.
+Trail imports ask for direction where applicable. After you select the
 matching target, it asks for the collection name. Questions appear one at a time.
 Enter accepts the displayed defaults for the folder and collection ID.
 

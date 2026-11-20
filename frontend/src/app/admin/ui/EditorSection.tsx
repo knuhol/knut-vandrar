@@ -35,8 +35,15 @@ export function EditorSection({
           input instanceof HTMLSelectElement ||
           input instanceof HTMLTextAreaElement
         ) {
-          const firstInvalid = input.form?.querySelector(
-            'input:invalid, select:invalid, textarea:invalid',
+          // Reading validity does not dispatch another invalid event, unlike
+          // checkValidity (including selector implementations in test browsers).
+          const firstInvalid = [...(input.form?.elements || [])].find(
+            (element) =>
+              (element instanceof HTMLInputElement ||
+                element instanceof HTMLSelectElement ||
+                element instanceof HTMLTextAreaElement) &&
+              element.willValidate &&
+              !element.validity.valid,
           )
           if (firstInvalid && firstInvalid !== input) {
             event.preventDefault()

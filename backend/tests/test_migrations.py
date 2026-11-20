@@ -6,6 +6,7 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
+from pytest import MonkeyPatch
 from sqlalchemy import create_engine, inspect
 
 
@@ -279,4 +280,51 @@ def test_stopping_point_migration_transfers_legacy_fix_and_preserves_hikes() -> 
         migration.module.downgrade()
         assert connection.execute(sa.text("SELECT COUNT(*) FROM hikes")).scalar() == 2
         assert [c["name"] for c in inspect(connection).get_columns("hikes")] == ["id"]
+    engine.dispose()
+
+
+def test_editor_metadata_migration_preserves_existing_records(monkeypatch: MonkeyPatch) -> None:
+    import sqlalchemy as sa
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    scripts = ScriptDirectory.from_config(config)
+    migration = scripts.get_revision("020_rating_na_named_route")
+    assert migration is not None
+    assert scripts.get_heads() == [migration.revision]
+    # PostgreSQL enum DDL is verified separately through offline migration SQL.
+    monkeypatch.setattr(migration.module, "_upgrade_enums", lambda: None)
+    engine = create_engine("sqlite://")
+    fields = migration.module.RATING_FIELDS
+    with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+        for table in ["hikes", "hiking_locations"]:
+            connection.execute(sa.text(f"CREATE TABLE {table} (id INTEGER PRIMARY KEY)"))
+            connection.execute(sa.text(f"INSERT INTO {table} VALUES (1), (2)"))
+        ratings = sa.Table(
+            "location_ratings",
+            sa.MetaData(),
+            sa.Column("id", sa.Integer, primary_key=True),
+            *[sa.Column(field, sa.Integer) for field in fields],
+            *[
+                sa.CheckConstraint(f"{field} BETWEEN 0 AND 10", name=f"ck_rating_{field}")
+                for field in fields
+            ],
+        )
+        ratings.create(connection)
+        connection.execute(ratings.insert(), [{"id": 1, "facilities": 7}])
+        migration.module.upgrade()
+        assert connection.execute(
+            sa.text("SELECT is_loop,named_route_name,named_route_url FROM hikes")
+        ).all() == [(None, None, None), (None, None, None)]
+        assert connection.execute(
+            sa.text("SELECT boat_connection_required,is_national_park FROM hiking_locations")
+        ).all() == [(None, None), (None, None)]
+        connection.execute(sa.text("UPDATE location_ratings SET maintenance = -1"))
+        migration.module.downgrade()
+        assert connection.execute(
+            sa.text("SELECT facilities,maintenance FROM location_ratings")
+        ).one() == (7, None)
+        for table in ["hikes", "hiking_locations"]:
+            assert connection.execute(sa.text(f"SELECT COUNT(*) FROM {table}")).scalar() == 2
+            assert [column["name"] for column in inspect(connection).get_columns(table)] == ["id"]
     engine.dispose()

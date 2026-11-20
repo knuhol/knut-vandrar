@@ -228,3 +228,82 @@ def test_collection_name_requires_explicit_valid_text(monkeypatch: pytest.Monkey
     answers = iter(["", " " * 3, "x" * 301, "  My chosen collection  "])
     monkeypatch.setattr("builtins.input", lambda _: next(answers))
     assert ask_name("Collection name") == "My chosen collection"
+
+
+def test_single_gpx_source_and_route_geometry(tmp_path: Path) -> None:
+    from knut_vandrar_backend.tracks.sources import SINGLE_GPX_ID, SingleGpxSource
+
+    path = tmp_path / "single.gpx"
+    path.write_bytes(GPX)
+    source = SingleGpxSource(path)
+    items = list(source.read(source.identifier))
+    assert items[0]["expected"] == 1 and items[0]["membership_complete"]
+    assert items[1]["source_id"] == SINGLE_GPX_ID
+    assert items[1]["metadata"]["RouteName"] == "Trail 7A"
+    assert items[1]["source_order"] == 0
+    original = path.read_bytes()
+    route_gpx = GPX.replace(b"<trk>", b"<rte>").replace(b"</trk>", b"</rte>")
+    route_gpx = route_gpx.replace(b"<trkseg>", b"").replace(b"</trkseg>", b"")
+    route_gpx = route_gpx.replace(b"trkpt", b"rtept")
+    path.write_bytes(route_gpx)
+    assert SingleGpxSource(path).identifier == source.identifier
+    normalized, geometry = normalize(route_gpx, "Route")
+    assert geometry["point_count"] == 2 and geometry["pois"][0]["name"] == "Water"
+    assert b"trkpt" in normalized and b"rtept" not in normalized
+    assert b"123" in normalized and b"234" in normalized
+    assert b"time>" not in normalized
+    assert original == GPX
+
+
+def test_single_gpx_rejects_multiple_tracks_unsafe_xml_and_symlinks(tmp_path: Path) -> None:
+    from knut_vandrar_backend.tracks.sources import SingleGpxSource
+
+    path = tmp_path / "single.gpx"
+    for content in [
+        GPX.replace(b"</gpx>", b"<trk><name>Second</name></trk></gpx>"),
+        b"<!DOCTYPE x><gpx/>",
+        b"not xml",
+    ]:
+        path.write_bytes(content)
+        with pytest.raises(ValueError):
+            SingleGpxSource(path)
+    path.write_bytes(GPX)
+    linked = tmp_path / "linked.gpx"
+    linked.symlink_to(path)
+    with pytest.raises(ValueError, match="symlink"):
+        SingleGpxSource(linked)
+
+
+def test_single_gpx_flags_and_interactive_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    from knut_vandrar_backend.tracks.cli import complete_args, parse_args
+
+    path = tmp_path / "route.gpx"
+    path.write_bytes(GPX)
+    monkeypatch.setattr(sys, "argv", ["tracks-import", "--hike", "Muddus", "--gpx", str(path)])
+    args = complete_args(parse_args())
+    assert args.collection == "gpx:single" and args.direction is None
+    monkeypatch.setattr(sys, "argv", ["tracks-import"])
+    answers = iter(["hike", "Muddus", str(path)])
+    monkeypatch.setattr("builtins.input", lambda _: next(answers))
+    args = complete_args(parse_args())
+    assert args.gpx == path and args.collection == "gpx:single"
+
+
+@pytest.mark.parametrize(
+    "extra", [["--bundle", "x.json"], ["--collection", "1"], ["--gpx-dir", "."]]
+)
+def test_single_gpx_rejects_bundle_flags(extra: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    from knut_vandrar_backend.tracks.cli import parse_args
+
+    monkeypatch.setattr(
+        sys, "argv", ["tracks-import", "--hike", "Muddus", "--gpx", "route.gpx", *extra]
+    )
+    with pytest.raises(SystemExit) as error:
+        parse_args()
+    assert error.value.code == 2

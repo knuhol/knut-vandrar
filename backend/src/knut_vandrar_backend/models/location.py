@@ -79,6 +79,8 @@ class HikingLocation(Authored, Base):
     official_url: Mapped[str | None] = mapped_column(String(2048))
     waymarking: Mapped[Waymarking | None] = mapped_column(enum_type(Waymarking, "waymarking"))
     is_loop: Mapped[bool | None] = mapped_column(Boolean)
+    is_national_park: Mapped[bool | None] = mapped_column(Boolean)
+    boat_connection_required: Mapped[bool | None] = mapped_column(Boolean)
     arctic_circle_position: Mapped[ArcticCirclePosition | None] = mapped_column(
         enum_type(ArcticCirclePosition, "arctic_circle_position")
     )
@@ -159,11 +161,11 @@ class LocationRating(Audit, Base):
     public_transport: Mapped[int | None] = mapped_column(SmallInteger)
     difficulty: Mapped[int | None] = mapped_column(SmallInteger)
     __table_args__ = (
-        CheckConstraint("facilities BETWEEN 0 AND 10", name="ck_rating_facilities"),
-        CheckConstraint("maintenance BETWEEN 0 AND 10", name="ck_rating_maintenance"),
-        CheckConstraint("resupplies BETWEEN 0 AND 10", name="ck_rating_resupplies"),
-        CheckConstraint("public_transport BETWEEN 0 AND 10", name="ck_rating_public_transport"),
-        CheckConstraint("difficulty BETWEEN 0 AND 10", name="ck_rating_difficulty"),
+        CheckConstraint("facilities BETWEEN -1 AND 10", name="ck_rating_facilities"),
+        CheckConstraint("maintenance BETWEEN -1 AND 10", name="ck_rating_maintenance"),
+        CheckConstraint("resupplies BETWEEN -1 AND 10", name="ck_rating_resupplies"),
+        CheckConstraint("public_transport BETWEEN -1 AND 10", name="ck_rating_public_transport"),
+        CheckConstraint("difficulty BETWEEN -1 AND 10", name="ck_rating_difficulty"),
     )
 
 

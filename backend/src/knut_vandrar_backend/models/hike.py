@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -130,6 +131,9 @@ class Hike(Base):
             RouteScope, name="route_scope", values_callable=lambda values: [v.value for v in values]
         )
     )
+    is_loop: Mapped[bool | None] = mapped_column(Boolean)
+    named_route_name: Mapped[str | None] = mapped_column(String(200))
+    named_route_url: Mapped[str | None] = mapped_column(String(2048))
     start_stage: Mapped[int | None] = mapped_column(Integer)
     end_stage: Mapped[int | None] = mapped_column(Integer)
     overnights_recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

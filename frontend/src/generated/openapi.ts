@@ -646,6 +646,26 @@ export const openapi = {
               "title": "Offset"
             },
             "description": "Number of entries to skip"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "long_distance",
+                    "multi_day"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
           }
         ],
         "responses": {
@@ -3826,6 +3846,7 @@ export const openapi = {
         "enum": [
           "tent",
           "free_shelter_or_hut",
+          "paid_shelter_or_hut",
           "mountain_hut",
           "other_paid_accommodation"
         ],
@@ -4335,6 +4356,44 @@ export const openapi = {
                 "type": "null"
               }
             ]
+          },
+          "is_loop": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Loop"
+          },
+          "named_route_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Named Route Name"
+          },
+          "named_route_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Named Route Url"
           },
           "start_stage": {
             "anyOf": [
@@ -4930,6 +4989,44 @@ export const openapi = {
               }
             ]
           },
+          "is_loop": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Loop"
+          },
+          "named_route_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Named Route Name"
+          },
+          "named_route_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Named Route Url"
+          },
           "start_stage": {
             "anyOf": [
               {
@@ -5334,6 +5431,28 @@ export const openapi = {
             ],
             "title": "Is Loop"
           },
+          "is_national_park": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is National Park"
+          },
+          "boat_connection_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boat Connection Required"
+          },
           "arctic_circle_position": {
             "anyOf": [
               {
@@ -5444,6 +5563,8 @@ export const openapi = {
           "logo_url",
           "waymarking",
           "is_loop",
+          "is_national_park",
+          "boat_connection_required",
           "arctic_circle_position",
           "information_checked_at",
           "country_codes",
@@ -5504,6 +5625,29 @@ export const openapi = {
               }
             ],
             "title": "Is Loop"
+          },
+          "is_national_park": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is National Park"
+          },
+          "boat_connection_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boat Connection Required",
+            "description": "Whether hiking requires a boat connection; null = unknown"
           },
           "arctic_circle_position": {
             "anyOf": [
@@ -6296,65 +6440,70 @@ export const openapi = {
               {
                 "type": "integer",
                 "maximum": 10,
-                "minimum": 0
+                "minimum": -1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Facilities"
+            "title": "Facilities",
+            "description": "-1 = N/A; 0–10 = 0–5 stars; null = unrated"
           },
           "maintenance": {
             "anyOf": [
               {
                 "type": "integer",
                 "maximum": 10,
-                "minimum": 0
+                "minimum": -1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Maintenance"
+            "title": "Maintenance",
+            "description": "-1 = N/A; 0–10 = 0–5 stars; null = unrated"
           },
           "resupplies": {
             "anyOf": [
               {
                 "type": "integer",
                 "maximum": 10,
-                "minimum": 0
+                "minimum": -1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Resupplies"
+            "title": "Resupplies",
+            "description": "-1 = N/A; 0–10 = 0–5 stars; null = unrated"
           },
           "public_transport": {
             "anyOf": [
               {
                 "type": "integer",
                 "maximum": 10,
-                "minimum": 0
+                "minimum": -1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Public Transport"
+            "title": "Public Transport",
+            "description": "-1 = N/A; 0–10 = 0–5 stars; null = unrated"
           },
           "difficulty": {
             "anyOf": [
               {
                 "type": "integer",
                 "maximum": 10,
-                "minimum": 0
+                "minimum": -1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Difficulty"
+            "title": "Difficulty",
+            "description": "-1 = N/A; 0–10 = 0–5 stars; null = unrated"
           },
           "assessed_at": {
             "anyOf": [
@@ -6550,6 +6699,7 @@ export const openapi = {
         "enum": [
           "full_trail",
           "trail_section",
+          "named_hiking_route",
           "custom_route"
         ],
         "title": "RouteScope"
