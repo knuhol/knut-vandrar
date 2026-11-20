@@ -1781,3 +1781,126 @@ def test_localized_hike_detail_includes_the_english_source_title(
     assert response.status_code == 200
     assert response.json()["translation"]["title"] == "Localized hike title"
     assert response.json()["english_title"] == "Hike through the Highlands"
+
+
+def test_hike_selects_only_its_own_or_current_trail_collection(client: TestClient) -> None:
+    from knut_vandrar_backend.models.location import HikingLocation, LocationTranslation
+    from knut_vandrar_backend.models.track import TrackCollection
+
+    trail, other_trail = UUID(int=8001), UUID(int=8002)
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory.begin() as db:
+        db.add_all([HikingLocation(id=trail), HikingLocation(id=other_trail)])
+        db.flush()
+        db.add_all(
+            [
+                LocationTranslation(location_id=value, locale_code="en", name=str(value))
+                for value in (trail, other_trail)
+            ]
+        )
+    first = client.post("/api/hikes", json=_planned_payload(location_id=str(trail))).json()
+    second = client.post("/api/hikes", json=_planned_payload()).json()
+    ids = [UUID(int=8100 + index) for index in range(4)]
+    with factory.begin() as db:
+        for identifier, location, hike in (
+            (ids[0], trail, None),
+            (ids[1], other_trail, None),
+            (ids[2], None, UUID(first["id"])),
+            (ids[3], None, UUID(second["id"])),
+        ):
+            db.add(
+                TrackCollection(
+                    id=identifier,
+                    location_id=location,
+                    hike_id=hike,
+                    source_id="20512",
+                    name=str(identifier),
+                    direction="forward" if location else None,
+                )
+            )
+    for identifier in (ids[0], ids[2]):
+        result = client.put(
+            f"/api/hikes/{first['id']}",
+            json=_planned_payload(location_id=str(trail), track_collection_id=str(identifier)),
+        )
+        assert result.status_code == 200, result.text
+        assert result.json()["track_collection_id"] == str(identifier)
+    for identifier in (ids[1], ids[3], UUID(int=99999)):
+        result = client.put(
+            f"/api/hikes/{first['id']}",
+            json=_planned_payload(location_id=str(trail), track_collection_id=str(identifier)),
+        )
+        assert result.status_code == 422, result.text
+    # A custom collection remains usable when the hike has no trail.
+    result = client.put(
+        f"/api/hikes/{first['id']}",
+        json=_planned_payload(location_id=None, track_collection_id=str(ids[2])),
+    )
+    assert result.status_code == 200, result.text
+    # A trail collection becomes invalid when the hike changes trails.
+    result = client.put(
+        f"/api/hikes/{first['id']}",
+        json=_planned_payload(location_id=str(other_trail), track_collection_id=str(ids[0])),
+    )
+    assert result.status_code == 422
+    result = client.post(
+        "/api/hikes", json=_planned_payload(location_id=str(trail), track_collection_id=str(ids[0]))
+    )
+    assert result.status_code == 201, result.text
+    assert result.json()["track_collection_id"] == str(ids[0])
+    result = client.put(
+        f"/api/hikes/{first['id']}", json=_planned_payload(track_collection_id=None)
+    )
+    assert result.status_code == 200 and result.json()["track_collection_id"] is None
+
+
+def test_collection_choices_are_scoped_paginated_and_private(client: TestClient) -> None:
+    from knut_vandrar_backend.models.location import HikingLocation, LocationTranslation
+    from knut_vandrar_backend.models.track import TrackCollection
+
+    trail = UUID(int=8201)
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory.begin() as db:
+        db.add(HikingLocation(id=trail))
+        db.flush()
+        db.add(LocationTranslation(location_id=trail, locale_code="en", name="Trail"))
+    first = client.post("/api/hikes", json=_planned_payload(location_id=str(trail))).json()
+    second = client.post("/api/hikes", json=_planned_payload()).json()
+    with factory.begin() as db:
+        db.add_all(
+            [
+                TrackCollection(
+                    id=UUID(int=8301),
+                    location_id=trail,
+                    source_id="1",
+                    name="Trail",
+                    direction="forward",
+                ),
+                TrackCollection(
+                    id=UUID(int=8302),
+                    hike_id=UUID(first["id"]),
+                    source_id="1",
+                    name="Custom",
+                    direction=None,
+                ),
+                TrackCollection(
+                    id=UUID(int=8303),
+                    hike_id=UUID(second["id"]),
+                    source_id="1",
+                    name="Other",
+                    direction=None,
+                ),
+            ]
+        )
+    query = {"location_id": str(trail), "hike_id": first["id"], "limit": 1}
+    response = client.get("/api/track-collections", params=query)
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 2 and len(response.json()["items"]) == 1
+    other = client.get("/api/track-collections", params={**query, "offset": 1}).json()
+    assert {response.json()["items"][0]["name"], other["items"][0]["name"]} == {"Custom", "Trail"}
+    assert client.get("/api/track-collections").json()["total"] == 0
+    assert (
+        client.get("/api/track-collections", params={"hike_id": first["id"]}).json()["total"] == 1
+    )
+    client.headers.pop("Authorization")
+    assert client.get("/api/track-collections", params=query).status_code == 401

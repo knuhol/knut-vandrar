@@ -119,6 +119,7 @@ class HikeExtra(BaseModel):
 
 
 class HikeWrite(HikeExtra):
+    track_collection_id: UUID | None = None
     location_id: UUID | None = None
     status: HikeStatus = HikeStatus.PLANNED
     planned_start_at: datetime | None = None
@@ -180,6 +181,7 @@ class HikeDiscoveryRead(BaseModel):
 
 
 class HikeRead(HikeExtra):
+    track_collection_id: UUID | None = None
     id: UUID
     english_title: str | None
     location: LocationRead | None

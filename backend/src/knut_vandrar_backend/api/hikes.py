@@ -45,6 +45,7 @@ from knut_vandrar_backend.models.hike import (
 from knut_vandrar_backend.models.location import HikeAchievement, HikeOvernight, HikingLocation
 from knut_vandrar_backend.models.reference import InfoCardType
 from knut_vandrar_backend.models.translation import TranslationJob
+from knut_vandrar_backend.tracks.selection import validate_selection
 from knut_vandrar_backend.translations.core import (
     SOURCE_LOCALE,
     TARGET_LOCALES,
@@ -114,6 +115,11 @@ def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> Hi
         review_status=TranslationReviewStatus.SOURCE,
     )
     db.add(english)
+    try:
+        validate_selection(db, hike.id, payload.location_id, payload.track_collection_id)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    hike.track_collection_id = payload.track_collection_id
     _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
     db.commit()
@@ -227,6 +233,11 @@ def replace_hike(
         _set_generated_slug(db, english, payload.english.title)
         english.source_revision = hike.source_revision
         english.review_status = TranslationReviewStatus.SOURCE
+    try:
+        validate_selection(db, hike.id, payload.location_id, payload.track_collection_id)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    hike.track_collection_id = payload.track_collection_id
     _replace_extra(db, hike, payload)
     _replace_cards(db, hike, payload)
     db.commit()
@@ -344,6 +355,7 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
     cards = [card_adapter.validate_python(item.data) for item in ordered_cards]
     return HikeRead(
         id=hike.id,
+        track_collection_id=hike.track_collection_id,
         english_title=next(
             (item.title for item in hike.translations if item.locale_code == SOURCE_LOCALE), None
         ),

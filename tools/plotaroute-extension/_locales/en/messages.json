@@ -1,0 +1,107 @@
+{
+  "extensionName": {
+    "message": "Plotaroute downloader"
+  },
+  "extensionDescription": {
+    "message": "Download routes and collections with your chosen export settings in your normal browser session."
+  },
+  "instructions": {
+    "message": "Download one route or an entire collection using your normal Plotaroute browser session."
+  },
+  "download": {
+    "message": "Download this route"
+  },
+  "ready": {
+    "message": "Ready."
+  },
+  "preparing": {
+    "message": "Selecting your download settings\u2026"
+  },
+  "downloading": {
+    "message": "Waiting for the download to finish\u2026"
+  },
+  "complete": {
+    "message": "Download completed."
+  },
+  "failed": {
+    "message": "Download did not complete."
+  },
+  "openRoute": {
+    "message": "Open an individual Plotaroute route, rather than a collection."
+  },
+  "viewerUnavailable": {
+    "message": "The route viewer is unavailable. Check that the map loads normally."
+  },
+  "routeNotReady": {
+    "message": "The route has not loaded. Wait until its track is visible and try again."
+  },
+  "downloadUnavailable": {
+    "message": "The download dialog could not be opened. Check for a site access check or cookie dialog."
+  },
+  "settingsUnavailable": {
+    "message": "The requested download settings are unavailable. Check your selected format and options."
+  },
+  "downloadInterrupted": {
+    "message": "The browser interrupted the download. Check its Downloads list."
+  },
+  "downloadTimeout": {
+    "message": "No completed download was detected within one minute. Check the page and the browser Downloads list."
+  },
+  "collectionLabel": {
+    "message": "Collection ID or URL"
+  },
+  "startCollection": {
+    "message": "Start collection"
+  },
+  "resumeCollection": {
+    "message": "Resume collection"
+  },
+  "pauseCollection": {
+    "message": "Pause"
+  },
+  "exportManifest": {
+    "message": "Export metadata"
+  },
+  "downloadPromptHint": {
+    "message": "For unattended downloads, turn off \u201cAsk where to save each file\u201d in browser download settings. Completed files are remembered."
+  },
+  "readingCollection": {
+    "message": "Reading collection\u2026"
+  },
+  "collectionComplete": {
+    "message": "Collection complete. Metadata export saved alongside your downloaded files."
+  },
+  "paused": {
+    "message": "Paused. Progress saved."
+  },
+  "pauseRequested": {
+    "message": "Pause requested; the current download will finish first."
+  },
+  "invalidCollection": {
+    "message": "Enter a valid Plotaroute collection ID or URL."
+  },
+  "collectionChanged": {
+    "message": "Collection membership changed. The saved job was kept; export it before starting a new collection."
+  },
+  "openPlotaroute": {
+    "message": "Open https://www.plotaroute.com in this tab before starting."
+  },
+  "noSavedCollection": {
+    "message": "No matching collection progress is saved."
+  },
+  "resumeFirst": {
+    "message": "Resume or finish the saved collection before starting another."
+  },
+  "pendingDownload": {
+    "message": "A previous download is still in progress. Finish or cancel it in the browser, then resume."
+  },
+  "navigationTimeout": {
+    "message": "The route page did not finish loading. Progress is saved; check the tab and resume."
+  },
+  "metadataExported": {
+    "message": "Metadata export completed."
+  },
+  "selectingRoute": {
+    "message": "Selecting the next route\u2026"
+  }
+}

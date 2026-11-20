@@ -24,10 +24,12 @@ import {
   resolve,
   type Json,
   type Schema,
+  type ReferenceOptions,
 } from '@/admin/resources'
 
 interface FieldProps {
   schema: Schema
+  references?: Record<string, ReferenceOptions>
   bare?: boolean
   reference?: string
   value: Json
@@ -44,24 +46,30 @@ export function Fields({
   onChange,
   label,
   reference,
+  references,
   required = false,
   bare = false,
 }: FieldProps) {
   const field = nonNull(schema)
   const [preview, setPreview] = useState(false)
   const labelText = label.replaceAll('_', ' ')
-  const relation = reference || referenceResources[label]
+  const scopedReference = references?.[label]
+  const relation = reference || scopedReference?.resource || referenceResources[label]
   if (fieldWidgets[label] === 'months') {
     return <MonthField value={value} onChange={onChange} />
   }
   if (relation && field.type !== 'array') {
     return (
       <ReferenceField
+        key={`${relation}:${JSON.stringify(scopedReference?.filters || {})}`}
         resource={relation}
+        filters={scopedReference?.filters}
+        helperText={scopedReference?.helperText}
+        optionLabel={scopedReference?.optionLabel}
         value={value}
         onChange={onChange}
         required={required}
-        label={label}
+        label={scopedReference?.label || label}
       />
     )
   }
@@ -103,6 +111,7 @@ export function Fields({
           ))}
         </TextField>
         <Fields
+          references={references}
           schema={selected}
           value={value}
           baseline={baseline}
@@ -142,6 +151,7 @@ export function Fields({
                 }
               >
                 <Fields
+                  references={references}
                   schema={
                     single ? single[1] : { type: 'object', properties, required: field.required }
                   }
@@ -183,6 +193,7 @@ export function Fields({
               }}
             >
               <Fields
+                references={references}
                 schema={child}
                 value={current[key] ?? null}
                 baseline={record(baseline)[key]}
@@ -231,6 +242,7 @@ export function Fields({
         {current.map((entry, index) => (
           <Stack key={index} spacing={1}>
             <Fields
+              references={references}
               schema={items}
               reference={relation}
               value={entry}

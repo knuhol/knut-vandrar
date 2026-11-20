@@ -1,9 +1,15 @@
 # Media exports and imports
 
+Published GPX collections, route metadata, track files, and hike collection selections
+transfer in the same archive as pictures. Collections can belong to a trail or a hike;
+`--map-location` and `--map-hike` remap their respective owners. New archives use format 3;
+formats 1 and 2 remain readable when database revisions match. Draft reviews are
+excluded. See [track imports](track-imports.md).
+
 Use `scripts/media-export.sh` and `scripts/media-import.sh` to transfer images between
 `local`, `dev`, and `prod` without replacing unrelated application content. Both
-environments need this code and migration `009_media_imports` applied through their
-normal deployment/startup process. The source and destination Alembic revisions must
+environments need this code and migration `017_hike_collection_direction` applied
+through their normal deployment/startup process. The source and destination Alembic revisions must
 match. No additional dependencies, cloud storage, or API credentials are needed.
 
 The commands execute Python inside an **already running backend**. They do not start,

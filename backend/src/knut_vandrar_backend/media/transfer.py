@@ -57,6 +57,16 @@ class ImportReport:
 
 
 def _validate_images(asset: Asset, staging: Path) -> None:
+    if asset.kind in {"collection", "track_selection"}:
+        return
+    if asset.kind == "gpx":
+        from knut_vandrar_backend.tracks.gpx import normalize
+
+        try:
+            normalize((staging / asset.file_path("track")).read_bytes(), "Validation")
+        except (ValueError, KeyError) as error:
+            raise MediaError(f"Invalid GPX: {asset.id}") from error
+        return
     register_heif_opener()
     for variant in asset.files:
         path = staging / asset.file_path(variant)
@@ -97,10 +107,17 @@ def _remap(
     # Keep the archive's source ordering while sorting locks by destination owner.
     for row_id, value in index.execute("SELECT rowid, data FROM assets ORDER BY rowid"):
         asset = Asset.model_validate_json(value)
-        mapping = location_map if asset.kind == "logo" else hike_map
+        mapping = (
+            location_map
+            if asset.kind == "logo"
+            or (asset.kind in {"collection", "gpx"} and asset.track_owner == "trail")
+            else hike_map
+        )
         owner = mapping.get(asset.owner_id, asset.owner_id)
-        target = asset.id if asset.kind == "photo" else owner
+        target = asset.id if asset.kind in {"photo", "collection", "gpx"} else owner
         mapped = asset.model_copy(update={"owner_id": owner, "id": target})
+        if mapped.kind == "collection" and mapped.track_owner == "hike":
+            mapped.track_data = {**mapped.track_data, "direction": None}
         try:
             index.execute(
                 "UPDATE assets SET data=?, owner=?, target=? WHERE rowid=?",
@@ -114,9 +131,18 @@ def _remap(
 
 
 def _lock_owners(db: Session, index: sqlite3.Connection) -> None:
-    for kinds, model in (("'cover', 'photo'", Hike), ("'logo'", HikingLocation)):
+    for condition, model in (
+        (
+            "kind IN ('cover', 'photo', 'track_selection') OR (kind IN ('collection', 'gpx') AND json_extract(data, '$.track_owner')='hike')",
+            Hike,
+        ),
+        (
+            "kind='logo' OR (kind IN ('collection', 'gpx') AND json_extract(data, '$.track_owner')='trail')",
+            HikingLocation,
+        ),
+    ):
         for (owner,) in index.execute(
-            f"SELECT DISTINCT owner FROM assets WHERE kind IN ({kinds}) ORDER BY owner"
+            f"SELECT DISTINCT owner FROM assets WHERE {condition} ORDER BY owner"
         ):
             if db.scalar(select(model.id).where(model.id == UUID(owner)).with_for_update()) is None:
                 raise MediaError(
@@ -180,7 +206,57 @@ def _plan(
     ):
         asset = Asset.model_validate_json(value)
         action = "add"
-        if asset.kind == "photo":
+        if asset.kind == "track_selection":
+            from knut_vandrar_backend.tracks.selection import validate_selection
+
+            hike = db.get(Hike, asset.owner_id)
+            if hike is None:
+                raise MediaError("Missing destination hike for collection selection")
+            collection_id = UUID(asset.track_data["collection_id"])
+            incoming = index.execute(
+                "SELECT data FROM assets WHERE kind='collection' AND target=?",
+                (str(collection_id),),
+            ).fetchone()
+            if incoming:
+                collection_asset = Asset.model_validate_json(incoming[0])
+                matches = (
+                    collection_asset.track_owner == "hike" and collection_asset.owner_id == hike.id
+                ) or (
+                    collection_asset.track_owner == "trail"
+                    and collection_asset.owner_id == hike.location_id
+                )
+                if not matches:
+                    raise MediaError(
+                        "Selected collection does not belong to this hike or its trail"
+                    )
+            else:
+                try:
+                    validate_selection(db, hike.id, hike.location_id, collection_id)
+                except ValueError as error:
+                    raise MediaError(str(error)) from error
+            action = (
+                "skip"
+                if hike.track_collection_id == collection_id
+                else "add"
+                if hike.track_collection_id is None
+                else "replace"
+            )
+        elif asset.kind in {"collection", "gpx"}:
+            from knut_vandrar_backend.tracks.transfer import plan
+
+            action = plan(db, asset, media_root)
+            if asset.kind == "gpx":
+                collection_id = asset.track_data["collection_id"]
+                incoming = index.execute(
+                    "SELECT data FROM assets WHERE kind='collection' AND target=?", (collection_id,)
+                ).fetchone()
+                if (
+                    incoming is None
+                    or Asset.model_validate_json(incoming[0]).owner_id != asset.owner_id
+                    or Asset.model_validate_json(incoming[0]).track_owner != asset.track_owner
+                ):
+                    raise MediaError("GPX archive requires its collection with the same owner")
+        elif asset.kind == "photo":
             for text in asset.translations:
                 if text.locale_code not in locales:
                     raise MediaError(f"Unsupported destination locale: {text.locale_code}")
@@ -349,12 +425,26 @@ def import_archive(
                     for applied, (source_id, value, action) in enumerate(
                         index.execute(
                             "SELECT id, data, action FROM assets WHERE action != 'skip' "
-                            "ORDER BY owner, sort_order, id"
+                            "ORDER BY CASE WHEN kind='collection' THEN 0 WHEN kind='track_selection' THEN 2 ELSE 1 END, owner, sort_order, id"
                         ),
                         start=1,
                     ):
                         asset = Asset.model_validate_json(value)
-                        if asset.kind == "photo":
+                        if asset.kind == "track_selection":
+                            from knut_vandrar_backend.tracks.selection import validate_selection
+
+                            hike = db.get(Hike, asset.owner_id)
+                            if hike is None:
+                                raise MediaError("Missing destination hike")
+                            collection_id = UUID(asset.track_data["collection_id"])
+                            validate_selection(db, hike.id, hike.location_id, collection_id)
+                            hike.track_collection_id = collection_id
+                            db.flush()
+                        elif asset.kind in {"collection", "gpx"}:
+                            from knut_vandrar_backend.tracks.transfer import apply
+
+                            apply(db, asset, staging, media_root, source_id)
+                        elif asset.kind == "photo":
                             _apply_photo(
                                 db, asset, work, media_root, source_id, repair=action == "repair"
                             )

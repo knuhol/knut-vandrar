@@ -178,6 +178,56 @@ export const referenceResources: Record<string, string> = {
   region_ids: 'regions',
 }
 
+export interface ReferenceOptions {
+  resource: string
+  filters?: Record<string, string>
+  label?: string
+  helperText?: string
+  optionLabel?: (value: Json) => string
+}
+
+const referenceDefinitions: Partial<
+  Record<string, Record<string, ReferenceOptions & { fields: Record<string, string> }>>
+> = {
+  HikeWrite: {
+    track_collection_id: {
+      resource: 'track-collections',
+      fields: { location_id: 'location_id', hike_id: '$id' },
+      label: messages.trackCollection,
+      helperText: messages.trackCollectionHelp,
+      optionLabel: (value) =>
+        [
+          title(value),
+          text(record(value).direction),
+          record(value).hike_id ? messages.customHikeCollection : messages.trailCollection,
+        ]
+          .filter(Boolean)
+          .join(' — '),
+    },
+  },
+}
+
+export function referencesFor(
+  resource: Resource,
+  value: Json,
+  id: string,
+): Record<string, ReferenceOptions> {
+  return Object.fromEntries(
+    Object.entries(referenceDefinitions[resource.write] || {}).map(([key, definition]) => [
+      key,
+      {
+        ...definition,
+        filters: Object.fromEntries(
+          Object.entries(definition.fields).flatMap(([parameter, field]) => {
+            const selected = field === '$id' ? id : text(record(value)[field])
+            return selected ? [[parameter, selected]] : []
+          }),
+        ),
+      },
+    ]),
+  )
+}
+
 interface EditorGroup {
   title: keyof typeof messages.editorSections
   fields: string[]
@@ -212,6 +262,7 @@ const editorGroups: Partial<Record<string, EditorGroup[]>> = {
         'end_latitude',
         'end_longitude',
         'direction',
+        'track_collection_id',
         'route_scope',
         'start_stage',
         'end_stage',

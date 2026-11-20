@@ -31,7 +31,7 @@ from knut_vandrar_backend.models.photo import Photo, PhotoTranslation
 
 FILE_PATH = re.compile(
     rf"(?:photo/[0-9a-f-]{{36}}/(?:{'|'.join(PHOTO_FILES)})"
-    r"|(?:cover|logo)/[0-9a-f-]{36}/image)\Z"
+    r"|(?:cover|logo)/[0-9a-f-]{36}/image|gpx/[0-9a-f-]{36}/track)\Z"
 )
 
 
@@ -191,6 +191,67 @@ def export_archive(
             )
             _add_bytes(archive, asset.file_path("image"), logo.content)
             write_asset(asset)
+        from knut_vandrar_backend.models.track import TrackCollection, TrackRoute
+        from knut_vandrar_backend.tracks.gpx import track_path
+        from knut_vandrar_backend.tracks.transfer import payload
+
+        collections = select(TrackCollection)
+        if hikes or locations:
+            collections = collections.where(
+                TrackCollection.location_id.in_(locations)
+                | TrackCollection.location_id.in_(selected.with_only_columns(Hike.location_id))
+                | TrackCollection.hike_id.in_(selected.with_only_columns(Hike.id))
+                | TrackCollection.id.in_(selected.with_only_columns(Hike.track_collection_id))
+            )
+        for collection in db.scalars(collections.order_by(TrackCollection.id)):
+            owner_id = collection.hike_id or collection.location_id
+            if owner_id is None:
+                raise MediaError("Track collection has no owner")
+            write_asset(
+                Asset(
+                    kind="collection",
+                    id=collection.id,
+                    owner_id=owner_id,
+                    track_owner="hike" if collection.hike_id else "trail",
+                    content_type="application/json",
+                    files={},
+                    track_data=payload(db, "collection", collection.id) or {},
+                )
+            )
+            for route in db.scalars(
+                select(TrackRoute)
+                .where(TrackRoute.collection_id == collection.id)
+                .order_by(TrackRoute.id)
+            ):
+                path = track_path(media_root, route.digest)
+                info = file_info(path)
+                if info.sha256 != route.digest:
+                    raise MediaError(f"GPX checksum mismatch: {route.id}")
+                asset = Asset(
+                    kind="gpx",
+                    id=route.id,
+                    owner_id=owner_id,
+                    track_owner="hike" if collection.hike_id else "trail",
+                    content_type="application/gpx+xml",
+                    files={"track": info},
+                    track_data=payload(db, "gpx", route.id) or {},
+                )
+                _add_path(archive, asset.file_path("track"), path, info.size)
+                write_asset(asset)
+        for hike in db.scalars(
+            selected.where(Hike.track_collection_id.is_not(None)).order_by(Hike.id)
+        ):
+            write_asset(
+                Asset(
+                    kind="track_selection",
+                    id=hike.id,
+                    owner_id=hike.id,
+                    track_owner="hike",
+                    content_type="application/json",
+                    files={},
+                    track_data={"collection_id": str(hike.track_collection_id)},
+                )
+            )
         record_info = tarfile.TarInfo("assets.jsonl")
         record_info.mode = 0o600
         record_info.size = records.tell()
@@ -310,7 +371,7 @@ def index_archive(
                 raise MediaError(f"Duplicate image record: {asset.id}") from error
     actual_files = sum(
         1
-        for kind in ("photo", "cover", "logo")
+        for kind in ("photo", "cover", "logo", "gpx")
         for path in (directory / kind).glob("*/*")
         if path.is_file()
     )

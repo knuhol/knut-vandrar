@@ -75,6 +75,16 @@ class Hike(Base):
     location_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("hiking_locations.id", ondelete="SET NULL"), nullable=True
     )
+    track_collection_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(
+            "track_collections.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_hike_track_collection",
+        ),
+        nullable=True,
+        index=True,
+    )
     status: Mapped[HikeStatus] = mapped_column(
         SqlEnum(
             HikeStatus,

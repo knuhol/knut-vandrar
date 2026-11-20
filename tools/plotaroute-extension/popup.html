@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Plotaroute downloader</title>
+  </head>
+  <body>
+    <header>
+      <img src="icons/icon-32.png" width="32" height="32" alt="" />
+      <h1 data-message="extensionName"></h1>
+    </header>
+    <p data-message="instructions"></p>
+    <fieldset id="settings">
+      <legend>Download settings</legend>
+      <p>
+        <label for="format">Format</label>
+        <select id="format"></select>
+      </p>
+      <p>
+        <label for="type">GPX type</label>
+        <select id="type"></select>
+      </p>
+      <p>
+        <label for="waypoints">GPX waypoints</label>
+        <select id="waypoints"></select>
+      </p>
+      <p>For local import, choose GPX and Track.</p>
+    </fieldset>
+    <button id="download" data-message="download"></button>
+    <hr />
+    <p><label for="collection" data-message="collectionLabel"></label></p>
+    <input id="collection" type="text" inputmode="url" />
+    <p>
+      <button id="start" data-message="startCollection"></button>
+      <button id="resume" data-message="resumeCollection"></button>
+      <button id="pause" data-message="pauseCollection"></button>
+    </p>
+    <p>Resume keeps the collection’s original download settings.</p>
+    <button id="export" data-message="exportManifest"></button>
+    <p data-message="downloadPromptHint"></p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <pre id="details"></pre>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
