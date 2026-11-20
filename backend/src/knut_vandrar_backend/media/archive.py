@@ -48,7 +48,7 @@ def schema_revision(db: Session) -> str:
 
 def file_info(path: Path) -> ImageFile:
     if path.is_symlink() or not path.is_file():
-        raise MediaError(f"Missing or unsafe image file: {path.name}")
+        raise MediaError(f"Missing or unsafe media file: {path}")
     digest = hashlib.sha256()
     size = 0
     with path.open("rb") as source:

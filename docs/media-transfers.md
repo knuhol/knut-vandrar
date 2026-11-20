@@ -62,7 +62,12 @@ MEDIA_REMOTE_CHECKOUTS_DIR=/srv/knut-vandrar
 ```
 
 `MEDIA_REMOTE_CHECKOUTS_DIR` selects the VPS repository location used to run commands.
-`MEDIA_ROOT=/media` selects gallery storage inside the backend container.
+`MEDIA_ROOT=/media` selects media storage inside the backend container. In local
+Compose, the host's `${MEDIA_ROOT:-./backend/.media}/tracks` is mounted at
+`/media/tracks`, so workstation GPX imports and container exports use the same
+track files. Photos remain in the existing named media volume. The mount takes
+effect when the backend container is next recreated; it does not require any
+volume deletion.
 
 `--ssh` and `--remote-checkouts-dir` override these defaults. By default, SSH uses batch authentication and
 strict host-key checking; configure keys, ports, and host aliases in `~/.ssh/config`.
