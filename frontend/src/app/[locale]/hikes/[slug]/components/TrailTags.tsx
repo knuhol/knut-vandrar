@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl'
 import {
+  IconPlant2 as Plant,
   IconMountain as Mountain,
   IconTrees as Trees,
   IconMapPin as MapPin,
@@ -8,11 +9,13 @@ import {
   IconCompass as Compass,
   IconBeach as Beach,
   IconRepeat as Loop,
+  IconSailboat as Boat,
 } from '@tabler/icons-react'
 
 import type { TrailTag } from '@/hiking/presentation'
 
 const icons = {
+  nationalPark: Plant,
   mountains: Mountain,
   lowlands: Trees,
   coastal: Beach,
@@ -24,6 +27,7 @@ const icons = {
   waymarked: Sign,
   partlyWaymarked: Sign,
   unmarked: Compass,
+  boatConnectionRequired: Boat,
 } satisfies Record<TrailTag, typeof Mountain>
 
 export function TrailTags({ tags, regions = [] }: { tags: TrailTag[]; regions?: string[] }) {

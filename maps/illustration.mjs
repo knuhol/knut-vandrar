@@ -1,9 +1,19 @@
 import { endpointColors } from "./style.mjs";
 
-/** Unknown, coastal and lowland classifications use the quieter label profile. */
+/** Public density levels; named profiles remain an internal rendering distinction. */
+export function labelLevel(settings) {
+  if (settings.profile === "auto")
+    return settings.terrainTypes?.includes("mountains") ? 3 : 2;
+  if (settings.profile === "overview") return 2;
+  if (settings.profile === "detail") return 3;
+  const level = Number(settings.profile);
+  if (!Number.isInteger(level) || level < 1 || level > 5)
+    throw new Error("Invalid label level");
+  return level;
+}
+
 export function labelProfile(settings) {
-  if (settings.profile !== "auto") return settings.profile;
-  return settings.terrainTypes?.includes("mountains") ? "detail" : "overview";
+  return labelLevel(settings) >= 3 ? "detail" : "overview";
 }
 
 /** Fit the entire route and marker strokes above the measured attribution panel. */
@@ -55,7 +65,8 @@ export function illustrationStyle(base, tokens, profile, settings) {
             : 0.86;
         paint["fill-color"] = mix(tokens.sage, tokens.cream, shade);
         paint["fill-opacity"] = 1;
-        if (profile === "detail") layer.minzoom = 0;
+        // Label density must never expose additional land-cover patterns.
+        if (id.includes("wetland")) delete paint["fill-pattern"];
       } else if (source === "landuse")
         paint["fill-color"] = mix(tokens.beige, tokens.cream, 0.6);
     }
@@ -110,14 +121,25 @@ export function illustrationStyle(base, tokens, profile, settings) {
         layer.layout.visibility = "none";
     }
   }
-  if (profile === "detail") {
-    for (const name of ["peaks", "waters", "pois", "places"]) {
+  {
+    for (const name of [
+      "peaks",
+      "waters",
+      "pois",
+      "places",
+      "areas",
+      "rivers",
+    ]) {
       style.sources[`illustration-${name}`] = {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       };
     }
     const font = ["Noto Sans Regular"];
+    const densityPadding =
+      settings.labelLevels?.[
+        String(settings.labelLevel ?? (profile === "detail" ? 3 : 2))
+      ]?.padding;
     const local = ["coalesce", ["get", "name"], ["get", "name:latin"]];
     style.layers.push({
       id: "vandrar-mountain-context",
@@ -138,7 +160,7 @@ export function illustrationStyle(base, tokens, profile, settings) {
         ],
         "text-font": font,
         "text-size": 11,
-        "text-padding": settings.detailLabelPadding ?? 18,
+        "text-padding": densityPadding ?? settings.detailLabelPadding ?? 18,
         "text-max-width": 10,
         "text-allow-overlap": false,
       },
@@ -160,7 +182,7 @@ export function illustrationStyle(base, tokens, profile, settings) {
           "text-field": local,
           "text-font": font,
           "text-size": 11,
-          "text-padding": settings.detailLabelPadding ?? 18,
+          "text-padding": densityPadding ?? settings.detailLabelPadding ?? 18,
           "text-max-width": 11,
         },
         paint: {
@@ -180,7 +202,7 @@ export function illustrationStyle(base, tokens, profile, settings) {
         "text-field": local,
         "text-font": font,
         "text-size": 10,
-        "text-padding": settings.detailPlacePadding ?? 32,
+        "text-padding": densityPadding ?? settings.detailPlacePadding ?? 32,
         "text-max-width": 10,
       },
       paint: {
@@ -190,6 +212,48 @@ export function illustrationStyle(base, tokens, profile, settings) {
       },
     });
   }
+  style.layers.push({
+    id: "vandrar-area-context",
+    type: "symbol",
+    source: "illustration-areas",
+    layout: {
+      "text-field": [
+        "upcase",
+        ["coalesce", ["get", "name"], ["get", "name:latin"]],
+      ],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": settings.areaLabelFontSize ?? 12,
+      "text-letter-spacing": settings.areaLabelLetterSpacing ?? 0.12,
+      "text-max-width": 16,
+      "text-padding": 40,
+      "text-allow-overlap": false,
+    },
+    paint: {
+      "text-color": tokens.forest,
+      "text-halo-color": tokens.cream,
+      "text-halo-width": 1.5,
+      "text-opacity": 0.8,
+    },
+  });
+  style.layers.push({
+    id: "vandrar-river-context",
+    type: "symbol",
+    source: "illustration-rivers",
+    layout: {
+      "symbol-placement": "line",
+      "symbol-spacing": settings.riverLabelSpacing ?? 480,
+      "text-field": ["coalesce", ["get", "name"], ["get", "name:latin"]],
+      "text-font": ["Noto Sans Italic"],
+      "text-size": 11,
+      "text-padding": settings.detailPlacePadding ?? 32,
+      "text-allow-overlap": false,
+    },
+    paint: {
+      "text-color": mix(tokens.forest, tokens.sage, 0.4),
+      "text-halo-color": tokens.cream,
+      "text-halo-width": 1.5,
+    },
+  });
   for (const layer of style.layers) {
     if (layer.type !== "symbol") continue;
     if (profile === "detail" && layer.id === "vandrar-locality-context") {

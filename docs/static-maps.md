@@ -65,7 +65,7 @@ The generator does not automatically migrate, start, or inspect containers.
 ./scripts/maps-generate.sh --hike Berg --preview --output-dir backups/maps
 
 # Override automatic labels, or compare terrain treatments.
-./scripts/maps-generate.sh --hike Jämt --preview --output-dir backups/maps --labels overview
+./scripts/maps-generate.sh --hike Jämt --preview --output-dir backups/maps --labels 2
 ./scripts/maps-generate.sh --hike Jämt --preview --output-dir backups/maps --terrain hillshade
 
 # Store generated maps and also write review copies.
@@ -81,19 +81,35 @@ without additional parameter prompts.
 
 ### Label detail and terrain
 
-`--labels auto` is the default. Label detail comes from the hike's linked location
-terrain classifications in the database (`location_terrains`): a location tagged
-`mountains` receives detailed geographical labels. Lowlands, coastal areas,
-locations without terrain tags, and hikes without a linked location all receive
-the quieter overview profile. If several classifications are present, `mountains`
-takes precedence. No hike IDs or names are used for styling, and no elevation
-sampling is needed to classify a hike. Classification changes invalidate the
-stored map's fingerprint. All four responsive formats use the same profile.
+`--labels auto` is the default. Use `--labels 1` through `--labels 5` to set
+label density explicitly (1 = minimal, 5 = richest). The guided prompt accepts
+the same values. Auto selects level 2 for lowlands/coastal/unknown terrain and
+level 3 for locations tagged `mountains`. No hike IDs or names affect styling.
 
-`--labels overview` and `--labels detail` are optional command-line overrides for
-experimentation. They are not saved as per-hike styling configuration.
-`peakLabels: false` and `lakeLabels: false` in shared illustration configuration
-can independently hide those names in detail mode.
+Named outdoor landmarks (huts, shelters, campsites, waterfalls, viewpoints,
+trailheads, visitor centres and bridges where represented as POIs) are selected
+within 3 km of the route and a bounded screen distance. Named parks/protected
+areas provide geographic context. Features must exist in the vector tiles;
+unnamed objects are never given invented labels. Duplicated names are removed,
+labels are spaced apart, kept inside the frame, and use normal collision handling.
+Named rivers and streams use sparse italic labels following their lines (none at
+level 1, at most 1/2/3/4 distinct waterways at levels 2/3/4/5). Area names use
+uppercase lettering with wider spacing. Label density never changes terrain or
+land-cover zoom thresholds; wetland icon patterns are suppressed in illustrations.
+
+| Level | Outdoor landmarks, maximum | Area names, maximum | Geographic context |
+| --- | --- | --- | --- |
+| 1 | 0 | 1 | Major settlements only |
+| 2 | 2 | 1 | Major settlements only |
+| 3 | 4 | 1 | A few peaks, waters and settlements |
+| 4 | 6 | 2 | More geographic context |
+| 5 | 8 | 3 | Richest geographic context |
+
+These are candidate limits, not guaranteed visible label counts. Collision handling
+may show fewer. Density budgets and spacing are centralized in `maps/config.json`.
+Overrides are used for that generation only. Configuration and script changes
+invalidate stored map fingerprints. `peakLabels: false` and `lakeLabels: false`
+can independently hide those names.
 
 Detailed labels use wider collision spacing and avoid duplicate native/sampled
 lake names. Start markers and labels are forest green; finish markers and labels
@@ -106,8 +122,7 @@ and capture checks reject clipping.
 CLI choices always display English hike titles even when matching another language.
 
 Peak prominence here is an elevation threshold and collision priority, not a
-computed topographic prominence measurement. `--labels overview` and
-`--labels detail` force either profile. `peakLabels: false` and `lakeLabels: false`
+computed topographic prominence measurement. Explicit levels override the automatic density. `peakLabels: false` and `lakeLabels: false`
 in illustration configuration can independently hide those names in detail mode.
 
 `--terrain combined` is the default; `hillshade`, `contours` and `none` are also

@@ -94,10 +94,13 @@ def authored_router(kind: str, path: str, write_schema: Any, read_schema: Any) -
         if kind == "achievement" and hike_id is not None:
             query = query.where(spec.entity.hike_id == hike_id)
         total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+        ordering = (
+            (spec.entity.sort_order, spec.entity.id) if kind == "achievement" else (spec.entity.id,)
+        )
         return {
             "items": [
                 read_authored(db, kind, entity, locale)
-                for entity in db.scalars(query.order_by(spec.entity.id).limit(limit).offset(offset))
+                for entity in db.scalars(query.order_by(*ordering).limit(limit).offset(offset))
             ],
             "total": total,
             "limit": limit,

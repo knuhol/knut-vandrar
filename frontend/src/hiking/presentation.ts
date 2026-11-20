@@ -12,6 +12,8 @@ export type TrailTag =
   | 'waymarked'
   | 'partlyWaymarked'
   | 'unmarked'
+  | 'nationalPark'
+  | 'boatConnectionRequired'
 export type TrailRatings = {
   facilities: number | null
   maintenance: number | null
@@ -26,6 +28,7 @@ export type HikeEndpoints = {
 const accommodation = {
   tent: 'tent',
   free_shelter_or_hut: 'freeShelter',
+  paid_shelter_or_hut: 'paidShelter',
   mountain_hut: 'mountainHut',
   other_paid_accommodation: 'paidAccommodation',
 } as const satisfies Record<
@@ -53,6 +56,11 @@ export function hikePresentation(hike: Hike): { endpoints: HikeEndpoints; detail
     details: {
       direction: hike.direction ?? null,
       scope: hike.route_scope,
+      isLoop: hike.is_loop ?? null,
+      namedRoute:
+        hike.route_scope === 'named_hiking_route' && hike.named_route_name
+          ? { name: hike.named_route_name, url: hike.named_route_url ?? null }
+          : null,
       stages:
         hike.start_stage != null && hike.end_stage != null
           ? { start: hike.start_stage, end: hike.end_stage }
@@ -72,6 +80,9 @@ export function locationPresentation(location: Location): {
   details: TrailDetails
 } {
   const tags: TrailTag[] = [...location.terrains]
+  if (location.is_national_park) {
+    tags.push('nationalPark')
+  }
   if (location.is_loop) {
     tags.push('loop')
   }
@@ -92,8 +103,12 @@ export function locationPresentation(location: Location): {
       )[location.waymarking],
     )
   }
+  if (location.boat_connection_required) {
+    tags.push('boatConnectionRequired')
+  }
   const rating = location.ratings
-  const half = (value: number | null | undefined) => (value == null ? null : value / 2)
+  const half = (value: number | null | undefined) =>
+    value == null ? null : value === -1 ? -1 : value / 2
   return {
     tags,
     ratings:

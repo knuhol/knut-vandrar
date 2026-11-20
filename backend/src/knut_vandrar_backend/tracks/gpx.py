@@ -35,6 +35,18 @@ def normalize(data: bytes, name: str) -> tuple[bytes, dict[str, Any]]:
         raise ValueError("Invalid GPX XML") from error
     if root.tag != NS + "gpx":
         raise ValueError("Expected GPX 1.1")
+    for route in root.findall(NS + "rte"):
+        track = ET.Element(NS + "trk", route.attrib)
+        segment = ET.Element(NS + "trkseg")
+        for child in list(route):
+            if child.tag == NS + "rtept":
+                child.tag = NS + "trkpt"
+                segment.append(child)
+            else:
+                track.append(child)
+        track.append(segment)
+        root.remove(route)
+        root.append(track)
     points = root.findall(f".//{NS}trkpt")
     if len(points) < 2:
         raise ValueError("GPX must contain a track with at least two points")

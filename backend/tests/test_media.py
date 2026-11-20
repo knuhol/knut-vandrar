@@ -1015,3 +1015,63 @@ def test_generated_maps_round_trip_remap_and_conflict(
     )
     with destination.factory() as db:
         assert len(images(db, remapped)) == 2
+
+
+def test_single_gpx_import_resume_replacement_and_media_round_trip(
+    environments: tuple[Environment, Environment], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from types import SimpleNamespace
+
+    from knut_vandrar_backend.models.track import TrackCollection, TrackRoute
+    from knut_vandrar_backend.tracks.cli import run
+    from knut_vandrar_backend.tracks.gpx import track_path
+    from knut_vandrar_backend.tracks.sources import SingleGpxSource
+
+    source, destination = environments
+    path = tmp_path / "single.gpx"
+    path.write_text(
+        '<gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><name>A - B</name>'
+        '<trkseg><trkpt lat="59" lon="15"/><trkpt lat="60" lon="16"/></trkseg></trk></gpx>'
+    )
+    args = SimpleNamespace(
+        collection="gpx:single",
+        direction=None,
+        bundle_source=SingleGpxSource(path),
+        name="My route",
+    )
+    answers = iter(["e", "3", "Edited start", "q"])
+    monkeypatch.setattr("builtins.input", lambda _: next(answers))
+    assert run(source.factory, source.media, None, "Hike", args, hike_id=HIKE) == 0
+    answers = iter(["", "s"])
+    assert run(source.factory, source.media, None, "Hike", args, hike_id=HIKE) == 0
+    with source.factory() as db:
+        collection = db.scalar(select(TrackCollection))
+        route = db.scalar(select(TrackRoute))
+        assert collection is not None and route is not None
+        collection_id, route_id, first_digest = collection.id, route.id, route.digest
+        assert route.overrides["start"] == "Edited start"
+        hike = db.get(Hike, HIKE)
+        assert hike is not None and hike.track_collection_id == collection.id
+    # A renamed replacement updates the same logical route and retains editorial overrides.
+    replacement = tmp_path / "renamed.gpx"
+    replacement.write_text(path.read_text().replace('lat="60"', 'lat="61"'))
+    args.bundle_source = SingleGpxSource(replacement)
+    answers = iter(["", "s"])
+    assert run(source.factory, source.media, None, "Hike", args, hike_id=HIKE) == 0
+    assert path.is_file() and replacement.is_file()
+    with source.factory() as db:
+        route = db.get(TrackRoute, route_id)
+        assert route is not None and route.digest != first_digest
+        assert route.overrides["start"] == "Edited start"
+        assert db.scalar(select(func.count()).select_from(TrackCollection)) == 1
+        assert db.scalar(select(func.count()).select_from(TrackRoute)) == 1
+        raw = track_path(source.media, route.digest).read_bytes()
+    imported = _import(destination, _export(source))
+    assert not imported.conflicts
+    with destination.factory() as db:
+        route = db.get(TrackRoute, route_id)
+        hike = db.get(Hike, HIKE)
+        assert route is not None and hike is not None
+        assert hike.track_collection_id == collection_id
+        assert route.source_id == "gpx:single"
+        assert track_path(destination.media, route.digest).read_bytes() == raw

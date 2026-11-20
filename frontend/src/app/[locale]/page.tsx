@@ -13,19 +13,36 @@ import { homeLanguages, homePath, absoluteUrl } from '@/seo/urls'
 import { collectionOffset, collectionPageSize } from '@/hiking/pagination'
 import type { Locale } from '@/i18n/routing'
 
-type Query = { offset?: string | string[] }
+type Query = { offset?: string | string[]; multiDayOffset?: string | string[] }
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<Query> }
 
 async function collection(locale: Locale, query: Query) {
   const offset = collectionOffset(query.offset)
-  if (query.offset !== undefined && (offset === 0 || query.offset !== String(offset))) {
-    permanentRedirect(homePath(locale, offset))
+  const multiDayOffset = collectionOffset(query.multiDayOffset)
+  if (
+    (query.offset !== undefined && (offset === 0 || query.offset !== String(offset))) ||
+    (query.multiDayOffset !== undefined &&
+      (multiDayOffset === 0 || query.multiDayOffset !== String(multiDayOffset)))
+  ) {
+    permanentRedirect(homePath(locale, offset, multiDayOffset))
   }
-  const page = await getHikes(locale, offset)
-  if (offset > 0 && page.items.length === 0) {
+  const [longDistance, multiDay] = await Promise.all([
+    getHikes(locale, offset, 'long_distance'),
+    getHikes(locale, multiDayOffset, 'multi_day'),
+  ])
+  if (
+    (offset > 0 && longDistance.items.length === 0) ||
+    (multiDayOffset > 0 && multiDay.items.length === 0)
+  ) {
     notFound()
   }
-  return page
+  return {
+    pages: { long_distance: longDistance, multi_day: multiDay },
+    offset,
+    multiDayOffset,
+    items: [...longDistance.items, ...multiDay.items],
+    total: longDistance.total + multiDay.total,
+  }
 }
 
 export async function generateMetadata({ params, searchParams }: Props) {
@@ -41,12 +58,17 @@ export async function generateMetadata({ params, searchParams }: Props) {
   return pageMetadata({
     locale,
     title:
-      page.offset === 0
+      page.offset === 0 && page.multiDayOffset === 0
         ? t('homeMetadataTitle')
-        : t('collectionPageTitle', { page: page.offset / collectionPageSize + 1 }),
+        : t('collectionPageTitle', {
+            page: Math.max(page.offset, page.multiDayOffset) / collectionPageSize + 1,
+          }),
     description: t('metadataDescription'),
-    path: homePath(locale, page.offset),
-    languages: page.offset === 0 ? { ...homeLanguages(), 'x-default': absoluteUrl('/') } : {},
+    path: homePath(locale, page.offset, page.multiDayOffset),
+    languages:
+      page.offset === 0 && page.multiDayOffset === 0
+        ? { ...homeLanguages(), 'x-default': absoluteUrl('/') }
+        : {},
     imageAlt: t('sharingImageAlt'),
   })
 }
@@ -63,9 +85,21 @@ export default async function Home({ params, searchParams }: Props) {
 
   return (
     <>
-      <StructuredData data={collectionData(locale, hikesPage, t('collection'))} />
+      <StructuredData
+        data={collectionData(
+          locale,
+          {
+            items: hikesPage.items,
+            total: hikesPage.total,
+            offset: 0,
+            limit: collectionPageSize * 2,
+          },
+          t('collection'),
+          homePath(locale, hikesPage.offset, hikesPage.multiDayOffset),
+        )}
+      />
       <Hero />
-      <HikeCollection page={hikesPage} />
+      <HikeCollection pages={hikesPage.pages} />
     </>
   )
 }

@@ -49,6 +49,7 @@ class InformationStatus(StrEnum):
 class AccommodationType(StrEnum):
     TENT = "tent"
     FREE_SHELTER_OR_HUT = "free_shelter_or_hut"
+    PAID_SHELTER_OR_HUT = "paid_shelter_or_hut"
     MOUNTAIN_HUT = "mountain_hut"
     OTHER_PAID_ACCOMMODATION = "other_paid_accommodation"
 
@@ -77,6 +78,7 @@ class Direction(StrEnum):
 class RouteScope(StrEnum):
     FULL_TRAIL = "full_trail"
     TRAIL_SECTION = "trail_section"
+    NAMED_HIKING_ROUTE = "named_hiking_route"
     CUSTOM_ROUTE = "custom_route"
 
 

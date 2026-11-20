@@ -667,13 +667,17 @@ def test_location_details_regions_ratings_and_validation(client: TestClient) -> 
         "overnight_options": ["tent"],
         "overnight_restrictions_status": "known",
         "overnight_restrictions": [],
-        "ratings": {"facilities": 0, "difficulty": 7},
+        "ratings": {"facilities": 0, "maintenance": -1, "difficulty": 7},
+        "boat_connection_required": True,
     }
     response = client.post("/api/locations", json=payload)
     assert response.status_code == 201, response.text
     location = response.json()
     assert location["regions"][0]["name"] == "Lapland"
     assert location["ratings"]["difficulty"] == 7
+    assert location["boat_connection_required"] is True
+    assert location["ratings"]["maintenance"] == -1
+    assert location["ratings"]["resupplies"] is None
     assert location["season_note"] == "First note\nSecond note"
     assert location["translation"]["locale"] == "en"
     assert client.get(f"/api/locations/{location['id']}?locale=sv").json()["name"] == "Sarek"
@@ -685,6 +689,7 @@ def test_location_details_regions_ratings_and_validation(client: TestClient) -> 
         {"water_sources_status": "unknown"},
         {"country_codes": ["SE", "se"]},
         {"ratings": {"difficulty": 11}},
+        {"ratings": {"maintenance": -2}},
     ]
     for changes in changes_to_check:
         assert client.post("/api/locations", json={**payload, **changes}).status_code == 422
@@ -1976,3 +1981,209 @@ def test_public_map_metadata_images_etag_and_missing_variants(client: TestClient
     assert cached.status_code == 304 and not cached.content
     assert client.get(f"/api/hikes/{hike_id}/maps/wide").status_code == 404
     assert client.get("/api/hikes/00000000-0000-0000-0000-000000000000/maps").status_code == 404
+
+
+def test_named_hiking_route_scope(client: TestClient) -> None:
+    response = client.post("/api/hikes", json=_planned_payload(route_scope="named_hiking_route"))
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["route_scope"] == "named_hiking_route"
+    assert client.get(f"/api/hikes/{hike['id']}").json()["route_scope"] == "named_hiking_route"
+
+
+@pytest.mark.parametrize("kind", ["trail", "area"])
+@pytest.mark.parametrize("required", [True, False, None])
+def test_location_boat_connection(client: TestClient, kind: str, required: bool | None) -> None:
+    payload = {
+        "kind": kind,
+        "english": {"name": "Boat connection test"},
+        "country_codes": ["SE"],
+        "boat_connection_required": required,
+    }
+    response = client.post("/api/locations", json=payload)
+    assert response.status_code == 201, response.text
+    location = response.json()
+    assert location["boat_connection_required"] is required
+    assert (
+        client.get(f"/api/locations/{location['id']}").json()["boat_connection_required"]
+        is required
+    )
+    payload["boat_connection_required"] = not required
+    updated = client.put(f"/api/locations/{location['id']}", json=payload)
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["boat_connection_required"] is (not required)
+
+
+def test_named_route_details_round_trip(client: TestClient) -> None:
+    payload = _planned_payload(
+        route_scope="named_hiking_route",
+        named_route_name="Treparksmötet",
+        named_route_url="https://example.com/treparksmotet",
+    )
+    response = client.post("/api/hikes", json=payload)
+    assert response.status_code == 201, response.text
+    hike_id = response.json()["id"]
+    saved = client.get(f"/api/hikes/{hike_id}").json()
+    assert saved["named_route_name"] == "Treparksmötet"
+    assert saved["named_route_url"] == "https://example.com/treparksmotet"
+    for invalid in ["javascript:alert(1)", "not-a-url", "ftp://example.com/route"]:
+        rejected = client.put(f"/api/hikes/{hike_id}", json={**payload, "named_route_url": invalid})
+        assert rejected.status_code == 422
+    updated = client.put(
+        f"/api/hikes/{hike_id}",
+        json={**payload, "named_route_name": "Another route", "named_route_url": None},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["named_route_name"] == "Another route"
+    assert updated.json()["named_route_url"] is None
+
+
+def test_paid_shelter_location_options_and_hike_overnights(client: TestClient) -> None:
+    location = client.post(
+        "/api/locations",
+        json={
+            "kind": "area",
+            "english": {"name": "Paid shelters"},
+            "country_codes": ["SE"],
+            "overnight_options_status": "known",
+            "overnight_options": ["paid_shelter_or_hut"],
+        },
+    )
+    assert location.status_code == 201, location.text
+    assert location.json()["overnight_options"] == ["paid_shelter_or_hut"]
+    hike = client.post(
+        "/api/hikes",
+        json=_planned_payload(
+            location_id=location.json()["id"],
+            overnights_recorded_at="2026-11-20T12:00:00Z",
+            overnights=[{"accommodation_type": "paid_shelter_or_hut", "night_count": 2}],
+        ),
+    )
+    assert hike.status_code == 201, hike.text
+    saved = client.get(f"/api/hikes/{hike.json()['id']}").json()
+    assert saved["overnights"] == [{"accommodation_type": "paid_shelter_or_hut", "night_count": 2}]
+    assert saved["location"]["overnight_options"] == ["paid_shelter_or_hut"]
+
+
+@pytest.mark.parametrize("is_loop", [True, False, None])
+def test_hike_loop_independent_of_location(client: TestClient, is_loop: bool | None) -> None:
+    location = client.post(
+        "/api/locations",
+        json={"kind": "area", "country_codes": ["SE"], "english": {"name": "Muddus"}},
+    ).json()
+    response = client.post(
+        "/api/hikes", json=_planned_payload(location_id=location["id"], is_loop=is_loop)
+    )
+    assert response.status_code == 201, response.text
+    hike = client.get(f"/api/hikes/{response.json()['id']}").json()
+    assert hike["is_loop"] is is_loop
+    assert hike["location"]["is_loop"] is None
+    updated = client.put(
+        f"/api/hikes/{hike['id']}",
+        json=_planned_payload(location_id=location["id"], is_loop=not is_loop),
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["is_loop"] is (not is_loop)
+
+
+def test_hike_category_boundaries_and_independent_pagination(client: TestClient) -> None:
+    start = datetime(2026, 5, 1, 9, tzinfo=UTC)
+    cases = [
+        (100, timedelta(days=2), "long_distance"),
+        (99, timedelta(days=4), "multi_day"),
+        (20, timedelta(days=4, seconds=1), "long_distance"),
+        (None, timedelta(days=5), "long_distance"),
+        (None, timedelta(days=2), "multi_day"),
+    ]
+    categories: dict[str, set[str]] = {"long_distance": set(), "multi_day": set()}
+    for distance, duration, category in cases:
+        response = client.post(
+            "/api/hikes",
+            json=_planned_payload(
+                distance_km=distance,
+                planned_start_at=start.isoformat(),
+                planned_end_at=(start + duration).isoformat(),
+            ),
+        )
+        assert response.status_code == 201, response.text
+        categories[category].add(response.json()["id"])
+    # Include unknown duration/distance and ensure the categories are exhaustive.
+    ongoing = client.post(
+        "/api/hikes",
+        json=_planned_payload(status="ongoing", actual_start_at=datetime.now(UTC).isoformat()),
+    ).json()
+    categories["multi_day"].add(ongoing["id"])
+    for category, expected in categories.items():
+        result = client.get("/api/hikes", params={"category": category, "limit": 2}).json()
+        assert result["total"] == len(expected)
+        assert len(result["items"]) == 2
+        second = client.get(
+            "/api/hikes", params={"category": category, "limit": 2, "offset": 2}
+        ).json()
+        assert second["total"] == len(expected)
+        assert {item["id"] for item in result["items"] + second["items"]} == expected
+    assert client.get("/api/hikes").json()["total"] == sum(map(len, categories.values()))
+    assert client.get("/api/hikes?category=invalid").status_code == 422
+
+
+@pytest.mark.parametrize("status", ["completed", "aborted", "ongoing"])
+def test_category_uses_actual_dates_for_started_hikes(client: TestClient, status: str) -> None:
+    end = datetime.now(UTC)
+    response = client.post(
+        "/api/hikes",
+        json=_planned_payload(
+            status=status,
+            planned_start_at=(end - timedelta(days=2)).isoformat(),
+            planned_end_at=end.isoformat(),
+            actual_start_at=(end - timedelta(days=5)).isoformat(),
+            actual_end_at=None if status == "ongoing" else end.isoformat(),
+        ),
+    )
+    assert response.status_code == 201, response.text
+    result = client.get("/api/hikes?category=long_distance").json()
+    assert result["total"] == 1
+    assert result["items"][0]["id"] == response.json()["id"]
+
+
+def test_achievement_listing_uses_hike_order_before_pagination(client: TestClient) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    created = []
+    for order in [9, 1]:
+        response = client.post(
+            "/api/achievements",
+            json={
+                "hike_id": hike["id"],
+                "icon": "tent",
+                "sort_order": order,
+                "english": {"title": f"Order {order}"},
+            },
+        )
+        assert response.status_code == 201, response.text
+        created.append(response.json())
+    first = client.get("/api/achievements", params={"hike_id": hike["id"], "limit": 1}).json()
+    second = client.get(
+        "/api/achievements", params={"hike_id": hike["id"], "limit": 1, "offset": 1}
+    ).json()
+    assert first["total"] == second["total"] == 2
+    assert first["items"][0]["id"] == created[1]["id"]
+    assert second["items"][0]["id"] == created[0]["id"]
+
+
+@pytest.mark.parametrize("kind", ["trail", "area"])
+@pytest.mark.parametrize("required", [True, False, None])
+def test_location_national_park(client: TestClient, kind: str, required: bool | None) -> None:
+    payload = {
+        "kind": kind,
+        "english": {"name": "National park test"},
+        "country_codes": ["SE"],
+        "is_national_park": required,
+    }
+    response = client.post("/api/locations", json=payload)
+    assert response.status_code == 201, response.text
+    location = response.json()
+    assert location["is_national_park"] is required
+    assert client.get(f"/api/locations/{location['id']}").json()["is_national_park"] is required
+    payload["is_national_park"] = not required
+    updated = client.put(f"/api/locations/{location['id']}", json=payload)
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["is_national_park"] is (not required)

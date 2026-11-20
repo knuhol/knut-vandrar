@@ -36,11 +36,21 @@ class AchievementEnglish(BaseModel):
 
 
 class RatingWrite(BaseModel):
-    facilities: int | None = Field(default=None, ge=0, le=10)
-    maintenance: int | None = Field(default=None, ge=0, le=10)
-    resupplies: int | None = Field(default=None, ge=0, le=10)
-    public_transport: int | None = Field(default=None, ge=0, le=10)
-    difficulty: int | None = Field(default=None, ge=0, le=10)
+    facilities: int | None = Field(
+        default=None, ge=-1, le=10, description="-1 = N/A; 0–10 = 0–5 stars; null = unrated"
+    )
+    maintenance: int | None = Field(
+        default=None, ge=-1, le=10, description="-1 = N/A; 0–10 = 0–5 stars; null = unrated"
+    )
+    resupplies: int | None = Field(
+        default=None, ge=-1, le=10, description="-1 = N/A; 0–10 = 0–5 stars; null = unrated"
+    )
+    public_transport: int | None = Field(
+        default=None, ge=-1, le=10, description="-1 = N/A; 0–10 = 0–5 stars; null = unrated"
+    )
+    difficulty: int | None = Field(
+        default=None, ge=-1, le=10, description="-1 = N/A; 0–10 = 0–5 stars; null = unrated"
+    )
     assessed_at: date | None = None
 
 
@@ -80,6 +90,10 @@ class LocationWrite(BaseModel):
     official_url: HttpUrl | None = None
     waymarking: Waymarking | None = None
     is_loop: bool | None = None
+    is_national_park: bool | None = None
+    boat_connection_required: bool | None = Field(
+        default=None, description="Whether hiking requires a boat connection; null = unknown"
+    )
     arctic_circle_position: ArcticCirclePosition | None = None
     information_checked_at: date | None = None
     country_codes: list[str] = Field(min_length=1)
@@ -137,6 +151,8 @@ class LocationRead(LocationEnglish):
     logo_url: str | None
     waymarking: Waymarking | None
     is_loop: bool | None
+    is_national_park: bool | None
+    boat_connection_required: bool | None
     arctic_circle_position: ArcticCirclePosition | None
     information_checked_at: date | None
     country_codes: list[str]

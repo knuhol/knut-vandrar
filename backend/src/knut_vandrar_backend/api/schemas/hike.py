@@ -125,6 +125,9 @@ class HikeExtra(BaseModel):
     end_longitude: float | None = Field(default=None, ge=-180, le=180)
     direction: Direction | None = None
     route_scope: RouteScope | None = None
+    is_loop: bool | None = None
+    named_route_name: str | None = Field(default=None, min_length=1, max_length=200)
+    named_route_url: HttpUrl | None = Field(default=None, max_length=2048)
     start_stage: int | None = Field(default=None, gt=0)
     end_stage: int | None = Field(default=None, gt=0)
     overnights_recorded_at: datetime | None = None

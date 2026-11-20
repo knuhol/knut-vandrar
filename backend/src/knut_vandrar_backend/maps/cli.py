@@ -42,7 +42,7 @@ def generate(
     illustration = dict(config["illustration"])
     illustration["profile"] = labels if labels is not None else illustration["profile"]
     terrain = "combined" if terrain is None else terrain
-    if illustration["profile"] not in ("auto", "overview", "detail"):
+    if illustration["profile"] not in ("auto", "1", "2", "3", "4", "5"):
         raise ValueError("Invalid map label profile")
     if terrain not in ("none", "hillshade", "contours", "combined"):
         raise ValueError("Invalid terrain mode")
@@ -226,9 +226,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--labels",
-        choices=("auto", "overview", "detail"),
+        choices=("auto", "1", "2", "3", "4", "5"),
         default=None,
-        help="Geographical label detail; auto uses the location's terrain classification",
+        help="Label density: 1 is minimal, 5 is richest; auto selects 2 for lowlands and 3 for mountains",
     )
     parser.add_argument(
         "--terrain",
@@ -262,9 +262,9 @@ def main() -> int:
             if not args.check:
                 if args.labels is None:
                     args.labels = ask(
-                        "Label detail (auto/overview/detail)",
+                        "Label detail (auto/1-5)",
                         default="auto",
-                        choices=("auto", "overview", "detail"),
+                        choices=("auto", "1", "2", "3", "4", "5"),
                     )
                 if args.terrain is None:
                     args.terrain = ask(

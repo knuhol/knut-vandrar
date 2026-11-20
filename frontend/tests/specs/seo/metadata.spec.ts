@@ -14,6 +14,8 @@ describe('public URL and crawler metadata', () => {
   test('keeps home URLs free of empty queries and preserves distinct pagination', () => {
     expect(homePath('en')).toBe('/en')
     expect(homePath('sv', 6)).toBe('/sv?offset=6')
+    expect(homePath('en', 6, 12)).toBe('/en?offset=6&multiDayOffset=12')
+    expect(homePath('en', 0, 6)).toBe('/en?multiDayOffset=6')
     expect(homeLanguages()).toEqual({
       sv: 'https://knut.vandrar.se/sv',
       en: 'https://knut.vandrar.se/en',

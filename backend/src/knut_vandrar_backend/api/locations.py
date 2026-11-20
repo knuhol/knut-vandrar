@@ -94,6 +94,8 @@ def read_location(
         else None,
         waymarking=entity.waymarking,
         is_loop=entity.is_loop,
+        is_national_park=entity.is_national_park,
+        boat_connection_required=entity.boat_connection_required,
         arctic_circle_position=entity.arctic_circle_position,
         information_checked_at=entity.information_checked_at,
         water_sources_status=entity.water_sources_status,

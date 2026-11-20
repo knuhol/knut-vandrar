@@ -16,6 +16,7 @@ import {
 } from '@mui/material'
 
 import { GalleryEditor } from './GalleryEditor'
+import { AchievementsEditor } from './AchievementsEditor'
 import { useAdminFeedback } from './useAdminFeedback'
 import { AdminMessage } from './AdminMessage'
 import { ImagePreview } from './ImagePreview'
@@ -25,6 +26,7 @@ import { Fields } from './Fields'
 import { TranslationEditor, TranslationRequest } from './Translations'
 import messages from '@/admin/messages/en.json'
 import { api, dataProvider } from '@/admin/client'
+import { prepareDraft, prepareWrite } from '@/admin/fieldConditions'
 import {
   text,
   initialValue,
@@ -49,7 +51,8 @@ function Content() {
   const [value, setValue] = useState<Json>(null)
   const [savedValue, setSavedValue] = useState<Json>(null)
   const [galleryDirty, setGalleryDirty] = useState(false)
-  const dirty = editing && (!valuesEqual(value, savedValue) || galleryDirty)
+  const [achievementsDirty, setAchievementsDirty] = useState(false)
+  const dirty = editing && (!valuesEqual(value, savedValue) || galleryDirty || achievementsDirty)
   const [imageVersion, setImageVersion] = useState(0)
   const [hasImage, setHasImage] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -74,6 +77,7 @@ function Content() {
     return !dirty || window.confirm(messages.discardUnsavedChanges)
   }
   function switchResource(next: Resource) {
+    setAchievementsDirty(false)
     setGalleryDirty(false)
     setResource(next)
     setEditing(false)
@@ -87,6 +91,7 @@ function Content() {
       const loaded = nextId
         ? writeValue(schema, await api(`${resource.name}/${nextId}?locale=en`))
         : initialValue(schema)
+      setAchievementsDirty(false)
       setGalleryDirty(false)
       setValue(loaded)
       setSavedValue(loaded)
@@ -102,7 +107,7 @@ function Content() {
   }
   async function save(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
-    const submitted = value
+    const submitted = prepareWrite(schema, value)
     setBusy(true)
     setMessage('')
     try {
@@ -110,6 +115,7 @@ function Content() {
         await api(`${resource.name}${id ? `/${id}` : ''}`, id ? 'PUT' : 'POST', submitted || {}),
       )
       setId(text(saved.id))
+      setValue(submitted)
       setSavedValue(submitted)
       setMessage(messages.savedNoTranslationsWereQueued, 'save', 'success')
       await query.refetch()
@@ -263,7 +269,7 @@ function Content() {
                 baseline={savedValue}
                 label={resource.label}
                 onChange={(next) => {
-                  setValue(next)
+                  setValue(prepareDraft(schema, next))
                 }}
               />
               <Button type="submit" disabled={busy}>
@@ -274,7 +280,18 @@ function Content() {
             {id && (
               <>
                 {resource.gallery && (
-                  <GalleryEditor key={id} hikeId={id} onDirtyChange={setGalleryDirty} />
+                  <GalleryEditor
+                    key={`gallery-${id}`}
+                    hikeId={id}
+                    onDirtyChange={setGalleryDirty}
+                  />
+                )}
+                {resource.achievements && (
+                  <AchievementsEditor
+                    key={`achievements-${id}`}
+                    hikeId={id}
+                    onDirtyChange={setAchievementsDirty}
+                  />
                 )}
                 {resource.image && (
                   <EditorSection title={messages.image}>
@@ -303,15 +320,17 @@ function Content() {
                           }
                         }}
                       />
-                      <Button
-                        variant="outlined"
-                        disabled={busy}
-                        onClick={() => {
-                          void image()
-                        }}
-                      >
-                        {messages.removeImage}
-                      </Button>
+                      {hasImage && (
+                        <Button
+                          variant="outlined"
+                          disabled={busy}
+                          onClick={() => {
+                            void image()
+                          }}
+                        >
+                          {messages.removeImage}
+                        </Button>
+                      )}
                       {feedbackAt('image')}
                     </Stack>
                   </EditorSection>

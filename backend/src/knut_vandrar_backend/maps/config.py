@@ -32,7 +32,7 @@ def load_config(root: Path = ROOT) -> tuple[dict[str, Any], dict[str, Any], dict
             for i in (0, 2, 4)
         )
     illustration = config["illustration"]
-    if illustration["profile"] not in ("auto", "overview", "detail"):
+    if illustration["profile"] not in ("auto", "1", "2", "3", "4", "5"):
         raise ValueError("Invalid illustration profile")
     ratio = config["render"]["pixelRatio"]
     if type(ratio) is not int or ratio < 1 or ratio > 4:
