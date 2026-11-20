@@ -1239,6 +1239,112 @@ export const openapi = {
         }
       }
     },
+    "/api/track-collections": {
+      "get": {
+        "tags": [
+          "tracks"
+        ],
+        "summary": "List Collections",
+        "operationId": "list_collections_api_track_collections_get",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "hike_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hike Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Maximum entries to return",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Maximum entries to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of entries to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of entries to skip"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TrackCollectionRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "x-admin-only": true
+      }
+    },
     "/api/locations": {
       "get": {
         "tags": [
@@ -4081,6 +4187,18 @@ export const openapi = {
             "type": "array",
             "title": "Overnights"
           },
+          "track_collection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Collection Id"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
@@ -4619,6 +4737,18 @@ export const openapi = {
             },
             "type": "array",
             "title": "Overnights"
+          },
+          "track_collection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Collection Id"
           },
           "location_id": {
             "anyOf": [
@@ -5644,6 +5774,37 @@ export const openapi = {
         ],
         "title": "Page[RegionRead]"
       },
+      "Page_TrackCollectionRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TrackCollectionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[TrackCollectionRead]"
+      },
       "Page_TranslationCandidateRead_": {
         "properties": {
           "items": {
@@ -6227,6 +6388,68 @@ export const openapi = {
           "type"
         ],
         "title": "StandardPageContent"
+      },
+      "TrackCollectionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "location_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
+          "hike_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hike Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_id",
+          "direction",
+          "location_id",
+          "hike_id"
+        ],
+        "title": "TrackCollectionRead"
       },
       "TrailType": {
         "type": "string",

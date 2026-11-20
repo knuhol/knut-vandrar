@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -556,3 +557,411 @@ def test_progress_reports_export_and_dry_run_stages(
     assert "Validating 4 images..." in messages
     assert messages[-1] == "Destination check complete: 4 images."
     assert "Applying image changes..." not in messages
+
+
+def test_tracks_share_media_archive_and_preserve_destination_content(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from knut_vandrar_backend.models.track import TrackCollection, TrackDraft, TrackRoute
+    from knut_vandrar_backend.tracks.gpx import normalize, store, track_path
+
+    source, destination = environments
+    raw = b'<gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="1" lon="2"/><trkpt lat="2" lon="3"/></trkseg></trk></gpx>'
+    content, _ = normalize(raw, "Trail 7A")
+    digest = store(source.media, content)
+    collection_id, route_id = uuid4(), uuid4()
+    with source.factory.begin() as db:
+        db.add(
+            TrackCollection(
+                id=collection_id,
+                location_id=LOCATION,
+                source_id="20512",
+                name="Trail",
+                direction="backward",
+                details={},
+            )
+        )
+        db.flush()
+        db.add(
+            TrackRoute(
+                id=route_id,
+                collection_id=collection_id,
+                source_id="123",
+                details={"stage": "7A"},
+                overrides={"start": "Manual"},
+                digest=digest,
+            )
+        )
+        db.add(TrackDraft(location_id=LOCATION, source_id="999", data={"private": True}))
+    archive = _export(source)
+    dry = transfer.import_archive(
+        destination.factory, destination.media, BytesIO(archive), dry_run=True
+    )
+    assert dry.counts["add"] >= 2
+    with destination.factory() as db:
+        assert db.get(TrackCollection, collection_id) is None
+    assert not track_path(destination.media, digest).exists()
+    result = transfer.import_archive(destination.factory, destination.media, BytesIO(archive))
+    assert result.counts["add"] >= 2
+    with destination.factory() as db:
+        imported_route = db.get(TrackRoute, route_id)
+        assert imported_route is not None
+        assert imported_route.overrides == {"start": "Manual"}
+        assert db.scalar(select(func.count()).select_from(TrackDraft)) == 0
+    assert track_path(destination.media, digest).read_bytes() == content
+    again = transfer.import_archive(destination.factory, destination.media, BytesIO(archive))
+    assert not again.counts["add"] and not again.counts["replace"]
+    track_path(destination.media, digest).unlink()
+    repair = transfer.import_archive(destination.factory, destination.media, BytesIO(archive))
+    assert repair.counts["repair"] == 1
+
+
+def test_draft_survives_sessions_and_publishes_only_when_reviewed(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from knut_vandrar_backend.models.track import TrackCollection, TrackDraft, TrackRoute
+    from knut_vandrar_backend.tracks.gpx import store
+    from knut_vandrar_backend.tracks.service import publish, save_draft
+
+    source, _ = environments
+    staging = source.media / ".track-drafts" / "test"
+    raw = b'<gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="1" lon="2"/><trkpt lat="2" lon="3"/></trkseg></trk></gpx>'
+    digest = store(staging, raw)
+    data: dict[str, Any] = {
+        "name": "Trail",
+        "direction": "backward",
+        "discovered": True,
+        "errors": {},
+        "seen": ["123"],
+        "routes": {
+            "123": {
+                "details": {"name": "Trail 7A", "stage": "7A"},
+                "overrides": {},
+                "digest": digest,
+                "reviewed": False,
+            }
+        },
+    }
+    with source.factory.begin() as db:
+        draft = TrackDraft(location_id=LOCATION, source_id="20512", data=data)
+        db.add(draft)
+        db.flush()
+        draft_id = draft.id
+    data["routes"]["123"]["overrides"]["start"] = "Manual"
+    save_draft(source.factory, draft_id, data)
+    with source.factory.begin() as db:
+        restored = db.get(TrackDraft, draft_id)
+        assert restored is not None
+        assert restored.data["routes"]["123"]["overrides"]["start"] == "Manual"
+        with pytest.raises(ValueError, match="review"):
+            publish(db, restored, staging, source.media)
+        assert db.scalar(select(func.count()).select_from(TrackCollection)) == 0
+    data["routes"]["123"]["reviewed"] = True
+    save_draft(source.factory, draft_id, data)
+    with source.factory.begin() as db:
+        restored = db.get(TrackDraft, draft_id)
+        assert restored is not None
+        publish(db, restored, staging, source.media)
+    with source.factory() as db:
+        assert db.get(TrackDraft, draft_id) is None
+        route = db.scalar(select(TrackRoute))
+        assert route is not None and route.overrides == {"start": "Manual"}
+
+
+@pytest.mark.parametrize("cleanup_answer", ["n", "y"])
+@pytest.mark.parametrize("supplied_name", [False, True])
+@pytest.mark.parametrize("owner_kind", ["trail", "hike"])
+def test_browser_bundle_resumes_cli_review_without_scraping(
+    environments: tuple[Environment, Environment],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cleanup_answer: str,
+    supplied_name: bool,
+    owner_kind: str,
+) -> None:
+    from types import SimpleNamespace
+
+    from knut_vandrar_backend.models.track import TrackCollection, TrackDraft, TrackRoute
+    from knut_vandrar_backend.tracks.bundle import BundleSource
+    from knut_vandrar_backend.tracks.cli import run
+
+    source, _ = environments
+    files = tmp_path / "browser-export"
+    files.mkdir()
+    names = ["Trail 7A", "Trail 8"]
+    references = []
+    for index, name in enumerate(names):
+        filename = f"{name}.gpx"
+        (files / filename).write_text(
+            '<gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'
+            + name
+            + '</name><trkseg><trkpt lat="1" lon="2"/><trkpt lat="2" lon="3"/></trkseg></trk></gpx>'
+        )
+        references.append(
+            {
+                "source_id": str(100 + index),
+                "source_order": index,
+                "filename": filename,
+                "metadata": {"RouteName": name + " ←", "About": "A - B"},
+            }
+        )
+    manifest = files / "plotaroute-20512.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "format": "knut-vandrar-plotaroute",
+                "version": 1,
+                "collection": {
+                    "id": "20512",
+                    "url": "https://www.plotaroute.com/routecollection/20512",
+                    "name": "Trail",
+                    "route_names": [name + " ←" for name in names],
+                },
+                "routes": references,
+            }
+        )
+    )
+    args = SimpleNamespace(
+        collection="20512",
+        direction="backward",
+        bundle_source=BundleSource(manifest),
+        name="My collection" if supplied_name else None,
+    )
+
+    answers = iter(
+        [*([] if supplied_name else ["My collection"]), "e", "3", "Edited start", "", "q"]
+    )
+    monkeypatch.setattr("builtins.input", lambda _: next(answers))
+    assert (
+        run(
+            source.factory,
+            source.media,
+            LOCATION if owner_kind == "trail" else None,
+            "Trail",
+            args,
+            hike_id=HIKE if owner_kind == "hike" else None,
+        )
+        == 0
+    )
+    with source.factory() as db:
+        draft = db.scalar(select(TrackDraft))
+        assert draft is not None
+        assert draft.data["name"] == "My collection"
+        assert draft.data["routes"]["100"]["reviewed"]
+        assert draft.data["routes"]["100"]["overrides"]["start"] == "Edited start"
+        assert not draft.data["routes"]["101"]["reviewed"]
+        assert db.scalar(select(func.count()).select_from(TrackCollection)) == 0
+    # A resumed draft can recover its temporary files from the original export.
+    import shutil
+
+    shutil.rmtree(source.media / ".track-drafts")
+    answers = iter([*([] if supplied_name else [""]), "", "s", cleanup_answer])
+    assert (
+        run(
+            source.factory,
+            source.media,
+            LOCATION if owner_kind == "trail" else None,
+            "Trail",
+            args,
+            hike_id=HIKE if owner_kind == "hike" else None,
+        )
+        == 0
+    )
+    with source.factory() as db:
+        collection = db.scalar(select(TrackCollection))
+        assert collection is not None
+        assert collection.name == "My collection"
+        assert collection.direction == ("backward" if owner_kind == "trail" else None)
+        assert not collection.details["incomplete"]
+        assert collection.hike_id == (HIKE if owner_kind == "hike" else None)
+        assert collection.location_id == (LOCATION if owner_kind == "trail" else None)
+        hike = db.get(Hike, HIKE)
+        assert hike is not None
+        assert hike.track_collection_id == (collection.id if owner_kind == "hike" else None)
+        route = db.scalar(select(TrackRoute).where(TrackRoute.source_id == "100"))
+        assert route is not None and route.overrides["start"] == "Edited start"
+        assert db.scalar(select(func.count()).select_from(TrackDraft)) == 0
+
+    assert manifest.exists() == (cleanup_answer == "n")
+    for reference in references:
+        assert (files / str(reference["filename"])).exists() == (cleanup_answer == "n")
+    with source.factory() as db:
+        for saved_route in db.scalars(select(TrackRoute)):
+            from knut_vandrar_backend.tracks.gpx import track_path
+
+            assert track_path(source.media, saved_route.digest).is_file()
+
+
+@pytest.mark.parametrize("owner_kind", ["trail", "hike"])
+def test_hike_collection_selection_and_custom_tracks_transfer_with_mapping(
+    environments: tuple[Environment, Environment], owner_kind: str
+) -> None:
+    from knut_vandrar_backend.models.track import TrackCollection, TrackRoute
+    from knut_vandrar_backend.tracks.gpx import store, track_path
+
+    source, destination = environments
+    collection_id, route_id = UUID(int=9001), UUID(int=9002)
+    mapped_hike, mapped_trail = UUID(int=9010), UUID(int=9011)
+    raw = b'<gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="1" lon="2"/><trkpt lat="2" lon="3"/></trkseg></trk></gpx>'
+    digest = store(source.media, raw)
+    with source.factory.begin() as db:
+        db.add(
+            TrackCollection(
+                id=collection_id,
+                location_id=LOCATION if owner_kind == "trail" else None,
+                hike_id=HIKE if owner_kind == "hike" else None,
+                source_id="20512",
+                name="Selected",
+                direction="backward" if owner_kind == "trail" else None,
+            )
+        )
+        db.flush()
+        db.add(
+            TrackRoute(
+                id=route_id,
+                collection_id=collection_id,
+                source_id="123",
+                details={"name": "Stage"},
+                overrides={"start": "Manual"},
+                digest=digest,
+            )
+        )
+        hike = db.get(Hike, HIKE)
+        assert hike is not None
+        hike.track_collection_id = collection_id
+    with destination.factory.begin() as db:
+        db.add(HikingLocation(id=mapped_trail))
+        db.flush()
+        db.add(Hike(id=mapped_hike, location_id=mapped_trail))
+    output = BytesIO()
+    with source.factory() as db:
+        export_archive(db, source.media, output, hikes=(HIKE,))
+    mapping = {"hike_map": {HIKE: mapped_hike}, "location_map": {LOCATION: mapped_trail}}
+    dry_run = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        BytesIO(output.getvalue()),
+        dry_run=True,
+        hike_map=mapping["hike_map"],
+        location_map=mapping["location_map"],
+    )
+    assert not dry_run.conflicts
+    with destination.factory() as db:
+        assert db.get(TrackCollection, collection_id) is None
+    imported = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        BytesIO(output.getvalue()),
+        hike_map=mapping["hike_map"],
+        location_map=mapping["location_map"],
+    )
+    assert not imported.conflicts
+    with destination.factory() as db:
+        collection = db.get(TrackCollection, collection_id)
+        hike = db.get(Hike, mapped_hike)
+        assert collection is not None and hike is not None
+        assert collection.hike_id == (mapped_hike if owner_kind == "hike" else None)
+        assert collection.location_id == (mapped_trail if owner_kind == "trail" else None)
+        assert hike.track_collection_id == collection_id
+        route = db.get(TrackRoute, route_id)
+        assert route is not None and route.overrides == {"start": "Manual"}
+        assert track_path(destination.media, route.digest).read_bytes() == raw
+    repeated = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        BytesIO(output.getvalue()),
+        hike_map=mapping["hike_map"],
+        location_map=mapping["location_map"],
+    )
+    assert not repeated.conflicts and repeated.counts["add"] == 0
+    assert repeated.counts["replace"] == 0
+    # A different destination selection is an ordinary metadata conflict.
+    extra_id = UUID(int=9020)
+    with destination.factory.begin() as db:
+        db.add(
+            TrackCollection(
+                id=extra_id,
+                hike_id=mapped_hike,
+                source_id="999",
+                name="Destination custom",
+                direction=None,
+            )
+        )
+        db.flush()
+        hike = db.get(Hike, mapped_hike)
+        assert hike is not None
+        hike.track_collection_id = extra_id
+    conflict = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        BytesIO(output.getvalue()),
+        hike_map=mapping["hike_map"],
+        location_map=mapping["location_map"],
+    )
+    assert conflict.counts["conflict"] == 1
+    with destination.factory() as db:
+        hike = db.get(Hike, mapped_hike)
+        assert hike is not None and hike.track_collection_id == extra_id
+    replaced = transfer.import_archive(
+        destination.factory,
+        destination.media,
+        BytesIO(output.getvalue()),
+        hike_map=mapping["hike_map"],
+        location_map=mapping["location_map"],
+        replace=True,
+    )
+    assert not replaced.conflicts
+    with destination.factory() as db:
+        hike = db.get(Hike, mapped_hike)
+        assert hike is not None and hike.track_collection_id == collection_id
+        assert db.get(TrackCollection, extra_id) is not None
+
+
+def test_collection_owner_constraint_rejects_missing_and_double_owner(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    from knut_vandrar_backend.models.track import TrackCollection
+
+    source, _ = environments
+    for location_id, hike_id in ((None, None), (LOCATION, HIKE)):
+        with pytest.raises(IntegrityError), source.factory.begin() as db:
+            db.add(
+                TrackCollection(
+                    location_id=location_id,
+                    hike_id=hike_id,
+                    source_id="1",
+                    name="Invalid",
+                    direction="forward",
+                )
+            )
+
+
+def test_import_target_lookup_matches_partial_names_and_titles_in_all_languages(
+    environments: tuple[Environment, Environment],
+) -> None:
+    from knut_vandrar_backend.models.hike import HikeTranslation
+    from knut_vandrar_backend.models.location import LocationTranslation
+    from knut_vandrar_backend.tracks.cli import find_targets
+
+    source, _ = environments
+    with source.factory.begin() as db:
+        db.add(LocationTranslation(location_id=LOCATION, locale_code="en", name="Bergslagsleden"))
+        for locale, title in (("en", "Northern adventure"), ("sv", "Nordvandring")):
+            db.add(
+                HikeTranslation(
+                    hike_id=HIKE,
+                    locale_code=locale,
+                    title=title,
+                    summary_markdown="Summary",
+                    slug="northern-adventure",
+                )
+            )
+    with source.factory() as db:
+        assert find_targets(db, trail="BER", hike=None) == [(LOCATION, "Bergslagsleden")]
+        assert find_targets(db, trail="slags", hike=None) == [(LOCATION, "Bergslagsleden")]
+        assert [row[0] for row in find_targets(db, trail=None, hike="NOR")] == [HIKE]
+        assert [row[0] for row in find_targets(db, trail=None, hike="adven")] == [HIKE]
+        assert find_targets(db, trail="%", hike=None) == []
+        assert find_targets(db, trail=None, hike="_") == []

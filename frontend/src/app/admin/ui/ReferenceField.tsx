@@ -10,12 +10,18 @@ import { record, text, title, type Json } from '@/admin/resources'
 
 export function ReferenceField({
   resource,
+  filters,
+  helperText,
+  optionLabel,
   value,
   onChange,
   required,
   label,
 }: {
   resource: string
+  filters?: Record<string, string>
+  helperText?: string
+  optionLabel?: (value: Json) => string
   value: Json
   onChange: (value: Json) => void
   required: boolean
@@ -27,14 +33,20 @@ export function ReferenceField({
   const [error, setError] = useState('')
   async function load() {
     setBusy(true)
+    setError('')
     try {
       const page = record(
-        await api(`${resource}?locale=en&limit=20&offset=${text(options.length)}`),
+        await api(
+          `${resource}?${new URLSearchParams({ ...filters, locale: 'en', limit: '20', offset: text(options.length) }).toString()}`,
+        ),
       )
       const entries = Array.isArray(page.items) ? page.items : []
       setOptions((previous) => [
         ...previous,
-        ...entries.map((item) => ({ id: text(record(item).id), label: title(item) })),
+        ...entries.map((item) => ({
+          id: text(record(item).id),
+          label: optionLabel ? optionLabel(item) : title(item),
+        })),
       ])
       setTotal(typeof page.total === 'number' ? page.total : 0)
     } catch (error) {
@@ -52,6 +64,7 @@ export function ReferenceField({
         options={options}
         value={selected}
         getOptionLabel={(option) => option.label}
+        getOptionKey={(option) => option.id}
         isOptionEqualToValue={(a, b) => a.id === b.id}
         loading={busy}
         onOpen={() => {
@@ -67,7 +80,7 @@ export function ReferenceField({
             {...params}
             label={label.replaceAll('_', ' ')}
             required={required}
-            helperText={messages.searchLoadedRecordsLoadMoreTo}
+            helperText={helperText || messages.searchLoadedRecordsLoadMoreTo}
           />
         )}
       />

@@ -30,6 +30,7 @@ import {
   initialValue,
   record,
   resources,
+  referencesFor,
   schemaFor,
   supportsTranslations,
   title,
@@ -257,6 +258,7 @@ function Content() {
               <Fields
                 key={`${resource.name}-${id}`}
                 schema={schema}
+                references={referencesFor(resource, value, id)}
                 value={value}
                 baseline={savedValue}
                 label={resource.label}

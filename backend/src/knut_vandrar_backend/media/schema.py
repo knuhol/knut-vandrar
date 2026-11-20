@@ -1,7 +1,7 @@
 """Versioned, environment-independent media archive records."""
 
 from datetime import datetime
-from typing import Literal, Self
+from typing import Any, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from knut_vandrar_backend.media.storage import PHOTO_FILES
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
 
-FORMAT_VERSION: Literal[1] = 1
+FORMAT_VERSION: Literal[3] = 3
 MAX_RECORD_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 25_000_000
 DEFAULT_MAX_BYTES = 100 * 1024**3
@@ -22,7 +22,7 @@ class Record(BaseModel):
 
 class Manifest(Record):
     format: Literal["knut-vandrar-media"] = "knut-vandrar-media"
-    version: Literal[1] = FORMAT_VERSION
+    version: Literal[1, 2, 3] = FORMAT_VERSION
     schema_revision: str = Field(min_length=1, max_length=100)
 
 
@@ -44,7 +44,9 @@ class PhotoText(Record):
 
 
 class Asset(Record):
-    kind: Literal["photo", "cover", "logo"]
+    kind: Literal["photo", "cover", "logo", "collection", "gpx", "track_selection"]
+    track_owner: Literal["trail", "hike"] = "trail"
+    track_data: dict[str, Any] = Field(default_factory=dict)
     id: UUID
     owner_id: UUID
     content_type: str = Field(max_length=100)
@@ -57,6 +59,31 @@ class Asset(Record):
 
     @model_validator(mode="after")
     def validate_asset(self) -> Self:
+        if self.kind in {"collection", "gpx", "track_selection"}:
+            if self.translations:
+                raise ValueError("Track assets cannot contain photo translations")
+            if self.kind == "track_selection":
+                if (
+                    self.files
+                    or self.content_type != "application/json"
+                    or self.id != self.owner_id
+                    or self.track_owner != "hike"
+                ):
+                    raise ValueError("Collection selections require a hike owner and metadata only")
+                SelectionData.model_validate(self.track_data)
+            elif self.kind == "collection":
+                if self.files or self.content_type != "application/json":
+                    raise ValueError("Collections contain metadata only")
+                collection = CollectionData.model_validate(self.track_data)
+                if self.track_owner == "trail" and collection.direction is None:
+                    raise ValueError("Trail collections require a direction")
+            else:
+                if set(self.files) != {"track"} or self.content_type != "application/gpx+xml":
+                    raise ValueError("GPX assets require a track file")
+                RouteData.model_validate(self.track_data)
+            return self
+        if self.track_data:
+            raise ValueError("Image assets cannot contain track metadata")
         if self.content_type not in {
             "image/png",
             "image/jpeg",
@@ -89,3 +116,31 @@ class Asset(Record):
 
     def file_path(self, variant: str) -> str:
         return f"{self.kind}/{self.id}/{variant}"
+
+
+class CollectionData(Record):
+    source_id: str = Field(pattern=r"^[1-9][0-9]*$")
+    name: str = Field(min_length=1, max_length=300)
+    direction: Literal["forward", "backward"] | None
+    details: dict[str, Any]
+
+
+class RouteData(Record):
+    collection_id: str = Field(pattern=r"^[0-9a-f-]{36}$")
+    source_id: str = Field(pattern=r"^[1-9][0-9]*$")
+    details: dict[str, Any]
+    overrides: dict[str, Any]
+
+    @model_validator(mode="after")
+    def valid_collection(self) -> Self:
+        UUID(self.collection_id)
+        return self
+
+
+class SelectionData(Record):
+    collection_id: str = Field(pattern=r"^[0-9a-f-]{36}$")
+
+    @model_validator(mode="after")
+    def valid_collection(self) -> Self:
+        UUID(self.collection_id)
+        return self

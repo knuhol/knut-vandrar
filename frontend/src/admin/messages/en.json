@@ -205,5 +205,9 @@
   "pages": "Pages",
   "pagesHelp": "Each locale is authored and published independently. Choose the about template for About and the standard template for translation notes and the privacy policy. No fallback or automatic translations. About body placeholders: [current_age] and [years_in_sweden]. Indexable only takes effect on the production site.",
   "published": "Published",
-  "draft": "Draft"
+  "draft": "Draft",
+  "trackCollection": "Track collection",
+  "trackCollectionHelp": "Select a collection belonging to this hike or its current trail. Import custom collections with tracks-import.sh --hike. Clear the selection to leave the hike without a collection.",
+  "customHikeCollection": "Custom hike collection",
+  "trailCollection": "Trail collection"
 }

@@ -20,6 +20,7 @@ from knut_vandrar_backend.api.locations import router as locations_router
 from knut_vandrar_backend.api.pages import admin_router as page_admin_router
 from knut_vandrar_backend.api.pages import router as pages_router
 from knut_vandrar_backend.api.photos import router as photos_router
+from knut_vandrar_backend.api.tracks import router as tracks_router
 from knut_vandrar_backend.api.translations import router as translations_router
 from knut_vandrar_backend.database.session import engine
 from knut_vandrar_backend.settings import settings
@@ -81,6 +82,7 @@ async def indexing_headers(
 app.include_router(photos_router)
 app.include_router(discovery_router)
 app.include_router(hikes_router)
+app.include_router(tracks_router)
 app.include_router(locations_router)
 app.include_router(health_router)
 
