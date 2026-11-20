@@ -3,3 +3,15 @@
 .links a[aria-current] {
   @apply underline decoration-orange decoration-3;
 }
+
+.links {
+  @variant desktop {
+    display: flex;
+  }
+}
+
+.menuTrigger {
+  @variant desktop {
+    display: none;
+  }
+}

@@ -52,3 +52,16 @@ export async function getPhotos(hikeId: string, locale: Locale, offset = 0) {
   }
   return response.json()
 }
+
+export const getHikeMaps = cache(async (hikeId: string) => {
+  const response = await client['/api/hikes/{hike_id}/maps'].get({ params: { hike_id: hikeId } })
+  if (response.status === 404) {
+    return []
+  }
+  if (!response.ok) {
+    throw new Error('Could not load hike maps')
+  }
+  return response.json()
+})
+
+export type HikeMapImage = Awaited<ReturnType<typeof getHikeMaps>>[number]

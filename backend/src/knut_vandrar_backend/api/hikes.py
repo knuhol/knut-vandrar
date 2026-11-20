@@ -165,7 +165,11 @@ def get_hike_cover_image(hike_id: UUID, request: Request, db: DatabaseSession) -
     )
 
 
-@router.get("/{hike_id}/maps", response_model=list[HikeMapRead])
+@router.get(
+    "/{hike_id}/maps",
+    response_model=list[HikeMapRead],
+    responses={404: {"description": "Hike not found"}},
+)
 def list_hike_maps(hike_id: UUID, request: Request, db: DatabaseSession) -> list[HikeMapRead]:
     if db.get(Hike, hike_id) is None:
         raise HTTPException(404, "Hike not found")

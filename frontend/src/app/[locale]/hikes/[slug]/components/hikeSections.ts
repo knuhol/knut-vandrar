@@ -4,6 +4,7 @@ import { IconBook2, IconRoute, IconMap, IconExternalLink, IconPhoto } from '@tab
 export const hikeSectionIcons = {
   story: IconBook2,
   journey: IconRoute,
+  map: IconMap,
   trail: IconMap,
   resources: IconExternalLink,
   photos: IconPhoto,

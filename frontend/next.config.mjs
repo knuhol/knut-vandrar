@@ -22,6 +22,15 @@ if (!publicApiUrl) {
   throw new Error('NEXT_PUBLIC_API_URL must be configured before the frontend builds')
 }
 
+// Picture media queries must use the same values as Tailwind's design tokens.
+const tokenCss = fs.readFileSync(path.join(__dirname, 'src/styles/tokens.css'), 'utf8')
+const breakpoints = Object.fromEntries(
+  [...tokenCss.matchAll(/--breakpoint-([a-z]+):\s*([\d.]+px);/g)].map((match) => [
+    match[1],
+    match[2],
+  ]),
+)
+
 const nextConfig = {
   experimental: { globalNotFound: true },
   // Let next-intl resolve the original localized URL before rewriting it.
@@ -31,7 +40,7 @@ const nextConfig = {
     ? path.resolve(__dirname, '..')
     : __dirname,
   // This is intentionally public and contains no credentials.
-  env: { NEXT_PUBLIC_API_URL: publicApiUrl },
+  env: { NEXT_PUBLIC_API_URL: publicApiUrl, NEXT_PUBLIC_BREAKPOINTS: JSON.stringify(breakpoints) },
   async headers() {
     return [
       {

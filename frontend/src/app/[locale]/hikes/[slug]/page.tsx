@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { IconArrowLeft as ArrowLeft } from '@tabler/icons-react'
 
+import { HikeMap } from './components/HikeMap/HikeMap'
+
 import { HikeGallery } from './components/HikeGallery/HikeGallery'
 
 import { HikeNavigation, type HikeNavigationItem } from './components/HikeNavigation'
@@ -21,7 +23,7 @@ import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname, Link } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
-import { getHike, getPhotos } from '@/api/hikes'
+import { getHike, getPhotos, getHikeMaps } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
@@ -85,7 +87,7 @@ export default async function HikePage({ params }: Props) {
   }
 
   const t = await getTranslations('Site')
-  const galleryPage = await getPhotos(hike.id, locale)
+  const [galleryPage, maps] = await Promise.all([getPhotos(hike.id, locale), getHikeMaps(hike.id)])
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const hasJourney = hasHikeJourney(presentation.details)
@@ -98,6 +100,7 @@ export default async function HikePage({ params }: Props) {
   const navigationItems: HikeNavigationItem[] = [
     ...(isActive && cards.length > 0 ? [resourceItem] : []),
     { id: 'story', label: t('about') },
+    ...(maps.length > 0 ? [{ id: 'map' as const, label: t('map.title') }] : []),
     ...(hasJourney ? [{ id: 'journey' as const, label: t('journey.title') }] : []),
     ...(hike.location ? [{ id: 'trail' as const, label: t('trailOrArea') }] : []),
     ...(!isActive && cards.length > 0 ? [resourceItem] : []),
@@ -177,6 +180,7 @@ export default async function HikePage({ params }: Props) {
                 )}
               </div>
             </HikeSection>
+            {maps.length > 0 && <HikeMap images={maps} hikeTitle={hike.translation.title} />}
             {hasJourney && <HikeJourney details={presentation.details} status={hike.status} />}
             {hike.location && locationData && (
               <TrailFacts
