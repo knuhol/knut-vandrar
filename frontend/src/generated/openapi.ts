@@ -1070,6 +1070,9 @@ export const openapi = {
               }
             }
           },
+          "404": {
+            "description": "Hike not found"
+          },
           "422": {
             "description": "Validation Error",
             "content": {

@@ -1,6 +1,7 @@
 export const messages = {
   sv: {
     Site: {
+      map: { title: 'Vandringskarta', alt: 'Karta över hela rutten för {title}' },
       privacyPolicy: 'Integritetspolicy',
       gallery: {
         defaultAlt: 'Bild från vandringen',
@@ -198,6 +199,7 @@ export const messages = {
 
   en: {
     Site: {
+      map: { title: 'Hike map', alt: 'Map showing the complete route for {title}' },
       previewAccess: {
         title: 'A glimpse of the next step.',
         description:
@@ -405,6 +407,7 @@ export const messages = {
 
   cs: {
     Site: {
+      map: { title: 'Mapa hiku', alt: 'Mapa celé trasy hiku {title}' },
       privacyPolicy: 'Zásady ochrany soukromí',
       gallery: {
         defaultAlt: 'Fotka z hiku',

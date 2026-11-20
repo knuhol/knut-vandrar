@@ -1,7 +1,7 @@
 # Static hike maps
 
-Static maps are manually generated assets. They are not displayed on public pages,
-added to galleries, or substituted for cover photos. Each hike's selected GPX
+Static maps are manually generated assets, displayed in a dedicated Hike map
+section on hike pages. They remain separate from galleries and cover photos. Each hike's selected GPX
 collection produces four independently framed WebP images, each showing the whole
 hike. The approved combined hillshade/contour treatment, brand palette, endpoint
 labels and country inset are now the default. No persistent renderer service is required.
@@ -75,7 +75,7 @@ The generator does not automatically migrate, start, or inspect containers.
 `--preview` always renders all four variants and never publishes to the database.
 Preview folders also contain framing/terrain diagnostics and `provenance.json`.
 Without `--preview`, generation stores images in the existing map media records.
-No frontend display is enabled. The guided flow asks for label detail, terrain,
+Stored images are displayed on hike pages; previews are not. The guided flow asks for label detail, terrain,
 preview/store and output directory; explicit command-line targets use defaults
 without additional parameter prompts.
 
@@ -245,8 +245,8 @@ also transfers them. No extra volume or backup command is needed.
 
 Generate locally, review images, then use the existing media transfer commands to
 move them to dev/prod. Both environments must have migration 019 and this version
-of the media tools. The public map read API is available, but public pages do not request or display
-it. Generation remains manual; imports and page requests never start Chromium.
+of the media tools. The public map read API supplies the hike page. Generation remains manual;
+imports and page requests never start Chromium.
 
 ## Validation before bulk generation
 
@@ -289,3 +289,17 @@ inset. Country geometry comes from the public-domain Natural Earth outline in
 features from OpenFreeMap tiles at up to zoom 11; the sampler reduces zoom when
 needed to stay within an 8192px viewport. It does not introduce another basemap.
 See `maps/TOPOGRAPHY.md` for shared elevation and contour runtime configuration.
+
+## Hike page display
+
+The server fetches map metadata alongside gallery metadata. A Hike map section
+follows the story, with a corresponding contents-menu link; both are omitted
+when no stored images exist. Section headings and alternative text are translated
+into English, Swedish and Czech. Geographic names stay local within the images.
+
+A native `picture` selects mobile/tablet/desktop/wide variants at the existing
+breakpoints. `next.config.mjs` derives picture media values from the design-token
+CSS at build time; no additional environment configuration is needed. Images
+retain their full aspect ratio, are lazy-loaded and bypass redundant image
+recompression. The browser downloads the selected variant, with a fallback for
+partial image sets. No interactive map renderer is shipped to public pages.
