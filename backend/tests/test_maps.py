@@ -169,7 +169,7 @@ def test_generation_is_atomic_idempotent_and_detects_changes(
                 Path(job["output"]) / f"{name}.png"
             )
 
-    monkeypatch.setattr(cli.subprocess, "run", render)
+    monkeypatch.setattr(subprocess, "run", render)
     monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
     assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
     assert not calls
@@ -192,7 +192,7 @@ def test_generation_is_atomic_idempotent_and_detects_changes(
     def fail(*args: Any, **kwargs: Any) -> None:
         raise subprocess.CalledProcessError(1, "node")
 
-    monkeypatch.setattr(cli.subprocess, "run", fail)
+    monkeypatch.setattr(subprocess, "run", fail)
     with pytest.raises(subprocess.CalledProcessError):
         cli.generate(factory, root, hike_id)
     with factory() as db:
@@ -345,7 +345,7 @@ def test_preview_preserves_database_and_tracks_presentation(
                 Path(job["output"]) / f"{name}.png"
             )
 
-    monkeypatch.setattr(cli.subprocess, "run", render)
+    monkeypatch.setattr(subprocess, "run", render)
     monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
     assert "preview generated" in cli.generate(
         factory,
@@ -386,7 +386,7 @@ def test_terrain_classification_is_in_render_inputs_and_freshness(
                 Path(job["output"]) / f"{name}.png"
             )
 
-    monkeypatch.setattr(cli.subprocess, "run", render)
+    monkeypatch.setattr(subprocess, "run", render)
     monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
     assert cli.generate(factory, root, hike_id) == "generated"
     assert cli.generate(factory, root, hike_id, check=True) == "up to date"
@@ -477,7 +477,7 @@ def test_database_stop_controls_generation_and_freshness(
                 Path(job["output"]) / f"{name}.png"
             )
 
-    monkeypatch.setattr(cli.subprocess, "run", render)
+    monkeypatch.setattr(subprocess, "run", render)
     monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
     assert cli.generate(factory, root, hike_id) == "generated"
     assert cli.generate(factory, root, hike_id, check=True) == "up to date"
