@@ -1036,6 +1036,107 @@ export const openapi = {
         }
       }
     },
+    "/api/hikes/{hike_id}/maps": {
+      "get": {
+        "tags": [
+          "hikes"
+        ],
+        "summary": "List Hike Maps",
+        "operationId": "list_hike_maps_api_hikes__hike_id__maps_get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HikeMapRead"
+                  },
+                  "title": "Response List Hike Maps Api Hikes  Hike Id  Maps Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hikes/{hike_id}/maps/{variant}": {
+      "get": {
+        "tags": [
+          "hikes"
+        ],
+        "summary": "Get Hike Map",
+        "operationId": "get_hike_map_api_hikes__hike_id__maps__variant__get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          },
+          {
+            "name": "variant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Variant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated WebP map",
+            "content": {
+              "image/webp": {}
+            }
+          },
+          "304": {
+            "description": "Image unchanged"
+          },
+          "404": {
+            "description": "Map not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/hikes/{locale}/{slug}": {
       "get": {
         "tags": [
@@ -4070,8 +4171,96 @@ export const openapi = {
         ],
         "title": "HikeLocalizedRead"
       },
+      "HikeMapRead": {
+        "properties": {
+          "variant": {
+            "type": "string",
+            "title": "Variant"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant",
+          "width",
+          "height",
+          "url",
+          "sha256"
+        ],
+        "title": "HikeMapRead"
+      },
       "HikeRead": {
         "properties": {
+          "stop_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Latitude",
+            "description": "Stopping latitude for an aborted hike. Clear both stopping coordinates to remove it."
+          },
+          "stop_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Longitude",
+            "description": "Stopping longitude; projected onto the selected GPX route during generation."
+          },
+          "stop_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^\\d+(?:[A-Za-z]+|(?:\\.\\d+)+)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Stage",
+            "description": "Optional GPX stage label, such as 11 or 11B, to disambiguate nearby stages."
+          },
           "start_latitude": {
             "anyOf": [
               {
@@ -4623,6 +4812,49 @@ export const openapi = {
       },
       "HikeWrite": {
         "properties": {
+          "stop_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90,
+                "minimum": -90
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Latitude",
+            "description": "Stopping latitude for an aborted hike. Clear both stopping coordinates to remove it."
+          },
+          "stop_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180,
+                "minimum": -180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Longitude",
+            "description": "Stopping longitude; projected onto the selected GPX route during generation."
+          },
+          "stop_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^\\d+(?:[A-Za-z]+|(?:\\.\\d+)+)?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Stage",
+            "description": "Optional GPX stage label, such as 11 or 11B, to disambiguate nearby stages."
+          },
           "start_latitude": {
             "anyOf": [
               {

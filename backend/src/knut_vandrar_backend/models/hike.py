@@ -57,6 +57,16 @@ class Hike(Base):
             "end_latitude BETWEEN -90 AND 90 AND end_longitude BETWEEN -180 AND 180",
             name="ck_end_coordinates_range",
         ),
+        CheckConstraint(
+            "(stop_latitude IS NULL) = (stop_longitude IS NULL)", name="ck_stop_coordinates_pair"
+        ),
+        CheckConstraint(
+            "stop_latitude BETWEEN -90 AND 90 AND stop_longitude BETWEEN -180 AND 180",
+            name="ck_stop_coordinates_range",
+        ),
+        CheckConstraint(
+            "stop_stage IS NULL OR stop_latitude IS NOT NULL", name="ck_stop_stage_coordinates"
+        ),
         CheckConstraint("(start_stage IS NULL) = (end_stage IS NULL)", name="ck_stages_pair"),
         CheckConstraint("start_stage > 0 AND end_stage > 0", name="ck_stages_positive"),
         CheckConstraint("distance_km IS NULL OR distance_km >= 0", name="ck_hike_distance"),
@@ -107,6 +117,9 @@ class Hike(Base):
     end_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     start_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
     end_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    stop_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    stop_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    stop_stage: Mapped[str | None] = mapped_column(String(40))
     direction: Mapped[Direction | None] = mapped_column(
         SqlEnum(
             Direction, name="direction", values_callable=lambda values: [v.value for v in values]

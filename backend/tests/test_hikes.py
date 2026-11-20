@@ -1904,3 +1904,75 @@ def test_collection_choices_are_scoped_paginated_and_private(client: TestClient)
     )
     client.headers.pop("Authorization")
     assert client.get("/api/track-collections", params=query).status_code == 401
+
+
+def test_stopping_point_round_trip_clear_and_validation(client: TestClient) -> None:
+    payload = _planned_payload(stop_latitude=59.84081, stop_longitude=15.96310, stop_stage="11")
+    response = client.post("/api/hikes", json=payload)
+    assert response.status_code == 201, response.text
+    hike = response.json()
+    assert hike["stop_latitude"] == 59.84081
+    assert hike["stop_longitude"] == 15.96310
+    assert hike["stop_stage"] == "11"
+    assert client.get(f"/api/hikes/{hike['id']}").json()["stop_stage"] == "11"
+    for changes in (
+        {"stop_longitude": None},
+        {"stop_latitude": 91},
+        {"stop_longitude": -181},
+        {"stop_stage": "garbage"},
+        {"stop_latitude": None, "stop_longitude": None},
+    ):
+        invalid = client.put(f"/api/hikes/{hike['id']}", json={**payload, **changes})
+        assert invalid.status_code == 422, invalid.text
+    cleared = client.put(f"/api/hikes/{hike['id']}", json=_planned_payload())
+    assert cleared.status_code == 200, cleared.text
+    assert all(
+        cleared.json()[key] is None for key in ("stop_latitude", "stop_longitude", "stop_stage")
+    )
+
+
+def test_public_map_metadata_images_etag_and_missing_variants(client: TestClient) -> None:
+    import hashlib
+
+    from knut_vandrar_backend.models.map import HikeMapImage
+
+    hike_id = client.post("/api/hikes", json=_planned_payload()).json()["id"]
+    assert client.get(f"/api/hikes/{hike_id}/maps").json() == []
+    output = BytesIO()
+    Image.new("RGB", (32, 24)).save(output, "WEBP")
+    content = output.getvalue()
+    digest = hashlib.sha256(content).hexdigest()
+    with app.state.testing_session_local.begin() as db:
+        db.add(
+            HikeMapImage(
+                hike_id=UUID(hike_id),
+                variant="mobile",
+                width=32,
+                height=24,
+                content=content,
+                sha256=digest,
+                fingerprint="a" * 64,
+                provenance={"generated_at": "2026-11-20T12:00:00+00:00"},
+            )
+        )
+    # Map reads are public, while normal hike edits retain their existing auth.
+    client.headers.pop("Authorization")
+    listing = client.get(f"/api/hikes/{hike_id}/maps")
+    assert listing.status_code == 200, listing.text
+    image = listing.json()[0]
+    assert (image["variant"], image["width"], image["height"], image["sha256"]) == (
+        "mobile",
+        32,
+        24,
+        digest,
+    )
+    served = client.get(image["url"])
+    assert served.status_code == 200
+    assert served.content == content
+    assert served.headers["content-type"] == "image/webp"
+    assert served.headers["etag"] == f'"{digest}"'
+    assert served.headers["x-content-type-options"] == "nosniff"
+    cached = client.get(image["url"], headers={"If-None-Match": served.headers["etag"]})
+    assert cached.status_code == 304 and not cached.content
+    assert client.get(f"/api/hikes/{hike_id}/maps/wide").status_code == 404
+    assert client.get("/api/hikes/00000000-0000-0000-0000-000000000000/maps").status_code == 404

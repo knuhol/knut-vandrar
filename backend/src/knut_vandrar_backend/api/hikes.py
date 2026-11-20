@@ -24,6 +24,7 @@ from knut_vandrar_backend.api.locations import read_location
 from knut_vandrar_backend.api.schemas.hike import (
     HikeEnglishContent,
     HikeLocalizedRead,
+    HikeMapRead,
     HikeRead,
     HikeSlugRead,
     HikeSummaryRead,
@@ -43,6 +44,7 @@ from knut_vandrar_backend.models.hike import (
     HikeTranslation,
 )
 from knut_vandrar_backend.models.location import HikeAchievement, HikeOvernight, HikingLocation
+from knut_vandrar_backend.models.map import HikeMapImage
 from knut_vandrar_backend.models.reference import InfoCardType
 from knut_vandrar_backend.models.translation import TranslationJob
 from knut_vandrar_backend.tracks.selection import validate_selection
@@ -161,6 +163,52 @@ def get_hike_cover_image(hike_id: UUID, request: Request, db: DatabaseSession) -
         hike.cover_image.sha256,
         request,
     )
+
+
+@router.get("/{hike_id}/maps", response_model=list[HikeMapRead])
+def list_hike_maps(hike_id: UUID, request: Request, db: DatabaseSession) -> list[HikeMapRead]:
+    if db.get(Hike, hike_id) is None:
+        raise HTTPException(404, "Hike not found")
+    # Keep binary content out of metadata queries.
+    rows = db.execute(
+        select(
+            HikeMapImage.variant,
+            HikeMapImage.width,
+            HikeMapImage.height,
+            HikeMapImage.sha256,
+            HikeMapImage.provenance,
+        )
+        .where(HikeMapImage.hike_id == hike_id)
+        .order_by(HikeMapImage.variant)
+    )
+    return [
+        HikeMapRead(
+            variant=row.variant,
+            width=row.width,
+            height=row.height,
+            sha256=row.sha256,
+            generated_at=row.provenance.get("generated_at"),
+            url=str(request.url_for("get_hike_map", hike_id=str(hike_id), variant=row.variant)),
+        )
+        for row in rows
+    ]
+
+
+@router.get(
+    "/{hike_id}/maps/{variant}",
+    name="get_hike_map",
+    response_class=Response,
+    responses={
+        200: {"content": {"image/webp": {}}, "description": "Generated WebP map"},
+        304: {"description": "Image unchanged"},
+        404: {"description": "Map not found"},
+    },
+)
+def get_hike_map(hike_id: UUID, variant: str, request: Request, db: DatabaseSession) -> Response:
+    image = db.get(HikeMapImage, (hike_id, variant))
+    if image is None:
+        raise HTTPException(404, "Hike map not found")
+    return image_response(image.content, "image/webp", image.sha256, request)
 
 
 @router.get(
@@ -537,6 +585,9 @@ def _replace_cards(db: Session, hike: Hike, payload: HikeWrite) -> None:
 
 
 EXTRA_FIELDS = (
+    "stop_latitude",
+    "stop_longitude",
+    "stop_stage",
     "start_latitude",
     "start_longitude",
     "end_latitude",

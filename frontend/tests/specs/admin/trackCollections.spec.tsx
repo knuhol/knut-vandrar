@@ -74,4 +74,7 @@ test('new hikes request trail choices and selection is grouped with route fields
   )
   const route = fieldGroups(schemaFor('HikeWrite')).find((group) => group.title === 'route')
   expect(route?.fields).toContain('track_collection_id')
+  expect(route?.fields).toEqual(
+    expect.arrayContaining(['stop_latitude', 'stop_longitude', 'stop_stage']),
+  )
 })

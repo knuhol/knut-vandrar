@@ -309,6 +309,7 @@ export function Fields({
         label={labelText}
         required={required}
         value={value ?? ''}
+        helperText={resolve(schema).description || field.description}
         multiline={markdown || label.includes('note') || label === 'description'}
         minRows={markdown ? 4 : undefined}
         type={numeric ? 'number' : field.format === 'date' ? 'date' : 'text'}

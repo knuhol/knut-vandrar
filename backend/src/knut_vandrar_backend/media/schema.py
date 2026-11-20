@@ -1,5 +1,6 @@
 """Versioned, environment-independent media archive records."""
 
+import re
 from datetime import datetime
 from typing import Any, Literal, Self
 from uuid import UUID
@@ -9,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from knut_vandrar_backend.media.storage import PHOTO_FILES
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
 
-FORMAT_VERSION: Literal[3] = 3
+FORMAT_VERSION: Literal[4] = 4
 MAX_RECORD_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 25_000_000
 DEFAULT_MAX_BYTES = 100 * 1024**3
@@ -22,7 +23,7 @@ class Record(BaseModel):
 
 class Manifest(Record):
     format: Literal["knut-vandrar-media"] = "knut-vandrar-media"
-    version: Literal[1, 2, 3] = FORMAT_VERSION
+    version: Literal[1, 2, 3, 4] = FORMAT_VERSION
     schema_revision: str = Field(min_length=1, max_length=100)
 
 
@@ -44,7 +45,8 @@ class PhotoText(Record):
 
 
 class Asset(Record):
-    kind: Literal["photo", "cover", "logo", "collection", "gpx", "track_selection"]
+    kind: Literal["photo", "cover", "logo", "collection", "gpx", "track_selection", "map"]
+    map_data: dict[str, Any] = Field(default_factory=dict)
     track_owner: Literal["trail", "hike"] = "trail"
     track_data: dict[str, Any] = Field(default_factory=dict)
     id: UUID
@@ -59,6 +61,22 @@ class Asset(Record):
 
     @model_validator(mode="after")
     def validate_asset(self) -> Self:
+        if self.kind == "map":
+            from knut_vandrar_backend.maps.assets import MapData
+
+            data = MapData.model_validate(self.map_data)
+            if (
+                self.id != self.owner_id
+                or self.content_type != "image/webp"
+                or self.translations
+                or self.track_data
+                or set(self.files) != set(data.variants)
+                or any(not re.fullmatch(r"[a-z][a-z0-9_-]{0,39}", key) for key in self.files)
+            ):
+                raise ValueError("Invalid generated map asset")
+            return self
+        if self.map_data:
+            raise ValueError("Only map assets can contain map metadata")
         if self.kind in {"collection", "gpx", "track_selection"}:
             if self.translations:
                 raise ValueError("Track assets cannot contain photo translations")
