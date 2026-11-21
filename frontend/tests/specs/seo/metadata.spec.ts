@@ -106,17 +106,17 @@ describe('public URL and crawler metadata', () => {
   })
 
   test.each([
-    [undefined, 0],
-    ['0', 0],
-    ['6', 6],
-    ['7', 6],
-    ['12', 12],
-    ['-1', 0],
-    ['NaN', 0],
-    ['1e2', 0],
-    [['6', '12'], 0],
-    ['9007199254740992', 0],
-  ] as const)('normalizes collection offset %p', (value, expected) => {
+    ['missing offset', undefined, 0],
+    ['first page', '0', 0],
+    ['second page', '6', 6],
+    ['offset between page boundaries', '7', 6],
+    ['third page', '12', 12],
+    ['negative offset', '-1', 0],
+    ['nonnumeric offset', 'NaN', 0],
+    ['scientific notation', '1e2', 0],
+    ['duplicate query parameters', ['6', '12'], 0],
+    ['unsafe integer', '9007199254740992', 0],
+  ] as const)('normalizes pagination: %s', (_case, value, expected) => {
     expect(collectionOffset(value as string | string[] | undefined)).toBe(expected)
   })
 })

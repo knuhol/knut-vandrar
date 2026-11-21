@@ -1,8 +1,13 @@
-import norway from "./data/norway.json" with { type: "json" };
+import countries from "./data/countries.json" with { type: "json" };
 
-/** Conservative intersection: include a 25 km margin for outline and DEM edge uncertainty. */
+/** Credit Norwegian terrain only when the visible viewport overlaps Norway. */
 export function includesNorwegianTerrain(bounds) {
-  if (!bounds) return true;
+  return includesCountryTerrain("Norway", bounds);
+}
+
+export function includesCountryTerrain(name, bounds) {
+  const country = countries.features.find((feature) => feature.properties.name === name);
+  if (!country || !bounds) return true;
   const [[west, south], [east, north]] = bounds;
   if (
     ![west, south, east, north].every(Number.isFinite) ||
@@ -10,19 +15,7 @@ export function includesNorwegianTerrain(bounds) {
     east - west >= 180
   )
     return true;
-  const latMargin = 25 / 111;
-  const lonMargin =
-    latMargin /
-    Math.max(
-      0.01,
-      Math.cos((Math.max(Math.abs(south), Math.abs(north)) * Math.PI) / 180),
-    );
-  const box = [
-    west - lonMargin,
-    south - latMargin,
-    east + lonMargin,
-    north + latMargin,
-  ];
+  const box = [west, south, east, north];
   const insideBox = ([x, y]) =>
     x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3];
   const insideRing = ([x, y], ring) => {
@@ -52,7 +45,9 @@ export function includesNorwegianTerrain(bounds) {
     }
     return true;
   };
-  return norway.geometry.coordinates.some(([ring]) => {
+  const polygons = country.geometry.type === "Polygon"
+    ? [country.geometry.coordinates] : country.geometry.coordinates;
+  return polygons.some(([ring]) => {
     if (ring.some(insideBox)) return true;
     if (
       [
@@ -71,6 +66,7 @@ export function terrainAttribution(provider, bounds) {
   return [
     provider.attribution,
     ...(includesNorwegianTerrain(bounds) ? [provider.norwayAttribution] : []),
+    ...(includesCountryTerrain("Finland", bounds) ? [provider.finlandAttribution] : []),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -103,17 +99,17 @@ export function layoutAttribution(element, basemap, terrain = "") {
   setRows([rows.join(" · ")]);
   const css = getComputedStyle(element);
   const available =
-    element.clientWidth -
+    element.getBoundingClientRect().width -
     parseFloat(css.paddingLeft) -
     parseFloat(css.paddingRight);
   if (
     terrain &&
-    element.firstElementChild.getBoundingClientRect().width > available
+    element.firstElementChild.getBoundingClientRect().width > available + 0.01
   )
     setRows(rows);
   const widest = Math.max(
     ...Array.from(element.children, (row) => row.getBoundingClientRect().width),
   );
-  if (widest > available)
+  if (widest > available + 0.01)
     element.style.fontSize = `${Math.floor((1200 * available) / widest) / 100}px`;
 }

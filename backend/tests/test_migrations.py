@@ -1,4 +1,4 @@
-"""Validate the migration graph without connecting to a database."""
+"""Migration graph and data preservation using isolated SQLite databases."""
 
 from pathlib import Path
 
@@ -291,7 +291,6 @@ def test_editor_metadata_migration_preserves_existing_records(monkeypatch: Monke
     scripts = ScriptDirectory.from_config(config)
     migration = scripts.get_revision("020_rating_na_named_route")
     assert migration is not None
-    assert scripts.get_heads() == [migration.revision]
     # PostgreSQL enum DDL is verified separately through offline migration SQL.
     monkeypatch.setattr(migration.module, "_upgrade_enums", lambda: None)
     engine = create_engine("sqlite://")

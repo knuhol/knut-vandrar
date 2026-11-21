@@ -14,6 +14,16 @@ jest.mock('@/app/[locale]/hikes/[slug]/components/VideoModal/VideoModal', () => 
   ),
 }))
 
+const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+
+afterEach(() => {
+  if (originalClipboard) {
+    Object.defineProperty(navigator, 'clipboard', originalClipboard)
+  } else {
+    Reflect.deleteProperty(navigator, 'clipboard')
+  }
+})
+
 function renderCards(cards: Hike['cards']) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
@@ -22,7 +32,7 @@ function renderCards(cards: Hike['cards']) {
   )
 }
 
-test('active tracking password is selectable above the cards, outside the link', () => {
+test('active tracking exposes a selectable password outside the resource link', () => {
   renderCards([
     {
       type: 'live_position',
@@ -42,11 +52,21 @@ test('active tracking password is selectable above the cards, outside the link',
 })
 
 test.each([
-  { state: 'inactive' as const, url: 'https://share.garmin.com/hike', password: 'hidden' },
-  { state: 'active' as const, url: null, password: 'hidden' },
-  { state: 'active' as const, url: 'https://share.garmin.com/hike', password: null },
-])('omits the password when tracking or the password is unavailable: %j', (card) => {
-  renderCards([{ type: 'live_position', ...card }])
+  {
+    reason: 'tracking is inactive',
+    state: 'inactive' as const,
+    url: 'https://share.garmin.com/hike',
+    password: 'hidden',
+  },
+  { reason: 'tracking URL is missing', state: 'active' as const, url: null, password: 'hidden' },
+  {
+    reason: 'password is missing',
+    state: 'active' as const,
+    url: 'https://share.garmin.com/hike',
+    password: null,
+  },
+])('omits the password when $reason', ({ state, url, password }) => {
+  renderCards([{ type: 'live_position', state, url, password }])
 
   expect(screen.queryByText('Live tracking password')).not.toBeInTheDocument()
   expect(screen.queryByText('hidden')).not.toBeInTheDocument()

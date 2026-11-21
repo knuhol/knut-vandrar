@@ -24,7 +24,7 @@ jest.mock('@/app/admin/ui/Translations', () => ({
 }))
 jest.mock('@/app/admin/ui/ImagePreview', () => ({ ImagePreview: () => null }))
 
-test('opening a hike mounts both editors without duplicate sibling keys', async () => {
+test('opening a hike loads the photo and achievement editors without React errors', async () => {
   jest
     .mocked(api)
     .mockResolvedValue({ id: 'hike-id', status: 'planned', english: { title: 'Muddus' } })
@@ -34,9 +34,7 @@ test('opening a hike mounts both editors without duplicate sibling keys', async 
     fireEvent.click(screen.getByRole('button', { name: messages.edit.trim() }))
     await screen.findByText('Photo editor')
     expect(screen.getByText('Achievement editor')).toBeInTheDocument()
-    expect(
-      error.mock.calls.some((args) => args.some((value) => String(value).includes('same key'))),
-    ).toBe(false)
+    expect(error).not.toHaveBeenCalled()
   } finally {
     error.mockRestore()
   }

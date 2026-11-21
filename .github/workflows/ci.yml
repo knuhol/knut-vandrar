@@ -41,10 +41,8 @@ jobs:
         run: npm --workspace frontend run lint
       - name: Test with Jest
         run: npm --workspace frontend run test:ci
-      - name: Test Plotaroute extension
-        run: |
-          node tools/tests/plotaroute-extension.test.mjs
-          node tools/tests/plotaroute-collection.test.mjs
+      - name: Test map and Plotaroute tools
+        run: node --test tools/tests/*.test.mjs
       - name: Build
         run: npm --workspace frontend run build
 

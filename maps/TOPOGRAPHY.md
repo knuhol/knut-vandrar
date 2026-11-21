@@ -92,8 +92,14 @@ https://www.kartverket.no/en/api-and-data/terms-of-use
 
 `maps/attribution.mjs` selects the Norwegian source credit using the complete
 visible viewport, rather than the hike's route or database country tags. A
-public-domain Norwegian outline plus a conservative 25 km margin keeps the
+public-domain Norwegian outline intersected with the visible viewport keeps the
 credit near borders. Missing or ambiguous bounds retain the credit. Clearly
 Norway-free views omit Kartverket; Mapterhorn and the source catalogue URL remain.
 The renderer rechecks geography after refitting around a shorter attribution row.
 Actual per-variant credits are recorded in framing diagnostics and provenance.
+
+Finland uses the National Land Survey of Finland 2025 2 m elevation model
+through Mapterhorn. Finnish and Norwegian credits are selected independently
+from intersection with the visible viewport, without a border margin. The locator
+uses route coordinates and Natural Earth country outlines rather than Sweden
+as a fixed default. Existing images must be regenerated to apply these changes.

@@ -120,40 +120,89 @@ test("DEM protocol errors remain observable for capture readiness", async () => 
   assert.equal(handlers.size, 0);
 });
 
-test("Kartverket attribution follows the visible area rather than hike identity", async () => {
-  const { terrainAttribution, includesNorwegianTerrain } =
-    await import("../../maps/attribution.mjs");
-  const provider = {
-    attribution: "Terrain © Mapterhorn",
-    norwayAttribution: "© Kartverket (CC BY 4.0)",
-  };
-  for (const bounds of [
-    [
+const { terrainAttribution, includesNorwegianTerrain } =
+  await import("../../maps/attribution.mjs");
+const provider = {
+  attribution: "Mapterhorn",
+  norwayAttribution: "Kartverket",
+  finlandAttribution: "NLS Finland",
+};
+
+for (const { name, bounds, expected } of [
+  {
+    name: "southern Sweden",
+    bounds: [
       [14, 58],
       [17, 60],
     ],
-    [
+    expected: "Mapterhorn",
+  },
+  {
+    name: "central Sweden",
+    bounds: [
       [15, 58.5],
       [19, 60.5],
     ],
-  ]) {
-    assert.equal(includesNorwegianTerrain(bounds), false);
-    assert.equal(terrainAttribution(provider, bounds), provider.attribution);
-  }
-  for (const bounds of [
-    [
+    expected: "Mapterhorn",
+  },
+  {
+    name: "Norwegian border",
+    bounds: [
       [11, 62.5],
       [13, 63.5],
     ],
-    [
+    expected: "Mapterhorn · Kartverket",
+  },
+  {
+    name: "southern Norway",
+    bounds: [
       [10, 60],
       [11, 61],
     ],
-    [
-      [12, 63],
-      [12.1, 63.1],
+    expected: "Mapterhorn · Kartverket",
+  },
+  {
+    name: "small Norwegian viewport",
+    bounds: [
+      [10, 63],
+      [10.1, 63.1],
     ],
-  ])
-    assert.match(terrainAttribution(provider, bounds), /Kartverket/);
+    expected: "Mapterhorn · Kartverket",
+  },
+  {
+    name: "Finland",
+    bounds: [
+      [25, 61],
+      [26, 62],
+    ],
+    expected: "Mapterhorn · NLS Finland",
+  },
+  {
+    name: "Finnish-Norwegian border",
+    bounds: [
+      [25, 68.5],
+      [27, 70],
+    ],
+    expected: "Mapterhorn · Kartverket · NLS Finland",
+  },
+  {
+    name: "Lemmenjoki without Norwegian terrain",
+    bounds: [
+      [25.8, 68.6],
+      [26.1, 68.8],
+    ],
+    expected: "Mapterhorn · NLS Finland",
+  },
+]) {
+  test(`terrain attribution credits only visible providers: ${name}`, () => {
+    assert.equal(terrainAttribution(provider, bounds), expected);
+    assert.equal(
+      includesNorwegianTerrain(bounds),
+      expected.includes("Kartverket"),
+    );
+  });
+}
+
+test("terrain attribution retains provider credits when bounds are unavailable", () => {
   assert.match(terrainAttribution(provider), /Kartverket/);
 });

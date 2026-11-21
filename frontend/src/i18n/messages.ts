@@ -235,7 +235,7 @@ export const messages = {
         showMore: 'Show more photos',
       },
       achievements: {
-        title: 'Achievements',
+        title: 'Milestones',
         goals: 'Goals for this hike',
       },
       accommodation: {

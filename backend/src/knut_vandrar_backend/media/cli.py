@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from PIL.Image import DecompressionBombError, DecompressionBombWarning
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from knut_vandrar_backend.media.archive import MediaError, export_archive
 from knut_vandrar_backend.media.progress import Progress
@@ -33,13 +34,43 @@ def _unique_mapping(values: list[tuple[UUID, UUID]]) -> dict[UUID, UUID]:
     return result
 
 
+def _resolve_hikes(db: Session, values: list[str]) -> tuple[UUID, ...]:
+    from knut_vandrar_backend.tracks.cli import find_targets
+
+    identifiers = []
+    for value in values:
+        try:
+            identifier = UUID(value)
+        except ValueError:
+            title = value.strip()
+            if not title:
+                raise MediaError("Hike title must not be empty") from None
+            matches = find_targets(db, trail=None, hike=title)
+            if not matches:
+                raise MediaError(f"No hike matches: {value}") from None
+            if len(matches) > 1:
+                candidates = "; ".join(f"{name} ({key})" for key, name in matches)
+                raise MediaError(
+                    f"Ambiguous hike title: {value}. Use a UUID: {candidates}"
+                ) from None
+            identifier = matches[0][0]
+        identifiers.append(identifier)
+    return tuple(dict.fromkeys(identifiers))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Transfer images and photo metadata between environments"
+        description="Transfer images, GPX files, and metadata between environments"
     )
     commands = parser.add_subparsers(dest="command", required=True)
     export = commands.add_parser("export", help="Write a portable tar archive to stdout")
-    export.add_argument("--hike", type=UUID, action="append", default=[])
+    export.add_argument(
+        "--hike",
+        action="append",
+        default=[],
+        metavar="UUID_OR_TITLE",
+        help="UUID or case-insensitive partial title in any supported language",
+    )
     export.add_argument("--location", type=UUID, action="append", default=[])
     importer = commands.add_parser("import", help="Read a portable tar archive from stdin")
     importer.add_argument("--dry-run", action="store_true")
@@ -68,11 +99,11 @@ def main() -> int:
                     db,
                     settings.media_root,
                     sys.stdout.buffer,
-                    hikes=tuple(args.hike),
+                    hikes=_resolve_hikes(db, args.hike),
                     locations=tuple(args.location),
                     progress=progress,
                 )
-            print(f"Exported {count} images.", file=sys.stderr)
+            print(f"Exported {count} assets.", file=sys.stderr)
         elif args.command == "recover":
             with transfer_lock(settings.media_root) as transfers:
                 count = recover_transfers(SessionLocal, settings.media_root, transfers)

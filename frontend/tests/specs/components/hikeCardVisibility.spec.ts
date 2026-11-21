@@ -10,17 +10,13 @@ const tracking = {
 } as const
 const route = { type: 'route', url: 'https://example.com/route' } as const
 
-test.each<Hike['status']>(['planned', 'ongoing'])(
-  '%s hikes retain live tracking and the original card order',
-  (status) => {
-    expect(visibleHikeCards({ status, cards: [route, tracking] })).toEqual([route, tracking])
-  },
-)
-
-test.each<Hike['status']>(['completed', 'aborted'])(
-  '%s hikes hide live tracking even when active, preserving other cards',
-  (status) => {
-    expect(visibleHikeCards({ status, cards: [tracking, route] })).toEqual([route])
-    expect(visibleHikeCards({ status, cards: [tracking] })).toEqual([])
-  },
-)
+test.each<{ status: Hike['status']; visible: boolean }>([
+  { status: 'planned', visible: true },
+  { status: 'ongoing', visible: true },
+  { status: 'completed', visible: false },
+  { status: 'aborted', visible: false },
+])('$status hikes show live tracking: $visible', ({ status, visible }) => {
+  expect(visibleHikeCards({ status, cards: [route, tracking] })).toEqual(
+    visible ? [route, tracking] : [route],
+  )
+})

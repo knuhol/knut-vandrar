@@ -58,8 +58,12 @@ def test_bundle_partial_import_and_review_preservation(tmp_path: Path) -> None:
     assert data["routes"]["123"]["overrides"]["start"] == "Edited start"
 
 
-@pytest.mark.parametrize("filename", ["../outside.gpx", "/tmp/outside.gpx", "..\\outside.gpx"])
-def test_bundle_rejects_paths(tmp_path: Path, filename: str) -> None:
+@pytest.mark.parametrize(
+    "filename",
+    ["../outside.gpx", "/tmp/outside.gpx", "..\\outside.gpx"],
+    ids=["parent-directory-traversal", "absolute-path", "windows-directory-traversal"],
+)
+def test_bundle_rejects_unsafe_filenames(tmp_path: Path, filename: str) -> None:
     manifest, data = export(tmp_path)
     data["routes"][0]["filename"] = filename
     manifest.write_text(json.dumps(data))
@@ -102,7 +106,16 @@ def test_bundle_accepts_separate_download_directory(tmp_path: Path) -> None:
     assert "path" in list(BundleSource(manifest, downloads).read("20512"))[1]
 
 
-@pytest.mark.parametrize("answer", ["", "n", "y", "yes"])
+@pytest.mark.parametrize(
+    "answer",
+    ["", "n", "y", "yes"],
+    ids=[
+        "empty-answer-keeps-files",
+        "no-keeps-files",
+        "y-removes-downloads",
+        "yes-removes-downloads",
+    ],
+)
 def test_cleanup_only_removes_bundle_downloads_after_confirmation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, answer: str
 ) -> None:

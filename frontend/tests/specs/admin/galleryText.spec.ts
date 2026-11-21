@@ -40,20 +40,16 @@ describe('gallery translation drafts', () => {
     })
   })
 
-  test('tracks caption changes and clears dirty state when reverted', () => {
+  test.each([
+    { field: 'caption' as const, value: 'Andra natten' },
+    { field: 'alt' as const, value: 'New description' },
+    { field: 'alt' as const, value: '' },
+  ])('tracks $field edits to "$value" and clears dirty state when reverted', ({ field, value }) => {
     const baseline = photoText(swedish, 'sv')
-    const draft = { ...baseline, caption: 'Andra natten' }
+    const draft = { ...baseline, [field]: value }
 
-    expect(draft.alt).toBe(baseline.alt)
     expect(photoTextChanged(draft, baseline)).toBe(true)
-    expect(photoTextChanged({ ...draft, caption: baseline.caption }, baseline)).toBe(false)
-    expect(swedish.caption).toBe('Första natten')
-  })
-
-  test('tracks description-only edits, including clearing existing text', () => {
-    const baseline = photoText(swedish, 'sv')
-
-    expect(photoTextChanged({ ...baseline, alt: '' }, baseline)).toBe(true)
-    expect(photoTextChanged({ ...baseline }, baseline)).toBe(false)
+    expect(photoTextChanged({ ...draft, [field]: baseline[field] }, baseline)).toBe(false)
+    expect(photoText(swedish, 'sv')).toEqual(baseline)
   })
 })

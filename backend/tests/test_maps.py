@@ -339,7 +339,7 @@ def test_preview_preserves_database_and_tracks_presentation(
         job = json.loads(kwargs["input"])
         assert job["illustration"]["profile"] == "2"
         assert job["topography"]["mode"] == "hillshade"
-        assert job["country"]["type"] == "Feature"
+        assert "country" not in job  # Renderer derives the locator from route geometry.
         for name, size in job["config"]["variants"].items():
             Image.new("RGB", (size["width"], size["height"])).save(
                 Path(job["output"]) / f"{name}.png"
@@ -487,7 +487,11 @@ def test_database_stop_controls_generation_and_freshness(
     assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
 
 
-@pytest.mark.parametrize("level", ["auto", "1", "2", "3", "4", "5"])
+@pytest.mark.parametrize(
+    "level",
+    ["auto", "1", "2", "3", "4", "5"],
+    ids=["automatic", "density-1", "density-2", "density-3", "density-4", "density-5"],
+)
 def test_label_density_cli_choices(level: str, monkeypatch: pytest.MonkeyPatch) -> None:
     import sys
 
@@ -495,7 +499,11 @@ def test_label_density_cli_choices(level: str, monkeypatch: pytest.MonkeyPatch) 
     assert cli.parse_args().labels == level
 
 
-@pytest.mark.parametrize("level", ["0", "6", "detail", "overview"])
+@pytest.mark.parametrize(
+    "level",
+    ["0", "6", "detail", "overview"],
+    ids=["below-minimum", "above-maximum", "obsolete-detail-option", "obsolete-overview-option"],
+)
 def test_label_density_rejects_old_or_invalid_options(
     level: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:

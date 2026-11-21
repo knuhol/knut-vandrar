@@ -119,7 +119,6 @@ def generate(
             "route": route,
             "output": directory,
             "illustration": illustration,
-            "country": json.loads((ROOT / "maps/data/sweden.geojson").read_text()),
         }
         if terrain != "none":
             job["topography"] = {

@@ -41,12 +41,16 @@ test('an empty website ID disables collection with the template script URL', asy
 })
 
 test.each([
-  ['UMAMI_WEBSITE_ID', 'invalid'],
-  ['UMAMI_SCRIPT_URL', 'http://umami.vandrar.se/script.js'],
-  ['UMAMI_SCRIPT_URL', 'https://user:secret@umami.vandrar.se/script.js'],
-  ['UMAMI_SCRIPT_URL', 'https://umami.vandrar.se/script.js?token=private'],
-  ['UMAMI_SCRIPT_URL', 'https://umami.vandrar.se/script.js#fragment'],
-])('rejects invalid %s configuration', async (key, value) => {
+  ['invalid website ID', 'UMAMI_WEBSITE_ID', 'invalid'],
+  ['insecure script URL', 'UMAMI_SCRIPT_URL', 'http://umami.vandrar.se/script.js'],
+  [
+    'credentials in script URL',
+    'UMAMI_SCRIPT_URL',
+    'https://user:secret@umami.vandrar.se/script.js',
+  ],
+  ['query in script URL', 'UMAMI_SCRIPT_URL', 'https://umami.vandrar.se/script.js?token=private'],
+  ['fragment in script URL', 'UMAMI_SCRIPT_URL', 'https://umami.vandrar.se/script.js#fragment'],
+])('rejects tracker configuration with %s', async (_case, key, value) => {
   process.env[key] = value
   await expect(
     import(/* webpackChunkName: 'analytics-server-config' */ '@/config/server'),

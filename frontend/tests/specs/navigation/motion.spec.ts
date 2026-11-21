@@ -83,7 +83,10 @@ describe('motion duration', () => {
     expect(motionDuration(document.documentElement)).toBe(300)
   })
 
-  test.each(['', 'invalid'])('treats an invalid duration %s as zero', (token) => {
+  test.each([
+    ['missing token', ''],
+    ['unrecognized token', 'invalid'],
+  ])('uses zero duration for %s', (_case, token) => {
     durationToken = token
     expect(motionDuration(document.documentElement)).toBe(0)
   })

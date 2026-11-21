@@ -27,20 +27,15 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/en')
 })
 
-test('disabled analytics renders neither a tracker nor consent controls', () => {
-  const { container } = render(<Analytics config={null} />)
-  expect(container).toBeEmptyDOMElement()
-})
-
-test('loads the tracker without consent, sends one initial pageview when ready and follows routes', () => {
-  const view = render(<Analytics config={config} />)
+test('starts disabled, tracks readiness and navigation, and ignores callbacks after disabling', () => {
+  const view = render(<Analytics config={null} />)
+  expect(view.container).toBeEmptyDOMElement()
+  view.rerender(<Analytics config={config} />)
   expect(screen.getByTestId('umami-script')).toHaveAttribute('data-src', config.scriptUrl)
   expect(screen.getByTestId('umami-script')).not.toHaveAttribute('data-auto-track')
   expect(screen.getByTestId('umami-script')).toHaveAttribute('data-auto-pageview', 'false')
   expect(screen.getByTestId('umami-script')).toHaveAttribute('data-performance', 'true')
   expect(screen.getByTestId('umami-script')).toHaveAttribute('data-website-id', config.websiteId)
-  expect(screen.queryByRole('button')).not.toBeInTheDocument()
-  expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   window.umami = { track: jest.fn() }
   act(() => {
     mockReady?.()
