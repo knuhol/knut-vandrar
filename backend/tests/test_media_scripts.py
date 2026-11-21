@@ -104,7 +104,11 @@ def test_failed_export_never_publishes_partial_archive(
     assert not list(root.glob("*.tmp.*"))
 
 
-@pytest.mark.parametrize("transport", ["arguments", "env", "password"])
+@pytest.mark.parametrize(
+    "transport",
+    ["arguments", "env", "password"],
+    ids=["ssh-command-options", "ssh-environment-config", "ssh-password-authentication"],
+)
 def test_remote_import_streams_archive_and_quotes_paths_and_arguments(
     scripts: tuple[Path, dict[str, str], Path],
     tmp_path: Path,

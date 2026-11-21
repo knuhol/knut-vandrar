@@ -419,3 +419,18 @@ test("river context retains line geometry, excludes drains and deduplicates name
   assert.equal(selected.length, 1);
   assert.equal(selected[0].geometry.type, "LineString");
 });
+
+test("locator selects Finland and Sweden from route coordinates without a default", async () => {
+  const { routeCountry } = await import("../../maps/illustration.mjs");
+  const locate = (points) => routeCountry({ geojson: { features: [{ geometry: {
+    type: "MultiLineString", coordinates: [points],
+  } }] } });
+  const countries = JSON.parse(await readFile(new URL("../../maps/data/countries.json", import.meta.url)));
+  for (const [name, point] of [["Finland", [25.9, 68.75]], ["Sweden", [15, 59]]]) {
+    const feature = countries.features.find((f) => f.properties.name === name);
+    const expected = feature.geometry.type === "Polygon" ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+    assert.deepEqual(locate([point]).geometry.coordinates, expected);
+  }
+  assert.equal(locate([[0, 0]]), null);
+  assert.equal(locate([[25.9, 68.75], [15, 59]]).geometry.coordinates.length, 2);
+});

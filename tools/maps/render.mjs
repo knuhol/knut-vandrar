@@ -61,10 +61,10 @@ try {
           ),
         });
       }
-      if (url.pathname === "/data/norway.json")
+      if (url.pathname === "/data/countries.json")
         return route.fulfill({
           contentType: "application/json",
-          body: await readFile(path.join(root, "maps/data/norway.json")),
+          body: await readFile(path.join(root, "maps/data", path.basename(url.pathname))),
         });
       if (url.pathname === "/")
         return route.fulfill({
@@ -337,7 +337,6 @@ try {
               startColorToken: config.overlay.startColorToken,
               finishColorToken: config.overlay.finishColorToken,
             },
-            job.country,
           );
         if (terrainRuntime) {
           if (

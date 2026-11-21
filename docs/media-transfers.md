@@ -90,10 +90,15 @@ Export all images by omitting filters, or repeat `--hike` and/or `--location`:
 
 ```sh
 ./scripts/media-export.sh local backups/one-hike.tar --hike <hike-uuid>
+./scripts/media-export.sh local --hike "Bergslagsleden"
 ./scripts/media-export.sh dev backups/location.tar --ssh deploy@your-vps --location <location-uuid>
 ```
 
-A hike selection includes its cover, gallery, generated maps, and associated location logo. A location
+The `--hike` filter accepts a UUID or a case-insensitive partial title in any supported
+language. Ambiguous titles fail with a list of candidates and their UUIDs.
+
+A hike selection includes its cover, gallery, generated maps, associated location logo,
+and associated GPX collections with their route files and metadata. A location
 selection includes its logo and all its hikes' images. Multiple filters form a union.
 Unknown filter IDs fail the export. Omitting the output path creates a timestamped
 archive under ignored `backups/`; existing archives are never overwritten. `-` writes

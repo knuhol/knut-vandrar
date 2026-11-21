@@ -1,4 +1,10 @@
-import { IconTent, IconHomeEco, IconBuildingCottage, IconBed } from '@tabler/icons-react'
+import {
+  IconTent,
+  IconHome,
+  IconHomeDollar,
+  IconBuildingCottage,
+  IconBed,
+} from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
 import { FactItems } from './FactItems'
@@ -7,8 +13,8 @@ import type { AccommodationType } from '@/hiking/details'
 
 const icons = {
   tent: IconTent,
-  freeShelter: IconHomeEco,
-  paidShelter: IconHomeEco,
+  freeShelter: IconHome,
+  paidShelter: IconHomeDollar,
   mountainHut: IconBuildingCottage,
   paidAccommodation: IconBed,
 } satisfies Record<AccommodationType, typeof IconTent>

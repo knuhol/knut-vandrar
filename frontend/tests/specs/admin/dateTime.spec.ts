@@ -27,21 +27,24 @@ describe('admin date/time conversion in Europe/Stockholm', () => {
   })
 
   test.each([
-    '2026-03-29T02:30',
-    '2026-02-30T10:00',
-    '2026-02-29T10:00',
-    '2026-01-15T24:00',
-    '2026-01-15T13:60',
-    '',
-    'invalid',
-    '2026-01-15T10:00Z',
-    '2026-01-15T10:00+01:00',
-    '2026-01-15T13:34:56.1234',
-  ])('rejects invalid or nonexistent local time %s', (value) => {
+    ['daylight-saving gap', '2026-03-29T02:30'],
+    ['February 30', '2026-02-30T10:00'],
+    ['February 29 in a non-leap year', '2026-02-29T10:00'],
+    ['hour outside range', '2026-01-15T24:00'],
+    ['minute outside range', '2026-01-15T13:60'],
+    ['empty input', ''],
+    ['unrecognized date', 'invalid'],
+    ['UTC suffix on a local time', '2026-01-15T10:00Z'],
+    ['offset suffix on a local time', '2026-01-15T10:00+01:00'],
+    ['submillisecond precision', '2026-01-15T13:34:56.1234'],
+  ])('rejects local time with %s', (_case, value) => {
     expect(utcDateTime(value)).toBeUndefined()
   })
 
-  test.each(['', 'invalid'])('clears invalid stored dates: %s', (value) => {
+  test.each([
+    ['empty input', ''],
+    ['unrecognized date', 'invalid'],
+  ])('clears stored dates with %s', (_case, value) => {
     expect(localDateTime(value)).toBe('')
   })
 })

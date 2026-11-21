@@ -43,12 +43,21 @@ def test_gpx_preserves_geometry_and_pois_and_ignores_export_time(tmp_path: Path)
         ("A-B", (None, None)),
         ("", (None, None)),
     ],
+    ids=[
+        "two-place-names",
+        "ambiguous-extra-separator",
+        "missing-start",
+        "missing-separator-spaces",
+        "empty-description",
+    ],
 )
-def test_endpoints(description: str, expected: tuple[str | None, str | None]) -> None:
+def test_endpoint_parsing(description: str, expected: tuple[str | None, str | None]) -> None:
     assert endpoints(description) == expected
 
 
-def test_resume_and_manual_overrides(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_review_resumes_without_losing_manual_endpoint_edits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "sample.gpx"
     path.write_bytes(GPX)
     data: dict[str, Any] = {
@@ -151,6 +160,18 @@ def test_review_keeps_plotaroute_order_instead_of_sorting_stage_numbers(
         ("", "Start - Finish\nExtra text", (None, None)),
         ("", "Start - Finish\rExtra text", (None, None)),
     ],
+    ids=[
+        "notes-override-title",
+        "title-with-direction-arrow",
+        "notes-without-endpoints",
+        "ambiguous-notes-use-title",
+        "title-without-endpoints",
+        "ambiguous-title",
+        "missing-start",
+        "missing-finish",
+        "multiline-title",
+        "carriage-return-in-title",
+    ],
 )
 def test_endpoint_notes_take_priority_then_title_fallback(
     tmp_path: Path,
@@ -183,6 +204,12 @@ def test_endpoint_notes_take_priority_then_title_fallback(
         ("--hike", ["--direction", "backward"], False),
         ("--trail", [], True),
         ("--trail", ["--direction", "backward"], True),
+    ],
+    ids=[
+        "hike-without-direction",
+        "hike-rejects-direction",
+        "trail-prompts-for-direction",
+        "trail-accepts-direction",
     ],
 )
 def test_direction_arguments_apply_only_to_trails(
@@ -294,7 +321,9 @@ def test_single_gpx_flags_and_interactive_path(
 
 
 @pytest.mark.parametrize(
-    "extra", [["--bundle", "x.json"], ["--collection", "1"], ["--gpx-dir", "."]]
+    "extra",
+    [["--bundle", "x.json"], ["--collection", "1"], ["--gpx-dir", "."]],
+    ids=["bundle-file", "collection-id", "download-directory"],
 )
 def test_single_gpx_rejects_bundle_flags(extra: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
     import sys

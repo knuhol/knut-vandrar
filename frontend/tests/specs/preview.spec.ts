@@ -161,11 +161,11 @@ test('throttle persists across requests and releases after fifteen minutes', () 
 })
 
 test.each([
-  'https://elsewhere.example',
-  '//elsewhere.example',
-  '/\\elsewhere.example',
-  '/preview',
-  '/\nLocation: elsewhere',
-])('does not permit an unsafe return URL: %p', (value) => {
+  ['external origin', 'https://elsewhere.example'],
+  ['protocol-relative origin', '//elsewhere.example'],
+  ['backslash redirect', '/\\elsewhere.example'],
+  ['preview gate loop', '/preview'],
+  ['newline injection', '/\nLocation: elsewhere'],
+])('rejects a preview return URL containing %s', (_case, value) => {
   expect(previewDestination(value)).toBe('/')
 })

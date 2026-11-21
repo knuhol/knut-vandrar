@@ -2,6 +2,20 @@ import { fireEvent, render } from '@testing-library/react'
 
 import { ImageMotion } from '@/components/ImageMotion'
 
+const originalMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia')
+const images: HTMLImageElement[] = []
+
+afterEach(() => {
+  for (const image of images.splice(0)) {
+    image.remove()
+  }
+  if (originalMatchMedia) {
+    Object.defineProperty(window, 'matchMedia', originalMatchMedia)
+  } else {
+    Reflect.deleteProperty(window, 'matchMedia')
+  }
+})
+
 function imageFixture(reduced = false) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
@@ -13,6 +27,7 @@ function imageFixture(reduced = false) {
   const animate = jest.fn()
   image.animate = animate
   document.body.append(image)
+  images.push(image)
   return { image, animate }
 }
 
@@ -28,7 +43,6 @@ test('fades dynamically loaded images using the shared duration token', () => {
   unmount()
   fireEvent.load(image)
   expect(animate).toHaveBeenCalledTimes(1)
-  image.remove()
 })
 
 test('keeps images immediately visible for reduced motion', () => {
@@ -37,5 +51,4 @@ test('keeps images immediately visible for reduced motion', () => {
   fireEvent.load(image)
   expect(animate).not.toHaveBeenCalled()
   expect(image.style.opacity).toBe('')
-  image.remove()
 })

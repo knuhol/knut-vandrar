@@ -1,167 +1,21 @@
-"""API and queue tests for hiking content."""
+"""Hike and location API behavior, ordering, and validation."""
 
-import json
-from collections.abc import Generator, Iterator
-from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from pathlib import Path
 from typing import cast
-from urllib.request import Request
 from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
-from pydantic import SecretStr
-from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from knut_vandrar_backend.api import auth
 from knut_vandrar_backend.api.hikes import _duration_days
-from knut_vandrar_backend.api.schemas.hike import (
-    GpxCollectionCard,
-    LivePositionCard,
-    RouteCard,
-    YouTubeVideoCard,
-)
-from knut_vandrar_backend.database.base import Base
-from knut_vandrar_backend.database.dependencies import get_db
 from knut_vandrar_backend.main import app
 from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike, HikeTranslation
-from knut_vandrar_backend.models.reference import InfoCardType, Language
-from knut_vandrar_backend.models.translation import TranslationJob, TranslationProfile
-from knut_vandrar_backend.settings import settings
-from knut_vandrar_backend.translations.cli import queue_outdated_translations
-from knut_vandrar_backend.translations.core import profile_fingerprint
-from knut_vandrar_backend.translations.openai_provider import TranslationResult
-
-TEST_WRITE_TOKEN = "test-write-token-" + "a" * 32
-
-
-@pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setattr(
-        auth, "settings", replace(settings, api_write_token=SecretStr(TEST_WRITE_TOKEN))
-    )
-    from knut_vandrar_backend.api import photos
-
-    monkeypatch.setattr(photos, "settings", replace(settings, media_root=tmp_path / "media"))
-    engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
-    Base.metadata.create_all(bind=engine)
-    testing_session_local = sessionmaker[Session](bind=engine, autoflush=False)
-    app.state.testing_session_local = testing_session_local
-    with testing_session_local.begin() as db:
-        for locale in ("sv", "cs"):
-            db.add(
-                TranslationProfile(
-                    content_type="photo",
-                    target_locale=locale,
-                    instructions="Translate photos",
-                    model="gpt-6-luna",
-                )
-            )
-        db.add_all(
-            [
-                Language(code="en", name="English", enabled=True, is_source=True),
-                Language(code="sv", name="Swedish", enabled=True, is_source=False),
-                Language(code="cs", name="Czech", enabled=True, is_source=False),
-                InfoCardType(
-                    type="route", sort_order=1, data_structure=RouteCard.model_json_schema()
-                ),
-                InfoCardType(
-                    type="youtube_video",
-                    sort_order=2,
-                    data_structure=YouTubeVideoCard.model_json_schema(),
-                ),
-                InfoCardType(
-                    type="live_position",
-                    sort_order=3,
-                    data_structure=LivePositionCard.model_json_schema(),
-                ),
-                InfoCardType(
-                    type="gpx_collection",
-                    sort_order=7,
-                    data_structure=GpxCollectionCard.model_json_schema(),
-                ),
-                TranslationProfile(
-                    content_type="hike",
-                    target_locale="sv",
-                    instructions="Use natural Swedish.",
-                    model="gpt-6-luna",
-                ),
-                TranslationProfile(
-                    content_type="hike",
-                    target_locale="cs",
-                    instructions="Use natural Czech.",
-                    model="gpt-6-luna",
-                ),
-            ]
-        )
-
-    with testing_session_local.begin() as db:
-        for kind in ("location", "region", "achievement"):
-            for locale in ("sv", "cs"):
-                db.add(
-                    TranslationProfile(
-                        content_type=kind,
-                        target_locale=locale,
-                        instructions="Translate naturally.",
-                        model="gpt-6-luna",
-                    )
-                )
-
-    def override_get_db() -> Generator[Session, None, None]:
-        db = testing_session_local()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        test_client.headers["Authorization"] = f"Bearer {TEST_WRITE_TOKEN}"
-        yield test_client
-    app.dependency_overrides.clear()
-    Base.metadata.drop_all(bind=engine)
-    engine.dispose()
-
-
-def _png_image(size: tuple[int, int]) -> bytes:
-    output = BytesIO()
-    Image.new("RGB", size, (20, 100, 180)).save(output, format="PNG")
-    return output.getvalue()
-
-
-def _planned_payload(**overrides: object) -> dict[str, object]:
-    start = datetime(2026, 5, 1, 9, tzinfo=UTC)
-    payload: dict[str, object] = {
-        "status": "planned",
-        "planned_start_at": start.isoformat(),
-        "planned_end_at": (start + timedelta(days=13, hours=23)).isoformat(),
-        "english": {
-            "title": "Hike through the Highlands",
-            "tagline": "A few days outside",
-            "summary_markdown": "A short summary reused on both pages.",
-            "description_markdown": "## The plan\n\nFollow the trail.",
-        },
-        "cards": [{"type": "route", "url": "https://example.com/route.gpx"}],
-    }
-    payload.update(overrides)
-    return payload
-
-
-def test_hike_create_does_not_queue_translations_and_returns_typed_cards(
-    client: TestClient,
-) -> None:
-    response = client.post("/api/hikes", json=_planned_payload())
-    assert response.status_code == 201
-    hike = response.json()
-    assert hike["duration_days"] == 14
-    assert hike["translation"]["slug"] == "hike-through-the-highlands"
-    assert hike["cards"] == [{"type": "route", "url": "https://example.com/route.gpx"}]
-    assert _get_jobs(client) == []
+from knut_vandrar_backend.models.reference import InfoCardType
+from tests.helpers import _db_session, _get_jobs, _planned_payload, _png_image
 
 
 @pytest.mark.parametrize("locale", ["en", "sv", "cs"])
@@ -201,56 +55,6 @@ def test_hikes_are_ordered_by_start_date_before_pagination(client: TestClient, l
     assert [item["id"] for item in page.json()["items"]] == [
         str(UUID(int=index)) for index in [3, 1]
     ]
-
-
-def test_missing_translation_is_not_fallback_and_outdated_translation_is_served(
-    client: TestClient,
-) -> None:
-    response = client.post("/api/hikes", json=_planned_payload())
-    hike_id = response.json()["id"]
-    assert client.get("/api/hikes?locale=sv").json() == {
-        "items": [],
-        "total": 0,
-        "limit": 10,
-        "offset": 0,
-    }
-    assert client.get("/api/hikes/sv/hike-through-the-highlands").status_code == 404
-
-    hike_start = datetime.fromisoformat(response.json()["planned_start_at"])
-    client.put(
-        f"/api/hikes/{hike_id}",
-        json=_planned_payload(
-            english={
-                "title": "Hike in the Mountains",
-                "tagline": "Changed tagline",
-                "summary_markdown": "Updated English summary.",
-                "description_markdown": "Updated details.",
-            },
-            planned_start_at=hike_start.isoformat(),
-        ),
-    )
-    # Insert an older published translation to prove localization wins while it refreshes.
-    db = _db_session(client)
-    hike = db.get(Hike, UUID(hike_id))
-    assert hike is not None
-    old = HikeTranslation(
-        hike_id=hike.id,
-        locale_code="sv",
-        title="Gammal översättning",
-        summary_markdown="Äldre sammanfattning.",
-        slug="gammal-oversattning",
-        source_revision=1,
-        profile_fingerprint="old-profile",
-        review_status="unreviewed",
-    )
-    db.add(old)
-    db.commit()
-    db.close()
-    # Current English changed; the old Swedish copy is returned and identified as stale.
-    localized = client.get("/api/hikes?locale=sv")
-    assert localized.status_code == 200
-    assert localized.json()["items"][0]["translation"]["title"] == "Gammal översättning"
-    assert localized.json()["items"][0]["translation"]["is_outdated"] is True
 
 
 def test_changing_a_title_keeps_the_old_localized_slug_as_redirect(client: TestClient) -> None:
@@ -351,7 +155,7 @@ def test_trail_logo_upload_rejects_oversized_body(client: TestClient) -> None:
     assert response.status_code == 413
 
 
-def test_hike_points_youtube_card_and_cover_image(client: TestClient) -> None:
+def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> None:
     payload = _planned_payload(
         start_point="Stenkälle gården",
         end_point="Kloten",
@@ -412,245 +216,6 @@ def test_duration_uses_actual_timestamps_and_rounds_up() -> None:
     assert _duration_days(hike) == 15
 
 
-def test_retranslation_command_only_queues_flagged_rows_once(client: TestClient) -> None:
-    db = _db_session(client)
-    hikes: list[Hike] = []
-    for index in range(3):
-        hike = Hike(status=HikeStatus.PLANNED)
-        db.add(hike)
-        db.flush()
-        db.add(
-            HikeTranslation(
-                hike_id=hike.id,
-                locale_code="en",
-                title=f"Example hike {index}",
-                summary_markdown="Summary",
-                slug=f"example-hike-{index}",
-                source_revision=1,
-                review_status="source",
-            )
-        )
-        hikes.append(hike)
-    db.flush()
-    _, sv_fingerprint = profile_fingerprint(db, "hike", "sv")
-    _, cs_fingerprint = profile_fingerprint(db, "hike", "cs")
-    db.add_all(
-        [
-            HikeTranslation(
-                hike_id=hikes[1].id,
-                locale_code="sv",
-                title="Gammal",
-                summary_markdown="Gammal",
-                slug="old-one",
-                source_revision=0,
-                profile_fingerprint=sv_fingerprint,
-                review_status="unreviewed",
-            ),
-            HikeTranslation(
-                hike_id=hikes[2].id,
-                locale_code="sv",
-                title="Needs translation",
-                summary_markdown="Needs translation",
-                slug="needs-translation",
-                source_revision=1,
-                profile_fingerprint=sv_fingerprint,
-                review_status="needs_retranslation",
-            ),
-            HikeTranslation(
-                hike_id=hikes[2].id,
-                locale_code="cs",
-                title="Aktualni",
-                summary_markdown="Aktualni",
-                slug="aktualni",
-                source_revision=1,
-                profile_fingerprint=cs_fingerprint,
-                review_status="approved",
-            ),
-        ]
-    )
-    db.flush()
-    queued, _ = queue_outdated_translations(db)
-    db.flush()
-    jobs = db.scalars(select(TranslationJob).order_by(TranslationJob.created_at)).all()
-    assert queued == 1
-    assert len(jobs) == 1
-    assert jobs[0].entity_id == hikes[2].id
-    assert jobs[0].target_locale == "sv"
-    assert jobs[0].reason == "needs_retranslation"
-    # Repeat in the same transaction and again after commit, as separate CLI calls do.
-    assert queue_outdated_translations(db) == (0, 1)
-    db.commit()
-    assert queue_outdated_translations(db) == (0, 1)
-    jobs[0].status = "running"
-    db.commit()
-    assert queue_outdated_translations(db) == (0, 1)
-    db.close()
-
-
-def test_translation_worker_publishes_localized_copy_and_history(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import worker
-
-    response = client.post("/api/hikes", json=_planned_payload())
-    _request_translations(client, "hike", response.json()["id"])
-    hike_id = UUID(response.json()["id"])
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-
-    def translate(**kwargs: object) -> TranslationResult:
-        assert kwargs["reasoning_effort"] == "medium"
-        return TranslationResult(
-            fields={
-                "title": "Vandring genom högländerna",
-                "tagline": "Några dagar utomhus",
-                "summary_markdown": "En kort sammanfattning.",
-                "description_markdown": "## Planen\n\nFölj leden.",
-            },
-            model="gpt-6-luna",
-            input_tokens=100,
-            output_tokens=40,
-        )
-
-    assert worker.run_once(translate)
-    db = factory()
-    try:
-        swedish = db.scalar(
-            select(HikeTranslation).where(
-                HikeTranslation.hike_id == hike_id,
-                HikeTranslation.locale_code == "sv",
-            )
-        )
-        assert swedish is not None
-        assert swedish.title == "Vandring genom högländerna"
-        assert swedish.slug == "vandring-genom-hoglanderna"
-        assert len(swedish.versions) == 1
-        job = db.scalar(
-            select(TranslationJob).where(
-                TranslationJob.entity_id == hike_id,
-                TranslationJob.target_locale == "sv",
-            )
-        )
-        assert job is not None
-        assert job.status == "succeeded"
-    finally:
-        db.close()
-
-
-def test_worker_discards_stale_job_without_replacement(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import worker
-
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    _request_translations(client, "hike", hike["id"])
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    with factory.begin() as db:
-        job = db.scalars(select(TranslationJob).order_by(TranslationJob.created_at)).first()
-        assert job is not None
-        job_id = job.id
-        locale = job.target_locale
-        job.profile_fingerprint = "old-worker-fingerprint"
-
-    def unexpected_translate(**_: object) -> TranslationResult:
-        pytest.fail("A stale job must be replaced before calling the provider")
-
-    assert worker.run_once(unexpected_translate)
-    with factory() as db:
-        original = db.get(TranslationJob, job_id)
-        assert original is not None
-        assert original.status == "superseded"
-        active = db.scalars(
-            select(TranslationJob).where(
-                TranslationJob.target_locale == locale,
-                TranslationJob.status.in_(("queued", "running")),
-            )
-        ).all()
-        assert len(active) == 0
-
-
-def test_worker_sends_profile_model_and_effort_in_http_request(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import openai_provider, worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    with factory.begin() as db:
-        for profile in db.scalars(select(TranslationProfile)).all():
-            profile.model = "gpt-6.1-terra"
-            profile.reasoning_effort = "medium"
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    _request_translations(client, "hike", hike["id"])
-    requests: list[dict[str, object]] = []
-
-    def capture_request(request: Request, timeout: int) -> BytesIO:
-        assert timeout == settings.openai_request_timeout_seconds
-        assert request.full_url == "https://api.openai.com/v1/responses"
-        assert request.method == "POST"
-        assert isinstance(request.data, bytes)
-        payload = json.loads(request.data)
-        requests.append(payload)
-        assert payload["model"] == "gpt-6.1-terra"
-        assert payload["reasoning"] == {"effort": "medium"}
-        return BytesIO(
-            json.dumps(
-                {
-                    "model": "gpt-6.1-terra",
-                    "output": [
-                        {
-                            "type": "message",
-                            "content": [
-                                {
-                                    "type": "output_text",
-                                    "text": json.dumps(
-                                        {
-                                            "title": "Translated title",
-                                            "tagline": None,
-                                            "summary_markdown": "Translated summary",
-                                            "description_markdown": None,
-                                        }
-                                    ),
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ).encode()
-        )
-
-    monkeypatch.setattr(openai_provider, "urlopen", capture_request)
-    # Exercise the actual default provider, rather than injecting a fake translator.
-    assert worker.run_once()
-    assert len(requests) == 1
-    with factory() as db:
-        assert (
-            db.scalar(select(TranslationJob.status).where(TranslationJob.status == "succeeded"))
-            == "succeeded"
-        )
-
-
-def test_slug_generation_keeps_non_latin_letters() -> None:
-    from knut_vandrar_backend.translations.core import make_slug
-
-    assert make_slug("Český výlet — Берг") == "cesky-vylet-берг"
-    assert make_slug("山歩きの旅") == "山歩きの旅"
-
-
-def _db_session(client: TestClient) -> Session:
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    return factory()
-
-
-def _get_jobs(client: TestClient) -> list[dict[str, object]]:
-    db = _db_session(client)
-    jobs = db.scalars(select(TranslationJob)).all()
-    result: list[dict[str, object]] = [{"target_locale": job.target_locale} for job in jobs]
-    db.close()
-    return result
-
-
 def test_location_details_regions_ratings_and_validation(client: TestClient) -> None:
     region = client.post("/api/regions", json={"english": {"name": "Lapland"}})
     assert region.status_code == 201, region.text
@@ -695,7 +260,7 @@ def test_location_details_regions_ratings_and_validation(client: TestClient) -> 
         assert client.post("/api/locations", json={**payload, **changes}).status_code == 422
 
 
-def test_hike_new_details_and_manual_achievement(client: TestClient) -> None:
+def test_hike_journey_ratings_overnights_and_manual_achievement(client: TestClient) -> None:
     payload = _planned_payload(
         distance_km=105.25,
         start_latitude=68.358,
@@ -737,632 +302,6 @@ def test_hike_new_details_and_manual_achievement(client: TestClient) -> None:
     assert "thruHike" not in detail
 
 
-@pytest.mark.parametrize(
-    "kind,path,english",
-    [
-        (
-            "location",
-            "/api/locations",
-            {"name": "Original", "season_note": None, "overnight_restrictions_note": None},
-        ),
-        ("region", "/api/regions", {"name": "Original"}),
-        ("achievement", "/api/achievements", {"title": "Original", "description": None}),
-    ],
-)
-def test_authored_manual_translation_survives_inflight_result(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
-    kind: str,
-    path: str,
-    english: dict[str, str | None],
-) -> None:
-    from knut_vandrar_backend.translations import content_worker, worker
-    from knut_vandrar_backend.translations.content import translation_for
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    monkeypatch.setattr(content_worker, "SessionLocal", factory)
-    payload: dict[str, object] = {"english": english}
-    if kind == "location":
-        payload["country_codes"] = ["SE"]
-    if kind == "achievement":
-        hike = client.post("/api/hikes", json=_planned_payload()).json()
-        payload.update(hike_id=hike["id"], icon="trophy")
-        with factory.begin() as db:
-            for job in db.scalars(select(TranslationJob)):
-                job.status = "superseded"
-    created = client.post(path, json=payload)
-    assert created.status_code == 201, created.text
-    entity_id = created.json()["id"]
-    _request_translations(client, kind, entity_id)
-    manual = {
-        key: ("Manual text" if key in ("name", "title") else value)
-        for key, value in english.items()
-    }
-
-    def translate(**arguments: object) -> TranslationResult:
-        locale = str(arguments["target_locale"])
-        result = client.put(f"{path}/{entity_id}/translations/{locale}", json=manual)
-        assert result.status_code == 200, result.text
-        return TranslationResult(fields=english, model="test", input_tokens=1, output_tokens=1)
-
-    assert worker.run_once(translate)
-    with factory() as db:
-        target = translation_for(db, kind, UUID(entity_id), "sv")
-        assert target is not None
-        assert target.review_status == "manual"
-        assert getattr(target, "name", getattr(target, "title", None)) == "Manual text"
-    changed = {**english, "name" if "name" in english else "title": "New English"}
-    assert (
-        client.put(f"{path}/{entity_id}", json={**payload, "english": changed}).status_code == 200
-    )
-    result = client.get(f"{path}/{entity_id}?locale=sv").json()
-    assert result["translation"]["review_status"] == "manual"
-    assert result["translation"]["is_outdated"] is True
-    assert (
-        client.put(
-            f"{path}/{entity_id}/translations/sv/review",
-            json={"review_status": "needs_retranslation"},
-        ).status_code
-        == 200
-    )
-
-
-def test_region_automatic_translation_publishes_history(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.models.location import RegionTranslation
-    from knut_vandrar_backend.models.translation import ContentTranslationVersion
-    from knut_vandrar_backend.translations import content_worker, worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    monkeypatch.setattr(content_worker, "SessionLocal", factory)
-    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
-
-    _request_translations(client, "region", region["id"])
-
-    def translate(**arguments: object) -> TranslationResult:
-        assert arguments["source_fields"] == {"name": "Lapland"}
-        return TranslationResult(
-            fields={"name": "Lappland"}, model="test", input_tokens=1, output_tokens=1
-        )
-
-    assert worker.run_once(translate)
-    with factory() as db:
-        target = db.get(RegionTranslation, (UUID(region["id"]), "sv"))
-        assert target is not None and target.name == "Lappland"
-        assert target.review_status == "unreviewed"
-        snapshot = db.scalar(select(ContentTranslationVersion))
-        assert snapshot is not None and snapshot.fields == {"name": "Lappland"}
-
-
-def test_hike_manual_override_survives_inflight_result(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    _request_translations(client, "hike", hike["id"])
-    fields = {
-        "title": "Manual Swedish",
-        "tagline": None,
-        "summary_markdown": "Manual summary",
-        "description_markdown": None,
-    }
-
-    def translate(**arguments: object) -> TranslationResult:
-        locale = str(arguments["target_locale"])
-        response = client.put(f"/api/hikes/{hike['id']}/translations/{locale}", json=fields)
-        assert response.status_code == 200, response.text
-        assert response.json()["review_status"] == "manual"
-        return TranslationResult(
-            fields={**fields, "title": "Automatic overwrite"},
-            model="test",
-            input_tokens=1,
-            output_tokens=1,
-        )
-
-    assert worker.run_once(translate)
-    with factory() as db:
-        target = db.scalar(
-            select(HikeTranslation).where(
-                HikeTranslation.hike_id == UUID(hike["id"]), HikeTranslation.locale_code == "sv"
-            )
-        )
-        assert target is not None and target.title == "Manual Swedish"
-        assert target.review_status == "manual"
-
-
-@pytest.mark.parametrize(
-    "authorization",
-    [None, "", "Basic anything", "Bearer wrong-token", "Bearer", "Bearer wrong token"],
-)
-def test_write_auth_rejects_missing_or_invalid_credentials(
-    client: TestClient, authorization: str | None
-) -> None:
-    client.headers.pop("Authorization", None)
-    headers = {"Authorization": authorization} if authorization is not None else {}
-    for method, path in [
-        ("POST", "/api/hikes"),
-        ("PUT", "/api/locations/00000000-0000-0000-0000-000000000001"),
-        ("DELETE", "/api/regions/00000000-0000-0000-0000-000000000001"),
-        ("POST", "/api/translations/requeue"),
-    ]:
-        response = client.request(method, path, headers=headers, json={})
-        assert response.status_code == 401, response.text
-        assert response.headers["www-authenticate"] == "Bearer"
-        assert TEST_WRITE_TOKEN not in response.text
-
-
-def test_reads_and_cors_preflight_are_public(client: TestClient) -> None:
-    client.headers.pop("Authorization", None)
-    for path in [
-        "/health",
-        "/api/hikes",
-        "/api/locations",
-        "/api/regions",
-        "/api/achievements",
-        "/openapi.json",
-    ]:
-        assert client.get(path).status_code == 200
-    response = client.options(
-        "/api/hikes",
-        headers={
-            "Origin": settings.cors_origins[0],
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "authorization,content-type",
-        },
-    )
-    assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == settings.cors_origins[0]
-    assert client.get("/health", headers={"Authorization": "Bearer wrong"}).status_code == 200
-
-
-def test_writes_fail_closed_without_configuration(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(auth, "settings", replace(settings, api_write_token=None))
-    assert client.post("/api/translations/requeue").status_code == 503
-    assert client.get("/api/hikes").status_code == 200
-
-
-def test_new_write_routes_inherit_authentication(client: TestClient) -> None:
-    def future_write() -> dict[str, bool]:
-        return {"ok": True}
-
-    app.add_api_route("/_test/future-write", future_write, methods=["PATCH"])
-    route = app.router.routes[-1]
-    try:
-        assert (
-            client.patch(
-                "/_test/future-write", headers={"Authorization": "Bearer wrong"}
-            ).status_code
-            == 401
-        )
-        assert client.patch("/_test/future-write").json() == {"ok": True}
-    finally:
-        app.router.routes.remove(route)
-
-
-def test_openapi_documents_write_auth_but_not_public_reads(client: TestClient) -> None:
-    schema = client.get("/openapi.json").json()
-    assert schema["components"]["securitySchemes"]["AdminBearer"]["scheme"] == "bearer"
-    for path in schema["paths"].values():
-        for method, operation in path.items():
-            if method in {"get", "head", "options"} and not operation.get("x-admin-only"):
-                assert not operation.get("security")
-            elif method in {"post", "put", "patch", "delete"} or operation.get("x-admin-only"):
-                assert {"AdminBearer": []} in operation["security"]
-                assert "401" in operation["responses"]
-    assert TEST_WRITE_TOKEN not in json.dumps(schema)
-
-
-def test_token_configuration_validation_and_redaction(monkeypatch: pytest.MonkeyPatch) -> None:
-    from knut_vandrar_backend.settings import _write_token
-
-    monkeypatch.delenv("API_WRITE_TOKEN", raising=False)
-    assert _write_token() is None
-    for value in ["", "   "]:
-        monkeypatch.setenv("API_WRITE_TOKEN", value)
-        assert _write_token() is None
-    for value in ["short", "a" * 129, "x " * 32]:
-        monkeypatch.setenv("API_WRITE_TOKEN", value)
-        with pytest.raises(RuntimeError, match="API_WRITE_TOKEN"):
-            _write_token()
-    monkeypatch.setenv("API_WRITE_TOKEN", TEST_WRITE_TOKEN)
-    token = _write_token()
-    assert token is not None and token.get_secret_value() == TEST_WRITE_TOKEN
-    assert TEST_WRITE_TOKEN not in repr(token)
-    assert TEST_WRITE_TOKEN not in repr(replace(settings, api_write_token=token))
-
-
-def test_translation_requeue_api_is_idempotent_and_preserves_manual(client: TestClient) -> None:
-    from knut_vandrar_backend.models.location import RegionTranslation
-
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
-    with _db_session(client) as db:
-        for job in db.scalars(select(TranslationJob)):
-            job.status = "superseded"
-        for locale, review in [("sv", "needs_retranslation"), ("cs", "manual")]:
-            db.add(
-                HikeTranslation(
-                    hike_id=UUID(hike["id"]),
-                    locale_code=locale,
-                    title="Text",
-                    summary_markdown="Text",
-                    slug=f"text-{locale}",
-                    review_status=review,
-                )
-            )
-            db.add(
-                RegionTranslation(
-                    region_id=UUID(region["id"]),
-                    locale_code=locale,
-                    name="Text",
-                    review_status=review,
-                )
-            )
-        db.commit()
-    first = client.post("/api/translations/requeue")
-    assert first.status_code == 200, first.text
-    assert first.json() == {"queued": 2, "skipped": 0}
-    assert client.post("/api/translations/requeue").json() == {"queued": 0, "skipped": 2}
-    with _db_session(client) as db:
-        manual = db.get(RegionTranslation, (UUID(region["id"]), "cs"))
-        assert manual is not None and manual.review_status == "manual"
-        active = db.scalars(select(TranslationJob).where(TranslationJob.status == "queued")).all()
-        assert len(active) == 2
-        assert all(job.target_locale == "sv" for job in active)
-
-
-def _request_translations(client: TestClient, kind: str, entity_id: str) -> None:
-    response = client.post(
-        "/api/translations/requeue",
-        json={
-            "include_outdated": True,
-            "entity_type": kind,
-            "entity_id": entity_id,
-            "locale": "sv",
-        },
-    )
-    assert response.status_code == 200, response.text
-    assert response.json()["queued"] == 1
-
-
-@pytest.mark.parametrize(
-    "kind,path,english",
-    [
-        (
-            "location",
-            "/api/locations",
-            {"name": "Original", "season_note": None, "overnight_restrictions_note": None},
-        ),
-        ("region", "/api/regions", {"name": "Original"}),
-        ("achievement", "/api/achievements", {"title": "Original", "description": None}),
-    ],
-)
-def test_source_edits_and_review_changes_never_queue(
-    client: TestClient, kind: str, path: str, english: dict[str, str | None]
-) -> None:
-    payload: dict[str, object] = {"english": english}
-    if kind == "location":
-        payload["country_codes"] = ["SE"]
-    if kind == "achievement":
-        payload.update(
-            hike_id=client.post("/api/hikes", json=_planned_payload()).json()["id"], icon="trophy"
-        )
-    created = client.post(path, json=payload)
-    assert created.status_code == 201, created.text
-    entity_id = created.json()["id"]
-    assert _get_jobs(client) == []
-    assert client.put(f"{path}/{entity_id}/translations/sv", json=english).status_code == 200
-    changed = {**english, "name" if "name" in english else "title": "Changed source"}
-    assert (
-        client.put(f"{path}/{entity_id}", json={**payload, "english": changed}).status_code == 200
-    )
-    assert client.get(f"{path}/{entity_id}?locale=sv").json()["translation"]["is_outdated"] is True
-    assert _get_jobs(client) == []
-    assert (
-        client.put(
-            f"{path}/{entity_id}/translations/sv/review",
-            json={"review_status": "needs_retranslation"},
-        ).status_code
-        == 200
-    )
-    assert _get_jobs(client) == []
-    _request_translations(client, kind, entity_id)
-
-
-def test_hike_edits_only_mark_outdated_and_explicit_selection_queues(client: TestClient) -> None:
-    payload = _planned_payload()
-    hike = client.post("/api/hikes", json=payload).json()
-    manual = {
-        "title": "Swedish",
-        "summary_markdown": "Summary",
-        "tagline": None,
-        "description_markdown": None,
-    }
-    assert client.put(f"/api/hikes/{hike['id']}/translations/sv", json=manual).status_code == 200
-    changed = _planned_payload(
-        english={"title": "Edited title", "summary_markdown": "Edited summary"}
-    )
-    assert client.put(f"/api/hikes/{hike['id']}", json=changed).status_code == 200
-    assert _get_jobs(client) == []
-    assert (
-        client.get(f"/api/hikes/{hike['id']}?locale=sv").json()["translation"]["is_outdated"]
-        is True
-    )
-    # Even an explicit broader request cannot replace manual content.
-    response = client.post(
-        "/api/translations/requeue",
-        json={
-            "include_outdated": True,
-            "entity_type": "hike",
-            "entity_id": hike["id"],
-            "locale": "sv",
-        },
-    )
-    assert response.json() == {"queued": 0, "skipped": 0}
-    assert (
-        client.put(
-            f"/api/hikes/{hike['id']}/translations/sv/review",
-            json={"review_status": "needs_retranslation"},
-        ).status_code
-        == 200
-    )
-    assert _get_jobs(client) == []
-    _request_translations(client, "hike", hike["id"])
-
-
-@pytest.mark.parametrize("kind", ["hike", "region"])
-@pytest.mark.parametrize("during_request", [False, True])
-def test_stale_jobs_do_not_create_replacement_or_publish(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, kind: str, during_request: bool
-) -> None:
-    from knut_vandrar_backend.translations import content_worker, worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    monkeypatch.setattr(content_worker, "SessionLocal", factory)
-    path = "/api/hikes" if kind == "hike" else "/api/regions"
-    payload = _planned_payload() if kind == "hike" else {"english": {"name": "Original"}}
-    entity_id = client.post(path, json=payload).json()["id"]
-    _request_translations(client, kind, entity_id)
-    update = (
-        _planned_payload(english={"title": "New English", "summary_markdown": "New English"})
-        if kind == "hike"
-        else {"english": {"name": "New English"}}
-    )
-    if not during_request:
-        assert client.put(f"{path}/{entity_id}", json=update).status_code == 200
-
-    def translate(**arguments: object) -> TranslationResult:
-        if not during_request:
-            pytest.fail("Already-obsolete jobs must not call the provider")
-        assert client.put(f"{path}/{entity_id}", json=update).status_code == 200
-        return TranslationResult(
-            fields=cast(dict[str, str | None], arguments["source_fields"]),
-            model="test",
-            input_tokens=1,
-            output_tokens=1,
-        )
-
-    assert worker.run_once(translate)
-    assert not worker.run_once(translate)
-    with factory() as db:
-        jobs = db.scalars(select(TranslationJob)).all()
-        assert len(jobs) == 1 and jobs[0].status == "superseded"
-    _request_translations(client, kind, entity_id)
-
-
-def test_worker_refuses_legacy_automatic_jobs(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    with factory.begin() as db:
-        for reason in ["source_changed", "superseded", "initial_migration"]:
-            db.add(
-                TranslationJob(
-                    entity_type="hike",
-                    entity_id=UUID(hike["id"]),
-                    target_locale="sv",
-                    source_revision=1,
-                    profile_fingerprint="old",
-                    reason=reason,
-                    status="queued",
-                )
-            )
-
-    def unexpected(**_: object) -> TranslationResult:
-        pytest.fail("Legacy automatic work must not call the provider")
-
-    for _ in range(3):
-        assert worker.run_once(unexpected)
-    with factory() as db:
-        assert all(job.status == "superseded" for job in db.scalars(select(TranslationJob)))
-
-
-def test_requeue_defaults_to_flagged_and_validates_selection(client: TestClient) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    assert client.post("/api/translations/requeue").json() == {"queued": 0, "skipped": 0}
-    for body in [{"entity_id": hike["id"]}, {"locale": "en"}, {"entity_type": "wrong"}]:
-        assert client.post("/api/translations/requeue", json=body).status_code == 422
-    assert _get_jobs(client) == []
-
-
-def test_worker_recovery_cannot_reset_cost_limit(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.translations import worker
-
-    factory = cast(sessionmaker[Session], app.state.testing_session_local)
-    monkeypatch.setattr(worker, "SessionLocal", factory)
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    old = datetime.now(UTC) - timedelta(days=1)
-    with factory.begin() as db:
-        for reason, attempts in [
-            ("explicit_request", 5),
-            ("explicit_request", 2),
-            ("source_changed", 1),
-        ]:
-            db.add(
-                TranslationJob(
-                    entity_type="hike",
-                    entity_id=UUID(hike["id"]),
-                    target_locale="sv",
-                    source_revision=1,
-                    profile_fingerprint="old",
-                    reason=reason,
-                    status="running",
-                    attempts=attempts,
-                    updated_at=old,
-                )
-            )
-    worker._recover_abandoned_jobs()
-    with factory() as db:
-        jobs = db.scalars(select(TranslationJob)).all()
-        assert {(job.reason, job.attempts, job.status) for job in jobs} == {
-            ("explicit_request", 5, "failed"),
-            ("explicit_request", 2, "queued"),
-            ("source_changed", 1, "superseded"),
-        }
-
-
-def test_translation_candidates_preview_matches_request_and_has_no_side_effects(
-    client: TestClient,
-) -> None:
-    from knut_vandrar_backend.models.location import RegionTranslation
-
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    region = client.post("/api/regions", json={"english": {"name": "Lapland"}}).json()
-    with _db_session(client) as db:
-        db.add(
-            RegionTranslation(
-                region_id=UUID(region["id"]),
-                locale_code="sv",
-                name="Text",
-                review_status="needs_retranslation",
-            )
-        )
-        db.add(
-            RegionTranslation(
-                region_id=UUID(region["id"]),
-                locale_code="cs",
-                name="Manual",
-                review_status="manual",
-            )
-        )
-        db.commit()
-    flagged = client.get("/api/translations/candidates")
-    assert flagged.status_code == 200, flagged.text
-    assert flagged.json()["total"] == 1
-    assert flagged.json()["items"][0]["title"] == "Lapland"
-    assert flagged.json()["items"][0]["review_status"] == "needs_retranslation"
-    assert not flagged.json()["items"][0]["already_queued"]
-    broad = {"include_outdated": True}
-    page = client.get(
-        "/api/translations/candidates", params={"include_outdated": "true", "limit": 1}
-    ).json()
-    assert page["total"] == 3
-    assert len(page["items"]) == 1
-    next_page = client.get(
-        "/api/translations/candidates", params={"include_outdated": "true", "limit": 1, "offset": 1}
-    ).json()
-    assert next_page["items"] != page["items"]
-    assert (
-        client.get(
-            "/api/translations/candidates",
-            params={
-                "entity_type": "hike",
-                "entity_id": hike["id"],
-                "locale": "cs",
-                "include_outdated": "true",
-            },
-        ).json()["total"]
-        == 1
-    )
-    with _db_session(client) as db:
-        assert list(db.scalars(select(TranslationJob))) == []
-    result = client.post("/api/translations/requeue", json=broad).json()
-    assert result == {"queued": 3, "skipped": 0}
-    rows = client.get("/api/translations/candidates", params={"include_outdated": "true"}).json()
-    assert rows["total"] == 3
-    assert all(row["already_queued"] for row in rows["items"])
-    assert sum(row["is_missing"] for row in rows["items"]) == 2
-    assert client.post("/api/translations/requeue", json=broad).json() == {
-        "queued": 0,
-        "skipped": 3,
-    }
-
-
-def test_translation_candidates_auth_and_validation(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    invalid: list[dict[str, str | int]] = [
-        {"entity_id": "00000000-0000-0000-0000-000000000001"},
-        {"locale": "en"},
-        {"limit": 101},
-        {"offset": -1},
-    ]
-    for params in invalid:
-        assert client.get("/api/translations/candidates", params=params).status_code == 422
-    client.headers.pop("Authorization", None)
-    response = client.get("/api/translations/candidates")
-    assert response.status_code == 401
-    assert response.headers["www-authenticate"] == "Bearer"
-    assert (
-        client.get(
-            "/api/translations/candidates", headers={"Authorization": "Bearer wrong"}
-        ).status_code
-        == 401
-    )
-    monkeypatch.setattr(auth, "settings", replace(settings, api_write_token=None))
-    assert client.get("/api/translations/candidates").status_code == 503
-
-
-def test_translation_candidates_current_and_profile_outdated(client: TestClient) -> None:
-    from knut_vandrar_backend.models.location import RegionTranslation
-
-    region = client.post("/api/regions", json={"english": {"name": "Region"}}).json()
-    with _db_session(client) as db:
-        db.add(
-            RegionTranslation(
-                region_id=UUID(region["id"]),
-                locale_code="sv",
-                name="Region",
-                review_status="approved",
-                source_revision=1,
-                profile_fingerprint=profile_fingerprint(db, "region", "sv")[1],
-            )
-        )
-        db.commit()
-    selection = {"entity_type": "region", "locale": "sv", "include_outdated": "true"}
-    assert client.get("/api/translations/candidates", params=selection).json()["total"] == 0
-    with _db_session(client) as db:
-        target = db.get(RegionTranslation, (UUID(region["id"]), "sv"))
-        assert target is not None
-        target.profile_fingerprint = None
-        db.commit()
-    rows = client.get("/api/translations/candidates", params=selection).json()
-    assert rows["total"] == 1
-    assert rows["items"][0]["is_outdated"]
-    assert not rows["items"][0]["is_missing"]
-    assert (
-        client.get(
-            "/api/translations/candidates", params={"entity_type": "region", "locale": "sv"}
-        ).json()["total"]
-        == 0
-    )
-
-
 def test_backpack_achievement_round_trip(client: TestClient) -> None:
     hike = client.post("/api/hikes", json=_planned_payload()).json()
     response = client.post(
@@ -1396,309 +335,6 @@ def test_circular_directions_round_trip(client: TestClient, direction: str) -> N
     updated = client.put(f"/api/hikes/{hike['id']}", json=_planned_payload(direction=alternate))
     assert updated.status_code == 200, updated.text
     assert updated.json()["direction"] == alternate
-
-
-def test_gallery_upload_delivery_order_and_private_original(client: TestClient) -> None:
-    from knut_vandrar_backend.api.photos import photo_directory
-
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    content = _png_image((3000, 1500))
-    uploaded = client.post(f"/api/hikes/{hike['id']}/photos", content=content)
-    assert uploaded.status_code == 201, uploaded.text
-    photo = uploaded.json()
-    assert (photo["width"], photo["height"]) == (2560, 1280)
-    for key, size in (("thumbnail_url", (640, 320)), ("image_url", (2560, 1280))):
-        response = client.get(photo[key])
-        assert response.headers["content-type"] == "image/webp"
-        assert "immutable" in response.headers["cache-control"]
-        with Image.open(BytesIO(response.content)) as image:
-            assert image.size == size
-            assert not image.getexif()
-    original = f"/api/photos/{photo['id']}/original"
-    assert client.get(original).content == content
-    token = client.headers.pop("Authorization")
-    assert client.get(original).status_code == 401
-    assert client.get(photo["thumbnail_url"]).status_code == 200
-    assert client.post(f"/api/hikes/{hike['id']}/photos", content=content).status_code == 401
-    client.headers["Authorization"] = token
-    other = client.post(f"/api/hikes/{hike['id']}/photos", content=content).json()
-    order_url = f"/api/hikes/{hike['id']}/photos/order"
-    assert client.put(order_url, json={"ids": [other["id"], photo["id"]]}).status_code == 204
-    assert client.put(order_url, json={"ids": [photo["id"], photo["id"]]}).status_code == 422
-    page = client.get(f"/api/hikes/{hike['id']}/photos?limit=1").json()
-    assert page["total"] == 2 and page["items"][0]["id"] == other["id"]
-    assert (
-        client.get(f"/api/hikes/{hike['id']}/photos?limit=1&offset=1").json()["items"][0]["id"]
-        == photo["id"]
-    )
-    assert client.delete(f"/api/photos/{photo['id']}").status_code == 204
-    assert not photo_directory(UUID(photo["id"])).exists()
-    assert client.get(photo["image_url"]).status_code == 404
-    assert client.delete(f"/api/hikes/{hike['id']}").status_code == 204
-    assert not photo_directory(UUID(other["id"])).exists()
-
-
-def test_gallery_metadata_translation_is_explicit(client: TestClient) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    photo = client.post(f"/api/hikes/{hike['id']}/photos", content=_png_image((32, 64))).json()
-    path = f"/api/photos/{photo['id']}"
-    assert (
-        client.put(path, json={"english": {"alt": "A lake", "caption": "At dusk"}}).status_code
-        == 200
-    )
-    assert client.get(path + "?locale=sv").json()["caption"] == "At dusk"
-    with app.state.testing_session_local() as db:
-        assert not db.scalars(select(TranslationJob)).all()
-    assert (
-        client.put(
-            path + "/translations/sv", json={"alt": "En sjö", "caption": "I skymningen"}
-        ).status_code
-        == 200
-    )
-    assert client.get(path + "?locale=sv").json()["caption"] == "I skymningen"
-    queued = client.post(
-        "/api/translations/requeue",
-        json={"include_outdated": True, "entity_type": "photo", "entity_id": photo["id"]},
-    )
-    assert queued.status_code == 200, queued.text
-    assert queued.json()["queued"] == 1  # Swedish manual text is protected.
-    assert client.get(path + "?locale=cs").json()["translation"]["locale"] == "en"
-
-
-def test_gallery_rejects_invalid_oversized_and_cross_hike_order(client: TestClient) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    path = f"/api/hikes/{hike['id']}/photos"
-    assert client.post(path, content=b"not an image").status_code == 415
-    assert (
-        client.post(path, content=b'<svg xmlns="http://www.w3.org/2000/svg"/>').status_code == 415
-    )
-    assert (
-        client.post(path, content=b"x", headers={"Content-Length": "25000001"}).status_code == 413
-    )
-    photo = client.post(path, content=_png_image((20, 20))).json()
-    other = client.post(
-        "/api/hikes",
-        json=_planned_payload(english={"title": "Another hike", "summary_markdown": "Summary"}),
-    ).json()
-    assert (
-        client.put(
-            f"/api/hikes/{other['id']}/photos/order", json={"ids": [photo["id"]]}
-        ).status_code
-        == 422
-    )
-
-
-def test_gallery_accepts_heic_and_respects_orientation(client: TestClient) -> None:
-    from pillow_heif import register_heif_opener
-
-    register_heif_opener()
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    image = Image.new("RGB", (80, 40), "green")
-    output = BytesIO()
-    image.save(output, format="HEIF")
-    response = client.post(f"/api/hikes/{hike['id']}/photos", content=output.getvalue())
-    assert response.status_code == 201, response.text
-    assert response.json()["width"] == 80
-    assert client.get(f"/api/photos/{response.json()['id']}/original").content == output.getvalue()
-    output = BytesIO()
-    exif = Image.Exif()
-    exif[274] = 6
-    image.save(output, format="JPEG", exif=exif)
-    response = client.post(f"/api/hikes/{hike['id']}/photos", content=output.getvalue())
-    assert response.status_code == 201, response.text
-    assert (response.json()["width"], response.json()["height"]) == (40, 80)
-
-
-def test_photo_worker_uses_existing_translation_pipeline(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from typing import Any
-
-    from knut_vandrar_backend.translations import content_worker
-
-    monkeypatch.setattr(content_worker, "SessionLocal", app.state.testing_session_local)
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    photo = client.post(f"/api/hikes/{hike['id']}/photos", content=_png_image((20, 20))).json()
-    path = f"/api/photos/{photo['id']}"
-    client.put(path, json={"english": {"alt": "Forest", "caption": None}})
-    client.post(
-        "/api/translations/requeue",
-        json={
-            "entity_type": "photo",
-            "entity_id": photo["id"],
-            "include_outdated": True,
-            "locale": "sv",
-        },
-    )
-    with app.state.testing_session_local() as db:
-        job_id = db.scalar(select(TranslationJob.id).where(TranslationJob.entity_type == "photo"))
-
-    def translate(**kwargs: Any) -> TranslationResult:
-        assert kwargs["source_fields"] == {"alt": "Forest", "caption": None}
-        return TranslationResult(
-            fields={"alt": "Skog", "caption": None}, model="test", input_tokens=1, output_tokens=1
-        )
-
-    content_worker.process_content(job_id, translate)
-    result = client.get(path + "?locale=sv").json()
-    assert result["alt"] == "Skog" and result["caption"] is None
-    assert result["translation"]["locale"] == "sv"
-
-
-def test_gallery_checks_stream_size_without_content_length() -> None:
-    import asyncio
-
-    from fastapi import HTTPException
-    from starlette.requests import Request as StarletteRequest
-
-    from knut_vandrar_backend.api.image_uploads import read_image_body
-
-    async def receive() -> dict[str, object]:
-        return {"type": "http.request", "body": b"12345", "more_body": False}
-
-    request = StarletteRequest({"type": "http", "headers": []}, receive)
-    with pytest.raises(HTTPException) as error:
-        asyncio.run(read_image_body(request, max_bytes=4))
-    assert error.value.status_code == 413
-
-
-def test_gallery_rejects_over_40_megapixels(client: TestClient) -> None:
-    import struct
-    import zlib
-
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    image = bytearray(_png_image((1, 1)))
-    image[16:24] = struct.pack(">II", 10000, 5000)
-    image[29:33] = struct.pack(">I", zlib.crc32(image[12:29]))
-    response = client.post(f"/api/hikes/{hike['id']}/photos", content=bytes(image))
-    assert response.status_code == 413
-
-
-@pytest.mark.parametrize("size", [6_000_000, 25_000_000])
-def test_cover_image_accepts_up_to_25_mb(client: TestClient, size: int) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    image = _png_image((20, 20))
-    # Valid PNG with trailing padding exercises the byte limit without huge dimensions.
-    response = client.put(
-        f"/api/hikes/{hike['id']}/cover-image",
-        content=image + bytes(size - len(image)),
-        headers={"Content-Type": "application/octet-stream"},
-    )
-    assert response.status_code == 200, response.text
-    assert client.get(response.json()["cover_image_url"]).headers["content-type"] == "image/webp"
-
-
-def test_cover_image_rejects_over_25_mb(client: TestClient) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    response = client.put(
-        f"/api/hikes/{hike['id']}/cover-image",
-        content=b"x",
-        headers={"Content-Length": "25000001"},
-    )
-    assert response.status_code == 413
-
-
-@pytest.mark.parametrize("destination", ["cover", "gallery"])
-def test_multi_picture_jpeg_uses_primary_still(client: TestClient, destination: str) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    output = BytesIO()
-    Image.new("RGB", (80, 60), "green").save(
-        output,
-        format="MPO",
-        save_all=True,
-        append_images=[Image.new("L", (40, 30), 128)],
-    )
-    content = output.getvalue()
-    with Image.open(BytesIO(content)) as source:
-        assert source.format == "MPO" and getattr(source, "is_animated", False)
-    if destination == "cover":
-        response = client.put(f"/api/hikes/{hike['id']}/cover-image", content=content)
-        assert response.status_code == 200, response.text
-        image_url = response.json()["cover_image_url"]
-    else:
-        response = client.post(f"/api/hikes/{hike['id']}/photos", content=content)
-        assert response.status_code == 201, response.text
-        image_url = response.json()["image_url"]
-        original = client.get(f"/api/photos/{response.json()['id']}/original")
-        assert original.headers["content-type"] == "image/jpeg"
-        assert original.content == content
-    with Image.open(BytesIO(client.get(image_url).content)) as optimized:
-        assert optimized.size == (80, 60)
-        pixel = optimized.getpixel((40, 30))
-        assert isinstance(pixel, tuple)
-        assert pixel[1] > pixel[0] + 50  # Primary green image, not grayscale auxiliary.
-        assert not getattr(optimized, "is_animated", False)
-
-
-@pytest.mark.parametrize("format_name", ["GIF", "PNG", "WEBP"])
-def test_animated_uploads_are_still_rejected(client: TestClient, format_name: str) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    output = BytesIO()
-    Image.new("RGB", (20, 20), "green").save(
-        output,
-        format=format_name,
-        save_all=True,
-        append_images=[Image.new("RGB", (20, 20), "red")],
-        duration=100,
-        loop=0,
-    )
-    for path, method in (
-        (f"/api/hikes/{hike['id']}/photos", "POST"),
-        (f"/api/hikes/{hike['id']}/cover-image", "PUT"),
-    ):
-        response = client.request(method, path, content=output.getvalue())
-        assert response.status_code == 415
-        assert response.json()["detail"] == "Please upload a static image"
-
-
-def test_photo_manual_edit_preserves_other_text_and_never_queues(client: TestClient) -> None:
-    hike = client.post("/api/hikes", json=_planned_payload()).json()
-    photo = client.post(f"/api/hikes/{hike['id']}/photos", content=_png_image((20, 20))).json()
-    path = f"/api/photos/{photo['id']}"
-    client.put(path, json={"english": {"alt": "Forest", "caption": "First night"}})
-    translation_path = path + "/translations/sv"
-    client.put(translation_path, json={"alt": "Skog", "caption": "Första natten"})
-    saved = client.put(translation_path, json={"alt": "Skog", "caption": "Andra natten"})
-    assert saved.status_code == 200
-    assert saved.json()["alt"] == "Skog"
-    assert saved.json()["caption"] == "Andra natten"
-    assert saved.json()["translation"]["review_status"] == "manual"
-    assert client.get(path).json()["caption"] == "First night"
-    assert client.get(path + "?locale=cs").json()["translation"]["locale"] == "en"
-    with app.state.testing_session_local() as db:
-        assert not db.scalars(select(TranslationJob)).all()
-
-
-def test_discovery_is_public_bounded_and_uses_only_existing_translations(
-    client: TestClient,
-) -> None:
-    first = client.post("/api/hikes", json=_planned_payload()).json()
-    second = client.post("/api/hikes", json=_planned_payload()).json()
-    content = _planned_payload()["english"]
-    assert isinstance(content, dict)
-    translated = {**content, "title": "Min första vandring"}
-    assert (
-        client.put(f"/api/hikes/{first['id']}/translations/sv", json=translated).status_code == 200
-    )
-    client.headers.pop("Authorization")
-
-    response = client.get("/api/discovery/hikes", params={"limit": 1})
-    assert response.status_code == 200
-    assert response.headers["x-robots-tag"] == "noindex"
-    page = response.json()
-    assert page["total"] == 2
-    assert len(page["items"]) == 1
-    following = client.get("/api/discovery/hikes", params={"limit": 1, "offset": 1}).json()
-    items = {item["id"]: item for item in page["items"] + following["items"]}
-    assert set(items) == {first["id"], second["id"]}
-    assert {item["locale"] for item in items[first["id"]]["translations"]} == {"en", "sv"}
-    assert {item["locale"] for item in items[second["id"]]["translations"]} == {"en"}
-    assert set(items[first["id"]]) == {"id", "translations"}
-    detail = client.get(f"/api/hikes/{first['id']}").json()
-    assert detail["available_translations"] == items[first["id"]]["translations"]
-    assert client.get("/api/discovery/hikes", params={"offset": 2}).json()["items"] == []
-    for query in [{"limit": 0}, {"limit": 101}, {"offset": -1}]:
-        assert client.get("/api/discovery/hikes", params=query).status_code == 422
 
 
 def test_discovery_has_no_urls_when_content_is_empty(client: TestClient) -> None:
@@ -1749,7 +385,7 @@ def test_card_display_order_follows_card_type_order(client: TestClient) -> None:
     assert saved.json()["cards"] == [gpx, route, second_route]
 
 
-@pytest.mark.parametrize("password", [None, "1234xss"])
+@pytest.mark.parametrize("password", [None, "1234xss"], ids=["without-password", "with-password"])
 def test_live_tracking_public_password(client: TestClient, password: str | None) -> None:
     card = {"type": "live_position", "state": "active", "url": "https://share.garmin.com/hike"}
     if password is not None:
@@ -1983,35 +619,27 @@ def test_public_map_metadata_images_etag_and_missing_variants(client: TestClient
     assert client.get("/api/hikes/00000000-0000-0000-0000-000000000000/maps").status_code == 404
 
 
-def test_named_hiking_route_scope(client: TestClient) -> None:
-    response = client.post("/api/hikes", json=_planned_payload(route_scope="named_hiking_route"))
-    assert response.status_code == 201, response.text
-    hike = response.json()
-    assert hike["route_scope"] == "named_hiking_route"
-    assert client.get(f"/api/hikes/{hike['id']}").json()["route_scope"] == "named_hiking_route"
-
-
+@pytest.mark.parametrize("field", ["boat_connection_required", "is_national_park"])
 @pytest.mark.parametrize("kind", ["trail", "area"])
-@pytest.mark.parametrize("required", [True, False, None])
-def test_location_boat_connection(client: TestClient, kind: str, required: bool | None) -> None:
+@pytest.mark.parametrize("required", [True, False, None], ids=["enabled", "disabled", "unknown"])
+def test_location_optional_flags_round_trip(
+    client: TestClient, field: str, kind: str, required: bool | None
+) -> None:
     payload = {
         "kind": kind,
-        "english": {"name": "Boat connection test"},
+        "english": {"name": "Optional location flags"},
         "country_codes": ["SE"],
-        "boat_connection_required": required,
+        field: required,
     }
     response = client.post("/api/locations", json=payload)
     assert response.status_code == 201, response.text
     location = response.json()
-    assert location["boat_connection_required"] is required
-    assert (
-        client.get(f"/api/locations/{location['id']}").json()["boat_connection_required"]
-        is required
-    )
-    payload["boat_connection_required"] = not required
+    assert location[field] is required
+    assert client.get(f"/api/locations/{location['id']}").json()[field] is required
+    payload[field] = not required
     updated = client.put(f"/api/locations/{location['id']}", json=payload)
     assert updated.status_code == 200, updated.text
-    assert updated.json()["boat_connection_required"] is (not required)
+    assert updated.json()[field] is (not required)
 
 
 def test_named_route_details_round_trip(client: TestClient) -> None:
@@ -2024,6 +652,7 @@ def test_named_route_details_round_trip(client: TestClient) -> None:
     assert response.status_code == 201, response.text
     hike_id = response.json()["id"]
     saved = client.get(f"/api/hikes/{hike_id}").json()
+    assert saved["route_scope"] == "named_hiking_route"
     assert saved["named_route_name"] == "Treparksmötet"
     assert saved["named_route_url"] == "https://example.com/treparksmotet"
     for invalid in ["javascript:alert(1)", "not-a-url", "ftp://example.com/route"]:
@@ -2065,7 +694,7 @@ def test_paid_shelter_location_options_and_hike_overnights(client: TestClient) -
     assert saved["location"]["overnight_options"] == ["paid_shelter_or_hut"]
 
 
-@pytest.mark.parametrize("is_loop", [True, False, None])
+@pytest.mark.parametrize("is_loop", [True, False, None], ids=["loop", "point-to-point", "unknown"])
 def test_hike_loop_independent_of_location(client: TestClient, is_loop: bool | None) -> None:
     location = client.post(
         "/api/locations",
@@ -2169,21 +798,45 @@ def test_achievement_listing_uses_hike_order_before_pagination(client: TestClien
     assert second["items"][0]["id"] == created[0]["id"]
 
 
-@pytest.mark.parametrize("kind", ["trail", "area"])
-@pytest.mark.parametrize("required", [True, False, None])
-def test_location_national_park(client: TestClient, kind: str, required: bool | None) -> None:
-    payload = {
-        "kind": kind,
-        "english": {"name": "National park test"},
-        "country_codes": ["SE"],
-        "is_national_park": required,
-    }
-    response = client.post("/api/locations", json=payload)
-    assert response.status_code == 201, response.text
-    location = response.json()
-    assert location["is_national_park"] is required
-    assert client.get(f"/api/locations/{location['id']}").json()["is_national_park"] is required
-    payload["is_national_park"] = not required
-    updated = client.put(f"/api/locations/{location['id']}", json=payload)
-    assert updated.status_code == 200, updated.text
-    assert updated.json()["is_national_park"] is (not required)
+def test_hike_create_does_not_queue_translations_and_returns_typed_cards(
+    client: TestClient,
+) -> None:
+    response = client.post("/api/hikes", json=_planned_payload())
+    assert response.status_code == 201
+    hike = response.json()
+    assert hike["duration_days"] == 14
+    assert hike["translation"]["slug"] == "hike-through-the-highlands"
+    assert hike["cards"] == [{"type": "route", "url": "https://example.com/route.gpx"}]
+    assert _get_jobs(client) == []
+
+
+def test_discovery_is_public_bounded_and_uses_only_existing_translations(
+    client: TestClient,
+) -> None:
+    first = client.post("/api/hikes", json=_planned_payload()).json()
+    second = client.post("/api/hikes", json=_planned_payload()).json()
+    content = _planned_payload()["english"]
+    assert isinstance(content, dict)
+    translated = {**content, "title": "Min första vandring"}
+    assert (
+        client.put(f"/api/hikes/{first['id']}/translations/sv", json=translated).status_code == 200
+    )
+    client.headers.pop("Authorization")
+
+    response = client.get("/api/discovery/hikes", params={"limit": 1})
+    assert response.status_code == 200
+    assert response.headers["x-robots-tag"] == "noindex"
+    page = response.json()
+    assert page["total"] == 2
+    assert len(page["items"]) == 1
+    following = client.get("/api/discovery/hikes", params={"limit": 1, "offset": 1}).json()
+    items = {item["id"]: item for item in page["items"] + following["items"]}
+    assert set(items) == {first["id"], second["id"]}
+    assert {item["locale"] for item in items[first["id"]]["translations"]} == {"en", "sv"}
+    assert {item["locale"] for item in items[second["id"]]["translations"]} == {"en"}
+    assert set(items[first["id"]]) == {"id", "translations"}
+    detail = client.get(f"/api/hikes/{first['id']}").json()
+    assert detail["available_translations"] == items[first["id"]]["translations"]
+    assert client.get("/api/discovery/hikes", params={"offset": 2}).json()["items"] == []
+    for query in [{"limit": 0}, {"limit": 101}, {"offset": -1}]:
+        assert client.get("/api/discovery/hikes", params=query).status_code == 422

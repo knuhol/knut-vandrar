@@ -9,7 +9,7 @@ import {
   IconCompass as Compass,
   IconBeach as Beach,
   IconRepeat as Loop,
-  IconSailboat as Boat,
+  IconShip as Boat,
 } from '@tabler/icons-react'
 
 import type { TrailTag } from '@/hiking/presentation'

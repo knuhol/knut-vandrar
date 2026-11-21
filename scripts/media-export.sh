@@ -7,7 +7,7 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/media-common.sh
 source "$script_dir/media-common.sh"
 
-[[ $# -ge 1 ]] || media_error 'Usage: media-export.sh <local|dev|prod> [archive.tar|-] [--ssh HOST] [--ssh-password] [--remote-checkouts-dir DIR] [--hike UUID] [--location UUID]'
+[[ $# -ge 1 ]] || media_error 'Usage: media-export.sh <local|dev|prod> [archive.tar|-] [--ssh HOST] [--ssh-password] [--remote-checkouts-dir DIR] [--hike UUID_OR_TITLE] [--location UUID]'
 environment="$1"
 shift
 output_path="$MEDIA_SCRIPT_ROOT/backups/media-$environment-$(date -u +%Y%m%dT%H%M%SZ).tar"

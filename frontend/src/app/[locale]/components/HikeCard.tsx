@@ -25,7 +25,7 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
         {hike.cover_image_url ? (
           <Image
             src={imageUrl(hike.cover_image_url)}
-            alt=""
+            alt={hike.translation.title}
             fill
             className="object-cover"
             unoptimized

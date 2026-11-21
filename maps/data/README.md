@@ -1,15 +1,18 @@
 # Country outlines
 
-`sweden.geojson` is the Sweden feature from Natural Earth's 1:110m Admin 0 Countries
-GeoJSON, retrieved 20 November 2026:
+`countries.json` contains the country geometries and names from Natural Earth's
+public-domain 1:110m Admin 0 Countries dataset, retrieved 21 November 2026:
 
 https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson
 
-Natural Earth data is public domain: https://www.naturalearthdata.com/about/terms-of-use/
+https://www.naturalearthdata.com/about/terms-of-use/
 
-This outline is used only as a country locator illustration, not as a terrain layer.
+Route coordinates select the locator outline, including multiple countries for
+cross-border routes. If no country contains route points, the locator is omitted.
+These generalised outlines are illustrations, not navigation boundaries.
+Terrain attribution uses intersection with the visible viewport. Proximity to a
+neighbouring country alone does not add its credit.
 
-`norway.json` is the Norway feature from the same public-domain Natural Earth
-1:110m dataset, retrieved 20 November 2026. It is used for conservative regional
-attribution selection, with a 25 km margin to account for outline generalisation
-and terrain sampling near the border. It is not a navigation boundary.
+Mapterhorn already incorporates Finland's National Land Survey 2 m elevation
+model (2025, CC BY 4.0), recorded in `terrain-sources.json`. Contours and hillshade
+use this shared terrain service; a separate Finnish API key is unnecessary.

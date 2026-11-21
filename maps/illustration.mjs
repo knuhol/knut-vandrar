@@ -1,3 +1,5 @@
+import countries from "./data/countries.json" with { type: "json" };
+
 import { endpointColors } from "./style.mjs";
 
 /** Public density levels; named profiles remain an internal rendering distinction. */
@@ -274,7 +276,30 @@ export function illustrationStyle(base, tokens, profile, settings) {
   return style;
 }
 
-export function addIllustration(map, route, tokens, settings, country) {
+/** Select all countries containing route points; never default to an unrelated country. */
+export function routeCountry(route) {
+  const points = route.geojson.features.flatMap((feature) =>
+    feature.geometry.coordinates.flat(),
+  );
+  const contains = ([x, y], ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [ax, ay] = ring[i], [bx, by] = ring[j];
+      if ((ay > y) !== (by > y) && x < ((bx - ax) * (y - ay)) / (by - ay) + ax)
+        inside = !inside;
+    }
+    return inside;
+  };
+  const polygons = countries.features.flatMap(({ geometry }) => {
+    const parts = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+    return parts.some((rings) => points.some((point) =>
+      contains(point, rings[0]) && !rings.slice(1).some((hole) => contains(point, hole)),
+    )) ? parts : [];
+  });
+  return polygons.length ? { geometry: { type: "MultiPolygon", coordinates: polygons } } : null;
+}
+
+export function addIllustration(map, route, tokens, settings) {
   const colors = endpointColors(route, settings, tokens);
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
@@ -288,6 +313,8 @@ export function addIllustration(map, route, tokens, settings, country) {
     (lon * Math.PI) / 180,
     Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)),
   ];
+  const country = routeCountry(route);
+  if (!country) return;
   const polygons =
     country.geometry.type === "Polygon"
       ? [country.geometry.coordinates]

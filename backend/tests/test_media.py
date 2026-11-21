@@ -412,6 +412,17 @@ def _rewrite(
         "limit",
         "truncated",
     ],
+    ids=[
+        "path-traversal",
+        "symbolic-link",
+        "extended-tar-header",
+        "duplicate-entry",
+        "orphaned-image",
+        "corrupt-image",
+        "unsupported-revision",
+        "archive-size-limit",
+        "truncated-archive",
+    ],
 )
 def test_invalid_archives_never_publish_images(
     environments: tuple[Environment, Environment],
@@ -448,7 +459,7 @@ def test_invalid_archives_never_publish_images(
     assert not list((destination.media / "photos").glob("*/versions/*"))
 
 
-@pytest.mark.parametrize("repair", [False, True])
+@pytest.mark.parametrize("repair", [False, True], ids=["new-import", "repair-missing-files"])
 def test_failed_apply_rolls_back_files_and_database(
     environments: tuple[Environment, Environment],
     monkeypatch: pytest.MonkeyPatch,
@@ -492,7 +503,9 @@ def test_failed_apply_rolls_back_files_and_database(
     } == original_files
 
 
-@pytest.mark.parametrize("committed", [False, True])
+@pytest.mark.parametrize(
+    "committed", [False, True], ids=["crash-before-commit", "crash-after-commit"]
+)
 def test_crash_journal_uses_database_commit_receipt(
     environments: tuple[Environment, Environment],
     monkeypatch: pytest.MonkeyPatch,
@@ -539,8 +552,10 @@ def test_progress_reports_export_and_dry_run_stages(
     archive = BytesIO()
     with source.factory.begin() as db:
         export_archive(db, source.media, archive, progress=Progress(messages.append))
-    assert messages[0] == "Exporting images and metadata..."
-    assert messages[-1] == "Archive complete: 4 images."
+    assert messages[0] == "Exporting images, GPX files, and collection metadata..."
+    assert messages[-1] == (
+        "Archive complete: 4 images, 0 GPX files, 0 collections, 0 hike selections (4 assets total)."
+    )
     messages.clear()
     archive.seek(0)
     report = transfer.import_archive(
@@ -668,8 +683,8 @@ def test_draft_survives_sessions_and_publishes_only_when_reviewed(
         assert route is not None and route.overrides == {"start": "Manual"}
 
 
-@pytest.mark.parametrize("cleanup_answer", ["n", "y"])
-@pytest.mark.parametrize("supplied_name", [False, True])
+@pytest.mark.parametrize("cleanup_answer", ["n", "y"], ids=["keep-downloads", "remove-downloads"])
+@pytest.mark.parametrize("supplied_name", [False, True], ids=["prompted-name", "provided-name"])
 @pytest.mark.parametrize("owner_kind", ["trail", "hike"])
 def test_browser_bundle_resumes_cli_review_without_scraping(
     environments: tuple[Environment, Environment],
@@ -833,9 +848,15 @@ def test_hike_collection_selection_and_custom_tracks_transfer_with_mapping(
         db.add(HikingLocation(id=mapped_trail))
         db.flush()
         db.add(Hike(id=mapped_hike, location_id=mapped_trail))
+    from knut_vandrar_backend.media.progress import Progress
+
     output = BytesIO()
+    messages: list[str] = []
     with source.factory() as db:
-        export_archive(db, source.media, output, hikes=(HIKE,))
+        export_archive(db, source.media, output, hikes=(HIKE,), progress=Progress(messages.append))
+    assert messages[-1] == (
+        "Archive complete: 4 images, 1 GPX files, 1 collections, 1 hike selections (7 assets total)."
+    )
     mapping = {"hike_map": {HIKE: mapped_hike}, "location_map": {LOCATION: mapped_trail}}
     dry_run = transfer.import_archive(
         destination.factory,

@@ -96,7 +96,7 @@ def export_archive(
     progress: Progress | None = None,
 ) -> int:
     progress = progress or Progress()
-    progress.report("Exporting images and metadata...")
+    progress.report("Exporting images, GPX files, and collection metadata...")
     # Snapshot all SQL data; shared row locks keep API deletes from removing photo files.
     if db.get_bind().dialect.name == "postgresql":
         db.connection(execution_options={"isolation_level": "REPEATABLE READ"})
@@ -109,6 +109,11 @@ def export_archive(
     if hikes or locations:
         selected = selected.where(Hike.id.in_(hikes) | Hike.location_id.in_(locations))
     count = 0
+    counts = {"images": 0, "GPX files": 0, "collections": 0, "hike selections": 0}
+
+    def summary() -> str:
+        return ", ".join(f"{value} {label}" for label, value in counts.items())
+
     with (
         TemporaryFile() as records,
         tarfile.open(fileobj=output, mode="w|", format=tarfile.USTAR_FORMAT) as archive,
@@ -122,7 +127,13 @@ def export_archive(
                 raise MediaError("Image metadata exceeds the archive record limit")
             records.write(value)
             count += 1
-            progress.report(f"Exported {count} images...", force=False)
+            category = {
+                "gpx": "GPX files",
+                "collection": "collections",
+                "track_selection": "hike selections",
+            }.get(asset.kind, "images")
+            counts[category] += 1
+            progress.report(f"Exported {summary()}...", force=False)
 
         for hike in db.scalars(
             selected.order_by(Hike.id).with_for_update(read=True).execution_options(yield_per=100)
@@ -278,7 +289,7 @@ def export_archive(
         record_info.size = records.tell()
         records.seek(0)
         archive.addfile(record_info, records)
-    progress.report(f"Archive complete: {count} images.")
+    progress.report(f"Archive complete: {summary()} ({count} assets total).")
     return count
 
 
