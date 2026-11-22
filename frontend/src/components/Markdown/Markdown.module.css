@@ -24,7 +24,10 @@
 }
 
 .prose h2,
-.prose h3 {
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   @apply mt-6 mb-4 font-display leading-tight font-bold tracking-tight;
 }
 
@@ -32,7 +35,10 @@
   @apply text-3xl;
 }
 
-.prose h3 {
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   @apply text-xl;
 }
 
@@ -59,37 +65,33 @@
 }
 
 .prose details {
-  @apply mb-6 overflow-clip rounded-lg border border-forest-outline bg-forest-soft;
+  @apply mb-0 overflow-clip;
   counter-increment: chapter;
 }
 
+.prose details + details {
+  @apply border-t border-beige;
+}
+
 .prose details[open] {
-  @apply border-forest bg-paper pb-6;
+  @apply pb-4;
 }
 
 .prose details > :not(summary) {
-  @apply mx-5 tablet:mx-8;
+  @apply tablet:ml-14;
 }
 
 .prose details > summary + * {
-  @apply mt-6;
+  @apply mt-2;
 }
 
 .prose summary {
-  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 bg-forest-soft px-5 py-5 text-forest tablet:px-8;
+  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-4 py-4 text-forest tablet:gap-6;
 }
 
 .prose summary::before {
   content: counter(chapter, decimal-leading-zero);
-  @apply font-statistic text-3xl leading-tight text-orange-dark;
-}
-
-.prose details[open] > summary {
-  @apply sticky top-(--header-height) z-1 bg-forest text-cream;
-}
-
-.prose details[open] > summary::before {
-  @apply text-orange;
+  @apply w-8 font-statistic text-base leading-tight text-muted;
 }
 
 .prose summary::-webkit-details-marker {
@@ -97,14 +99,62 @@
 }
 
 .prose summary::after {
-  content: '+';
-  @apply shrink-0 font-sans text-xl;
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: calc(var(--spacing) * 1.5) solid transparent;
+  border-bottom: calc(var(--spacing) * 1.5) solid transparent;
+  border-left: calc(var(--spacing) * 2) solid var(--color-forest);
+  transition: transform var(--chapter-toggle-duration, var(--duration-motion)) ease-out;
+  align-self: center;
 }
 
-.prose details[open] > summary::after {
-  content: '−';
+.prose details[data-expanded='true'] > summary::after,
+.prose details[open]:not([data-expanded]) > summary::after {
+  transform: rotate(90deg);
 }
 
-.prose summary h2 {
-  @apply m-0 text-xl;
+.prose summary h2,
+.prose summary h3 {
+  @apply relative m-0 text-xl;
+}
+
+.prose summary :is(h2, h3)::before {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--spacing) * -3);
+  width: calc(var(--spacing) * 0.75);
+  background: var(--color-orange);
+  content: '';
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.prose summary:is(:hover, :focus-visible, :active) :is(h2, h3)::before,
+.prose details[data-expanded='true'] > summary :is(h2, h3)::before,
+.prose details[open]:not([data-expanded]) > summary :is(h2, h3)::before {
+  opacity: 1;
+}
+
+.article {
+  line-height: var(--leading-reading);
+}
+
+.article p,
+.article ul,
+.article ol,
+.article blockquote {
+  max-width: var(--container-prose);
+}
+
+.article p {
+  margin-bottom: calc(var(--spacing) * 5);
+}
+
+.article h4 {
+  font-size: var(--text-lg);
+}
+.article h5,
+.article h6 {
+  font-size: var(--text-base);
 }

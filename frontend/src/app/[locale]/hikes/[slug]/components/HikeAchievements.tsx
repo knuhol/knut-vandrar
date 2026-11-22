@@ -9,6 +9,8 @@ import {
 } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
+import { HikeBadge } from './HikeBadge'
+
 import { Heading } from '@/components/Heading'
 import type { HikeDetails } from '@/hiking/details'
 import type { Hike } from '@/api/hikes'
@@ -50,19 +52,18 @@ export function HikeAchievements({
         </Heading>
         {isActive && <p className="mt-1 text-sm text-muted">{t('goals')}</p>}
       </div>
-      <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+      <ul className="flex flex-wrap items-start gap-2">
         {items.map(({ id, label, description, Icon }) => (
-          <li
-            key={id}
-            className="flex min-w-0 items-start gap-3 rounded-sm border border-orange-outline bg-orange-soft p-3"
-          >
-            <span className="grid size-6 shrink-0 place-items-center text-orange-dark">
-              <Icon className="size-5" aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-forest">{label}</span>
-              {description && <span className="mt-1 block text-xs text-muted">{description}</span>}
-            </span>
+          <li key={id} className="max-w-full">
+            <HikeBadge kind="milestone">
+              <Icon className="size-5 shrink-0 text-orange-dark" aria-hidden="true" />
+              <span className="min-w-0">
+                {label}
+                {description && (
+                  <span className="mt-1 block text-xs font-normal text-muted">{description}</span>
+                )}
+              </span>
+            </HikeBadge>
           </li>
         ))}
       </ul>

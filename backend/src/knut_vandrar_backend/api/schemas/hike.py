@@ -216,6 +216,17 @@ class HikeDiscoveryRead(BaseModel):
     translations: list[HikeSlugRead]
 
 
+class HikeNeighborRead(BaseModel):
+    id: UUID
+    title: str
+    slug: str
+
+
+class HikeNeighborsRead(BaseModel):
+    previous: HikeNeighborRead | None
+    next: HikeNeighborRead | None
+
+
 class HikeRead(HikeExtra):
     track_collection_id: UUID | None = None
     id: UUID

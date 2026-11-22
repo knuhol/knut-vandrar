@@ -1,14 +1,35 @@
 .landscape {
-  background-image:
-    linear-gradient(
-      to right,
-      var(--color-forest),
-      color-mix(in srgb, var(--color-forest) 75%, transparent)
-    ),
-    url('/brand/forest.svg');
-  background-position:
-    center,
-    right bottom;
-  background-size: cover;
-  background-repeat: no-repeat;
+  z-index: 2;
+  overflow: visible;
+  min-height: calc(100svh - var(--header-height));
+}
+
+.shade {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ink) 65%, transparent),
+    color-mix(in srgb, var(--color-ink) 35%, transparent) 35%,
+    color-mix(in srgb, var(--color-ink) 85%, transparent)
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo {
+    animation: cover-enter var(--duration-entrance) var(--ease-entrance) both;
+  }
+}
+
+@keyframes cover-enter {
+  from {
+    opacity: 0.85;
+    transform: scale(1.025);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.readable {
+  text-shadow: var(--text-shadow-on-image);
 }

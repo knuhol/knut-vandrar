@@ -1,0 +1,78 @@
+@reference '../../app/globals.css';
+
+.brand {
+  transition: width var(--duration-fast) var(--ease-entrance);
+}
+
+.brandFull,
+.brandIcon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  transition:
+    opacity var(--duration-fast) var(--ease-entrance),
+    visibility var(--duration-fast);
+}
+
+.track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform var(--duration-fast) var(--ease-entrance);
+}
+
+.trackReading {
+  transform: translateX(-50%);
+}
+
+.pane {
+  min-width: 0;
+  transition: visibility var(--duration-fast);
+}
+
+.inactive {
+  visibility: hidden;
+}
+
+.brandIcon {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.switcher {
+  overflow: hidden;
+  transition:
+    opacity var(--duration-fast) ease,
+    width var(--duration-fast) var(--ease-entrance),
+    margin-left var(--duration-fast) var(--ease-entrance);
+}
+
+.switcherHidden {
+  @apply -ml-2.5 w-0 tablet:-ml-6.25 desktop:-ml-11;
+  visibility: hidden;
+  opacity: 0;
+}
+
+@variant max-tablet {
+  .brand {
+    width: var(--spacing-header-brand);
+  }
+  .contextAvailable .brand {
+    width: var(--spacing-brand-icon);
+    flex-shrink: 0;
+  }
+  .brandFull {
+    width: var(--spacing-header-brand);
+  }
+  .contextAvailable .brandFull {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .contextAvailable .brandIcon {
+    opacity: 1;
+    visibility: visible;
+  }
+}

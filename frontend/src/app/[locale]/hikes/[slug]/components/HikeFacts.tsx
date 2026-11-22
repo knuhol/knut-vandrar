@@ -17,13 +17,13 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
     hike.duration_days !== null || hike.distance_km !== null || hike.ascent_m !== null
 
   return (
-    <div className="min-w-0 rounded-lg bg-cream p-6">
+    <div className="min-w-0">
       <div className="sr-only">
         <Heading as="h2" className="text-xl">
           {t('hikeFacts')}
         </Heading>
       </div>
-      <div className="grid gap-4.5 tablet:grid-cols-2 tablet:gap-8">
+      <div className="grid gap-4.5 tablet:gap-6">
         <dl>
           {(hasStats || start) && (
             <div className="grid gap-2">
@@ -33,8 +33,8 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
                   <dd>
                     <HikeStats
                       hike={hike}
-                      fontSize="xl"
-                      className="gap-x-4 gap-y-3 text-forest tablet:gap-x-6 [&_span]:gap-2"
+                      fontSize="lg"
+                      className="gap-x-3 gap-y-3 text-forest tablet:gap-x-4 wide:text-xl [&_span]:gap-2"
                     />
                   </dd>
                 </>

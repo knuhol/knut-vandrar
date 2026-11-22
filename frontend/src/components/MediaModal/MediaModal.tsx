@@ -55,12 +55,11 @@ export function MediaModal({
       }}
       onKeyDown={onKeyDown}
     >
-      <div className="grid h-full grid-rows-[auto_minmax(0,1fr)] gap-2 p-2 tablet:p-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 text-sm font-semibold">{title}</span>
+      <div className="relative h-full w-full">
+        <div className={`${styles.closeControl} absolute z-20`}>
           <MediaControl action="close" label={closeLabel} onClick={() => dialog.current?.close()} />
         </div>
-        <div className="min-h-0 min-w-0">{children}</div>
+        {children}
       </div>
     </dialog>
   )

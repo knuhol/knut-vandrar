@@ -34,7 +34,9 @@ export function PageMotion() {
     }
     const frame = requestAnimationFrame(hashChange)
     document.addEventListener('mousedown', pointerDown, true)
-    document.addEventListener('click', click, true)
+    // Let controls (including dropdown items) finish selection before canceling
+    // the browser's anchor jump. Capture would prevent their default close action.
+    document.addEventListener('click', click)
     window.addEventListener('hashchange', hashChange)
     window.addEventListener('wheel', cancelPageScroll, { passive: true })
     window.addEventListener('touchstart', cancelPageScroll, { passive: true })
@@ -43,7 +45,7 @@ export function PageMotion() {
       cancelAnimationFrame(frame)
       cancelPageScroll()
       document.removeEventListener('mousedown', pointerDown, true)
-      document.removeEventListener('click', click, true)
+      document.removeEventListener('click', click)
       window.removeEventListener('hashchange', hashChange)
       window.removeEventListener('wheel', cancelPageScroll)
       window.removeEventListener('touchstart', cancelPageScroll)

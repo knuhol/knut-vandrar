@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { headers } from 'next/headers'
 
 import { Navigation } from './Navigation/Navigation'
-import { SiteHeader } from './SiteHeader'
+import { SiteHeader } from './SiteHeader/SiteHeader'
 import { Logo } from './Logo'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Container } from './Container'
@@ -22,20 +22,20 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
       <a className="absolute -top-25 left-2.5 z-100 bg-paper p-2.5 focus:top-2.5" href="#content">
         {t('skip')}
       </a>
-      <SiteHeader>
-        <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
-          <Link
-            data-link-kind="brand"
-            className="min-w-0 flex-1 tablet:flex-none"
-            href="/"
-            locale={locale}
-          >
-            <Logo variant={logoVariant} locale={locale} />
+      <SiteHeader
+        brand={
+          <Link data-link-kind="brand" href="/" locale={locale} className="block w-full">
+            <Logo variant={logoVariant} size="header" locale={locale} />
           </Link>
-          <Navigation locale={locale} />
-          <LanguageSwitcher locale={locale} />
-        </div>
-      </SiteHeader>
+        }
+        brandIcon={
+          <Link data-link-kind="brand" href="/" locale={locale} className="block w-full">
+            <Logo variant="monochromaticForest" size="icon" locale={locale} />
+          </Link>
+        }
+        navigation={<Navigation locale={locale} />}
+        languages={<LanguageSwitcher locale={locale} />}
+      />
     </>
   )
 }

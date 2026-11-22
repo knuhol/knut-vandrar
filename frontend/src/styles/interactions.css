@@ -56,14 +56,14 @@ a[data-link-kind='card']:is(:hover, :focus-visible) [data-link-label] {
 /* A small entrance for server-rendered content, shared across page templates. */
 @utility content-enter {
   @media (prefers-reduced-motion: no-preference) {
-    animation: content-enter var(--duration-entrance) ease-out both;
+    animation: content-enter var(--duration-entrance) var(--ease-entrance) both;
   }
 }
 
 @keyframes content-enter {
   from {
-    opacity: 0.6;
-    transform: translateY(calc(var(--spacing) * 2));
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 3));
   }
   to {
     opacity: 1;

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 import { cancelPageScroll, motionDuration, scrollToElement } from '@/navigation/motion'
 
 export function Chapter({ children }: { children?: ReactNode }) {
   const element = useRef<HTMLDetailsElement>(null)
+  const id = useId()
 
   useEffect(() => {
     const details = element.current
@@ -17,6 +18,7 @@ export function Chapter({ children }: { children?: ReactNode }) {
     let expanded = details.open
     let operation = 0
     let pending = false
+    details.dataset.expanded = String(expanded)
 
     function toggle(event: MouseEvent) {
       if (
@@ -28,14 +30,11 @@ export function Chapter({ children }: { children?: ReactNode }) {
       }
       event.preventDefault()
       cancelPageScroll()
-      const summaryStyle = getComputedStyle(summary)
       const summaryTop = summary.getBoundingClientRect().top
       const wasSticky =
         expanded &&
-        summaryStyle.position === 'sticky' &&
-        Math.abs(summaryTop - Number.parseFloat(summaryStyle.top)) <= 1 &&
-        details.getBoundingClientRect().top < summaryTop - 1
-      const article = details.closest('article')
+        summaryTop < Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)
+      const article = details
       const request = ++operation
       const start = details.getBoundingClientRect().height
       animation?.cancel()
@@ -62,6 +61,8 @@ export function Chapter({ children }: { children?: ReactNode }) {
           animation = null
         }
         const duration = motionDuration(details)
+        summary.style.setProperty('--chapter-toggle-duration', `${String(duration)}ms`)
+        details.dataset.expanded = String(expanded)
         if (duration === 0) {
           finish()
           return
@@ -72,7 +73,7 @@ export function Chapter({ children }: { children?: ReactNode }) {
         )
         animation.onfinish = finish
       }
-      if (!expanded && wasSticky && article) {
+      if (!expanded && wasSticky) {
         pending = true
         async function closeAfterScroll(target: HTMLElement) {
           const completed = await scrollToElement(target)
@@ -84,6 +85,7 @@ export function Chapter({ children }: { children?: ReactNode }) {
             animate(details.getBoundingClientRect().height)
           } else {
             expanded = details.open
+            details.dataset.expanded = String(expanded)
           }
         }
         void closeAfterScroll(article)
@@ -100,13 +102,14 @@ export function Chapter({ children }: { children?: ReactNode }) {
       ) {
         return
       }
-      // Focusing a sticky summary must not scroll its original flow position into view.
+      // Taking focus must not move the reader away from the current position.
       event.preventDefault()
       summary?.focus({ preventScroll: true })
     }
     function sync() {
       if (!animation && !pending && details) {
         expanded = details.open
+        details.dataset.expanded = String(expanded)
       }
     }
     summary.addEventListener('mousedown', pointerDown)
@@ -124,5 +127,9 @@ export function Chapter({ children }: { children?: ReactNode }) {
     }
   }, [])
 
-  return <details ref={element}>{children}</details>
+  return (
+    <details ref={element} id={`chapter-${id}`} data-chapter>
+      {children}
+    </details>
+  )
 }

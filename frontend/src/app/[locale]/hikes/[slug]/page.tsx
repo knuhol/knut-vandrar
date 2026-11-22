@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { hasLocale } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
-import Image from 'next/image'
 import { notFound, permanentRedirect } from 'next/navigation'
-import { IconArrowLeft as ArrowLeft } from '@tabler/icons-react'
+import { IconArrowDown } from '@tabler/icons-react'
 
+import { HikePagination } from './components/HikePagination'
 import { HikeMap } from './components/HikeMap/HikeMap'
 
 import { HikeGallery } from './components/HikeGallery/HikeGallery'
@@ -12,18 +12,21 @@ import { HikeGallery } from './components/HikeGallery/HikeGallery'
 import { HikeNavigation, type HikeNavigationItem } from './components/HikeNavigation'
 import { HikeSection } from './components/HikeSection/HikeSection'
 import { HikeMasthead } from './components/HikeMasthead/HikeMasthead'
-import { hasHikeJourney, HikeJourney } from './components/HikeJourney'
+import { HikeOverview } from './components/HikeOverview/HikeOverview'
+import { HikeJourney } from './components/HikeJourney'
+import { TrailFooter } from './components/TrailFooter/TrailFooter'
 import { TrailFacts } from './components/TrailFacts'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
 
-import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
+import { HikeFacts } from './components/HikeFacts'
+import { ButtonLink } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { Markdown } from '@/components/Markdown/Markdown'
 import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
-import { getPathname, Link } from '@/i18n/navigation'
+import { getPathname } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
-import { getHike, getPhotos, getHikeMaps } from '@/api/hikes'
+import { getHike, getPhotos, getHikeMaps, getHikeNeighbors } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
@@ -87,10 +90,13 @@ export default async function HikePage({ params }: Props) {
   }
 
   const t = await getTranslations('Site')
-  const [galleryPage, maps] = await Promise.all([getPhotos(hike.id, locale), getHikeMaps(hike.id)])
+  const [galleryPage, maps, neighbors] = await Promise.all([
+    getPhotos(hike.id, locale),
+    getHikeMaps(hike.id),
+    getHikeNeighbors(hike.id, locale),
+  ])
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
-  const hasJourney = hasHikeJourney(presentation.details)
   const cards = visibleHikeCards(hike)
   const isActive = hike.status === 'planned' || hike.status === 'ongoing'
   const resourceItem: HikeNavigationItem = {
@@ -98,19 +104,19 @@ export default async function HikePage({ params }: Props) {
     label: t(isActive ? 'followHike' : 'hikeResources'),
   }
   const navigationItems: HikeNavigationItem[] = [
-    ...(isActive && cards.length > 0 ? [resourceItem] : []),
-    { id: 'story', label: t('about') },
     ...(maps.length > 0 ? [{ id: 'map' as const, label: t('map.title') }] : []),
-    ...(hasJourney ? [{ id: 'journey' as const, label: t('journey.title') }] : []),
+    ...(cards.length > 0 ? [resourceItem] : []),
+    { id: 'journey', label: t('journey.title') },
+    { id: 'story', label: t('about') },
+
+    ...(galleryPage.total > 0 ? [{ id: 'photos' as const, label: t('gallery.title') }] : []),
     ...(hike.location
       ? [{ id: 'trail' as const, label: t(`locationKind.${hike.location.kind}`) }]
       : []),
-    ...(!isActive && cards.length > 0 ? [resourceItem] : []),
-    ...(galleryPage.total > 0 ? [{ id: 'photos' as const, label: t('gallery.title') }] : []),
   ]
 
   return (
-    <div className="pt-6.25 pb-15">
+    <div>
       <StructuredData
         data={hikeData(
           locale,
@@ -119,90 +125,74 @@ export default async function HikePage({ params }: Props) {
           hike.cover_image_url ? imageUrl(hike.cover_image_url) : undefined,
         )}
       />
-      <Container>
-        <nav
-          className="mb-6.25 flex flex-wrap gap-3 text-sm [&_a]:text-forest"
-          aria-label={t('hikes')}
+      <HikeMasthead hike={hike} />
+      <section className="relative bg-cream" aria-label={t('hikeFacts')}>
+        <HikeOverview
+          map={
+            maps.length > 0 ? (
+              <HikeMap images={maps} hikeTitle={hike.translation.title} variant="landscape" />
+            ) : undefined
+          }
         >
-          <Link href={{ pathname: '/', hash: 'hikes' }}>{t('hikes')}</Link>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page">{hike.translation.title}</span>
-        </nav>
-        <HikeMasthead hike={hike} endpoints={presentation.endpoints} />
-        <div className="my-8 overflow-hidden rounded-lg bg-cream tablet:my-12">
-          {hike.cover_image_url && (
-            <div className="relative aspect-video max-h-100 w-full overflow-hidden">
-              <Image
-                src={imageUrl(hike.cover_image_url)}
-                alt={hike.translation.title}
-                fill
-                className="object-cover"
-                priority
-                unoptimized
-                sizes="100vw"
+          <HikeFacts hike={hike} endpoints={presentation.endpoints} />
+          {cards.length > 0 && (
+            <section aria-label={resourceItem.label}>
+              <InfoCards
+                cards={cards}
+                hikeId={hike.id}
+                hikeTitle={hike.english_title}
+                locale={locale}
+                presentation="compact"
               />
-              <div className="absolute top-3.75 left-3.75">
-                <HikeStatus status={hike.status} />
-              </div>
-            </div>
+            </section>
           )}
-          <div className="min-w-0 p-5 leading-relaxed text-forest tablet:p-8">
-            {!hike.cover_image_url && (
-              <div className="mb-4">
-                <HikeStatus status={hike.status} />
-              </div>
-            )}
-            <Markdown variant="lead">{hike.translation.summary_markdown}</Markdown>
-          </div>
+        </HikeOverview>
+        <div className="bg-forest-soft py-8 tablet:py-12">
+          <Container>
+            <HikeJourney
+              details={presentation.details}
+              status={hike.status}
+              more={
+                hike.location && (
+                  <ButtonLink
+                    size="small"
+                    variant="secondary"
+                    href={{
+                      pathname: '/hikes/[slug]',
+                      params: { slug: hike.translation.slug },
+                      hash: 'trail',
+                    }}
+                  >
+                    {t(hike.location.kind === 'trail' ? 'moreAboutTrail' : 'moreAboutArea')}
+                    <IconArrowDown className="size-4" aria-hidden="true" />
+                  </ButtonLink>
+                )
+              }
+            />
+          </Container>
         </div>
-        <div className="grid items-start gap-8 desktop:grid-cols-[var(--container-navigation)_minmax(0,1fr)] desktop:gap-10">
-          <div className="desktop:sticky desktop:top-(--section-scroll-offset)">
-            <HikeNavigation label={t('pageContents')} items={navigationItems} />
-          </div>
+      </section>
+      <HikeNavigation label={t('pageContents')} items={navigationItems} />
+      <div className="pt-10 tablet:pt-16">
+        <Container>
           <div className="grid gap-12 tablet:gap-16">
-            {isActive && cards.length > 0 && (
-              <HikeSection id="resources" title={t('followHike')} variant="contrast">
-                <InfoCards
-                  cards={cards}
-                  hikeId={hike.id}
-                  hikeTitle={hike.english_title}
-                  locale={locale}
-                />
-              </HikeSection>
-            )}
-            <HikeSection id="story" title={t('about')} as="article">
+            <HikeSection id="story" title={t('about')} as="article" heading="visible">
               <div>
                 {locale !== 'en' && (
                   <div className="mb-6">
                     <TranslationNotice />
                   </div>
                 )}
+                {hike.translation.summary_markdown && (
+                  <div className="mb-8">
+                    <Markdown variant="article">{hike.translation.summary_markdown}</Markdown>
+                  </div>
+                )}
                 {hike.translation.description_markdown && (
-                  <Markdown>{hike.translation.description_markdown}</Markdown>
+                  <Markdown variant="article">{hike.translation.description_markdown}</Markdown>
                 )}
               </div>
             </HikeSection>
-            {maps.length > 0 && <HikeMap images={maps} hikeTitle={hike.translation.title} />}
-            {hasJourney && <HikeJourney details={presentation.details} status={hike.status} />}
-            {hike.location && locationData && (
-              <TrailFacts
-                location={hike.location}
-                locale={locale}
-                tags={locationData.tags}
-                ratings={locationData.ratings}
-                details={locationData.details}
-              />
-            )}
-            {!isActive && cards.length > 0 && (
-              <HikeSection id="resources" title={t('hikeResources')} variant="contrast">
-                <InfoCards
-                  cards={cards}
-                  hikeId={hike.id}
-                  hikeTitle={hike.english_title}
-                  locale={locale}
-                />
-              </HikeSection>
-            )}
             <HikeGallery
               key={hike.id}
               hikeId={hike.id}
@@ -211,17 +201,25 @@ export default async function HikePage({ params }: Props) {
               initialPage={galleryPage}
             />
           </div>
-        </div>
-        <div className="mt-12 tablet:mt-16">
-          <Link
-            className="inline-flex items-center gap-2.5 font-semibold text-forest"
-            href={{ pathname: '/', hash: 'hikes' }}
-          >
-            <ArrowLeft className="size-4.5 shrink-0" aria-hidden="true" />
-            {t('back')}
-          </Link>
-        </div>
-      </Container>
+          <div className="mt-12 tablet:mt-16">
+            <HikePagination neighbors={neighbors} />
+          </div>
+        </Container>
+      </div>
+      {hike.location && locationData && (
+        <TrailFooter>
+          <Container>
+            <TrailFacts
+              location={hike.location}
+              locale={locale}
+              tags={locationData.tags}
+              ratings={locationData.ratings}
+              details={locationData.details}
+              presentation="footer"
+            />
+          </Container>
+        </TrailFooter>
+      )}
     </div>
   )
 }
