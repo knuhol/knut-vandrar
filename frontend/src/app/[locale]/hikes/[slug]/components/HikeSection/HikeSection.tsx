@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { hikeSectionIcons, type HikeSectionId } from '../hikeSections'
+import type { HikeSectionId } from '../hikeSections'
 
 import { Heading } from '@/components/Heading'
 
@@ -11,6 +11,7 @@ export function HikeSection({
   children,
   as: Tag = 'section',
   variant = 'plain',
+  heading = 'visible',
 }: {
   id: HikeSectionId
   title: string
@@ -18,26 +19,28 @@ export function HikeSection({
   children: ReactNode
   as?: 'section' | 'article'
   variant?: 'plain' | 'panel' | 'paper' | 'contrast'
+  heading?: 'visible' | 'hidden' | 'prominent'
 }) {
-  const Icon = hikeSectionIcons[id]
-
   return (
     <Tag
       id={id}
       className={`min-w-0 rounded-lg ${variant === 'plain' ? '' : 'p-5 tablet:p-8'} ${variant === 'panel' ? 'bg-cream' : ''} ${variant === 'paper' ? 'border border-beige bg-paper' : ''} ${variant === 'contrast' ? 'bg-forest text-cream' : ''}`}
       aria-labelledby={`${id}-title`}
     >
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
-        <div
-          className={`flex min-w-0 items-center gap-3 ${variant === 'plain' ? 'border-l-4 border-orange-dark pl-4 tablet:pl-7' : ''}`}
-        >
-          <span
-            aria-hidden="true"
-            className={`grid size-10 shrink-0 place-items-center rounded-sm ${variant === 'contrast' ? 'bg-cream/15 text-orange' : 'bg-orange/15 text-forest'}`}
+      <div
+        className={
+          heading === 'hidden'
+            ? 'sr-only'
+            : 'mb-6 flex flex-wrap items-baseline justify-between gap-3'
+        }
+      >
+        <div className="min-w-0">
+          <Heading
+            as="h2"
+            id={`${id}-title`}
+            className={heading === 'prominent' ? 'text-3xl' : 'text-xl'}
+            tone={variant === 'contrast' ? 'inverse' : 'brand'}
           >
-            <Icon className="size-6" />
-          </span>
-          <Heading as="h2" id={`${id}-title`} tone={variant === 'contrast' ? 'inverse' : 'brand'}>
             {title}
           </Heading>
         </div>

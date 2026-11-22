@@ -10,6 +10,7 @@ import { collapsibleSections } from './collapsibleSections'
 
 const variants = {
   rich: styles.prose,
+  article: `${styles.prose} ${styles.article}`,
   lead: `${styles.prose} text-xl`,
   summary: 'line-clamp-3 text-base text-muted tablet:min-h-[3lh] [&_p]:m-0',
 }
@@ -30,7 +31,7 @@ export function Markdown({
       ) : (
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          rehypePlugins={[collapsibleSections]}
+          rehypePlugins={[[collapsibleSections, { chapterLevel: variant === 'article' ? 3 : 2 }]]}
           components={{
             details: ({ children: content }) => <Chapter>{content}</Chapter>,
             table: ({ children: content }) => (

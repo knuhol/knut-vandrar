@@ -66,3 +66,13 @@ export const getHikeMaps = cache(async (hikeId: string) => {
 })
 
 export type HikeMapImage = Awaited<ReturnType<typeof getHikeMaps>>[number]
+
+export const getHikeNeighbors = cache(async (hikeId: string, locale: Locale) => {
+  const response = await client['/api/hikes/{hike_id}/neighbors/{locale}'].get({
+    params: { hike_id: hikeId, locale },
+  })
+  if (!response.ok) {
+    throw new Error('Could not load adjacent hikes')
+  }
+  return response.json()
+})

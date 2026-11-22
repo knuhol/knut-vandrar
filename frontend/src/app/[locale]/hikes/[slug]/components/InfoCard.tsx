@@ -13,6 +13,7 @@ export function InfoCard({
   onActivate,
   expanded,
   variant = 'default',
+  emphasis = 'standard',
 }: {
   icon: ReactNode
   title: string
@@ -23,8 +24,10 @@ export function InfoCard({
   onActivate?: () => void
   onClick?: () => void
   expanded?: boolean
-  variant?: 'default' | 'video'
+  variant?: 'default' | 'video' | 'compact'
+  emphasis?: 'standard' | 'film' | 'equipment'
 }) {
+  const compact = variant === 'compact'
   const interactive = Boolean((href || onClick) && !inactive && !message)
   const Tag = interactive ? (onClick ? 'button' : 'a') : 'article'
 
@@ -54,19 +57,23 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`flex min-h-20 w-full items-center gap-3 rounded-lg p-4 text-left ${inactive ? 'bg-beige text-muted' : variant === 'video' ? 'bg-orange text-ink' : 'bg-paper text-forest'} ${interactive ? 'card-interactive cursor-pointer' : ''}`}
+      className={`group relative flex w-full items-center gap-3 text-left ${compact ? 'min-h-13 rounded-sm border border-forest-outline border-l-2 border-l-orange bg-paper px-3 py-2.5 text-forest transition-[border-color,box-shadow] duration-(--duration-fast) [--link-interaction-color:var(--color-forest)]' : `min-h-20 rounded-lg p-4 ${inactive ? 'bg-beige text-muted' : variant === 'video' ? 'bg-orange text-ink' : 'bg-paper text-forest'}`} ${interactive ? (compact ? 'cursor-pointer hover:border-forest hover:border-l-orange hover:shadow-sm focus-visible:border-forest focus-visible:border-l-orange focus-visible:shadow-sm' : 'card-interactive cursor-pointer') : 'opacity-60'}`}
     >
       <span
-        className={`grid size-9 shrink-0 place-items-center rounded-full [&>svg]:size-5 ${inactive ? 'bg-forest/10' : variant === 'video' ? 'bg-ink/10' : 'bg-cream'}`}
+        className={`grid shrink-0 place-items-center [&>svg]:size-5 ${compact ? 'size-6' : `size-9 rounded-full ${inactive ? 'bg-forest/10' : variant === 'video' ? 'bg-ink/10' : 'bg-cream'}`}`}
       >
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-base leading-tight font-bold">{title}</span>
+        <span
+          className={`block font-display ${compact ? 'text-sm' : 'text-base'} leading-tight ${!compact || emphasis === 'film' ? 'font-bold' : 'font-semibold'}`}
+        >
+          {title}
+        </span>
         {(message || action) && (
           <span
             data-link-label={interactive ? true : undefined}
-            className={`mt-1 block text-sm ${variant === 'video' ? 'text-ink' : 'text-muted'}`}
+            className={`mt-1 block ${compact ? 'text-xs leading-relaxed' : 'text-sm'} ${variant === 'video' ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
           >
             {message || action}
           </span>

@@ -9,6 +9,7 @@ import {
   IconRotateClockwise,
   IconRotate,
 } from '@tabler/icons-react'
+import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { FactItems } from './FactItems'
@@ -41,7 +42,17 @@ export function hasHikeJourney(details: HikeDetails) {
   )
 }
 
-export function HikeJourney({ details, status }: { details: HikeDetails; status: Hike['status'] }) {
+export function HikeJourney({
+  details,
+  status,
+  facts,
+  more,
+}: {
+  details: HikeDetails
+  status: Hike['status']
+  facts?: ReactNode
+  more?: ReactNode
+}) {
   const t = useTranslations('Site.journey')
   const DirectionIcon = details.direction && directions[details.direction]
   const overnights = details.overnights.filter((stay) => stay.count > 0)
@@ -65,13 +76,14 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
       : []),
   ]
 
-  if (!hasHikeJourney(details)) {
+  if (!hasHikeJourney(details) && !facts) {
     return null
   }
 
   return (
-    <HikeSection id="journey" title={t('title')} variant="panel">
-      <div className="grid items-start gap-8 tablet:grid-cols-2">
+    <HikeSection id="journey" title={t('title')} variant="plain" heading="hidden">
+      <div className="grid items-start gap-8 tablet:grid-cols-2 desktop:grid-cols-3">
+        {facts && <div className="min-w-0">{facts}</div>}
         {routeItems.length > 0 && (
           <div>
             <div className="mb-4">
@@ -110,11 +122,12 @@ export function HikeJourney({ details, status }: { details: HikeDetails; status:
           </div>
         )}
         {hasAchievements && (
-          <div className="min-w-0 tablet:col-span-2">
+          <div className="min-w-0">
             <HikeAchievements details={details} status={status} />
           </div>
         )}
       </div>
+      {more && <div className="mt-8">{more}</div>}
     </HikeSection>
   )
 }

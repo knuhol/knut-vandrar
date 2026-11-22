@@ -742,6 +742,59 @@ export const openapi = {
         }
       }
     },
+    "/api/hikes/{hike_id}/neighbors/{locale}": {
+      "get": {
+        "tags": [
+          "hikes"
+        ],
+        "summary": "Get Hike Neighbors",
+        "description": "Adjacent translated hikes in the same stable order as the public hike listing.",
+        "operationId": "get_hike_neighbors_api_hikes__hike_id__neighbors__locale__get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HikeNeighborsRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/hikes/{hike_id}": {
       "get": {
         "tags": [
@@ -4239,6 +4292,60 @@ export const openapi = {
           "sha256"
         ],
         "title": "HikeMapRead"
+      },
+      "HikeNeighborRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "slug"
+        ],
+        "title": "HikeNeighborRead"
+      },
+      "HikeNeighborsRead": {
+        "properties": {
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HikeNeighborRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HikeNeighborRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "previous",
+          "next"
+        ],
+        "title": "HikeNeighborsRead"
       },
       "HikeRead": {
         "properties": {

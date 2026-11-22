@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from pydantic import TypeAdapter
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from knut_vandrar_backend.api.authored import read_authored
@@ -26,6 +26,8 @@ from knut_vandrar_backend.api.schemas.hike import (
     HikeEnglishContent,
     HikeLocalizedRead,
     HikeMapRead,
+    HikeNeighborRead,
+    HikeNeighborsRead,
     HikeRead,
     HikeSlugRead,
     HikeSummaryRead,
@@ -75,14 +77,7 @@ def list_hikes(
         long_distance = long_distance_condition()
         query = query.where(long_distance if category == "long_distance" else ~long_distance)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    translations = db.scalars(
-        query.order_by(
-            func.coalesce(Hike.actual_start_at, Hike.planned_start_at).desc().nulls_last(),
-            Hike.id,
-        )
-        .limit(limit)
-        .offset(offset)
-    ).all()
+    translations = db.scalars(query.order_by(*_hike_order()).limit(limit).offset(offset)).all()
     return Page(
         items=[
             _summary(db, translation.hike, translation, request) for translation in translations
@@ -91,6 +86,47 @@ def list_hikes(
         limit=limit,
         offset=offset,
     )
+
+
+def _hike_order(reverse: bool = False) -> tuple[Any, ...]:
+    start = func.coalesce(Hike.actual_start_at, Hike.planned_start_at)
+    return (
+        (start.asc().nulls_first(), Hike.id.desc())
+        if reverse
+        else (start.desc().nulls_last(), Hike.id.asc())
+    )
+
+
+@router.get("/{hike_id}/neighbors/{locale}", response_model=HikeNeighborsRead)
+def get_hike_neighbors(hike_id: UUID, locale: str, db: DatabaseSession) -> HikeNeighborsRead:
+    """Adjacent translated hikes in the same stable order as the public hike listing."""
+    _require_locale(db, locale)
+    hike = db.get(Hike, hike_id)
+    if hike is None or _translation(db, hike_id, locale) is None:
+        raise HTTPException(status_code=404, detail="Hike translation not found")
+    start = func.coalesce(Hike.actual_start_at, Hike.planned_start_at)
+    current_start = hike.actual_start_at or hike.planned_start_at
+    query = select(HikeTranslation).join(Hike).where(HikeTranslation.locale_code == locale)
+
+    def neighbor(previous: bool) -> HikeNeighborRead | None:
+        id_condition = Hike.id < hike_id if previous else Hike.id > hike_id
+        if current_start is None:
+            condition = and_(start.is_(None), id_condition)
+            if previous:
+                condition = or_(start.is_not(None), condition)
+        else:
+            date_condition = start > current_start if previous else start < current_start
+            condition = or_(date_condition, and_(start == current_start, id_condition))
+            if not previous:
+                condition = or_(condition, start.is_(None))
+        translation = db.scalar(query.where(condition).order_by(*_hike_order(previous)).limit(1))
+        return (
+            HikeNeighborRead(id=translation.hike_id, title=translation.title, slug=translation.slug)
+            if translation
+            else None
+        )
+
+    return HikeNeighborsRead(previous=neighbor(True), next=neighbor(False))
 
 
 @router.post("", response_model=HikeRead, status_code=status.HTTP_201_CREATED)

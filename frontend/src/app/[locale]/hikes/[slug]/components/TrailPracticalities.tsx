@@ -2,6 +2,7 @@ import { IconFountain, IconBuildingStore, IconRipple, IconInfoCircle } from '@ta
 import { useTranslations } from 'next-intl'
 
 import { AccommodationOptions } from './AccommodationOptions'
+import { FactTag } from './FactTag'
 import { FactItems } from './FactItems'
 
 import { Heading } from '@/components/Heading'
@@ -56,12 +57,13 @@ export function TrailPracticalities({
               return (
                 <li
                   key={date.toISOString()}
-                  className={`rounded-sm px-1 py-2 text-center text-xs ${selected ? 'bg-forest font-semibold text-cream' : 'bg-beige/40 text-muted'}`}
                   aria-label={t(selected ? 'inSeason' : 'outsideSeason', {
                     month: fullMonthFormatter.format(date),
                   })}
                 >
-                  {monthFormatter.format(date)}
+                  <FactTag state={selected ? 'selected' : 'muted'} size="month">
+                    {monthFormatter.format(date)}
+                  </FactTag>
                 </li>
               )
             })}

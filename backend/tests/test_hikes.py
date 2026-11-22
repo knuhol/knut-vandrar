@@ -840,3 +840,58 @@ def test_discovery_is_public_bounded_and_uses_only_existing_translations(
     assert client.get("/api/discovery/hikes", params={"offset": 2}).json()["items"] == []
     for query in [{"limit": 0}, {"limit": 101}, {"offset": -1}]:
         assert client.get("/api/discovery/hikes", params=query).status_code == 422
+
+
+@pytest.mark.parametrize("locale", ["en", "sv"])
+def test_hike_neighbors_follow_localized_listing_order_without_wrapping(
+    client: TestClient, locale: str
+) -> None:
+    earlier = datetime(2026, 5, 1, tzinfo=UTC)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
+    with _db_session(client) as db:
+        for index, (planned, actual) in enumerate(
+            [
+                (later, earlier),
+                (earlier, later),
+                (later, None),
+                (earlier, None),
+                (None, None),
+                (None, None),
+            ],
+            start=1,
+        ):
+            hike = Hike(id=UUID(int=index), planned_start_at=planned, actual_start_at=actual)
+            db.add(hike)
+            db.flush()
+            for language in ["en", "sv"]:
+                if language == "sv" and index == 3:
+                    continue
+                db.add(
+                    HikeTranslation(
+                        hike_id=hike.id,
+                        locale_code=language,
+                        title=f"{language} hike {index}",
+                        summary_markdown="Summary",
+                        slug=f"{language}-hike-{index}",
+                    )
+                )
+        db.commit()
+    ordered = [2, 3, 1, 4, 5, 6] if locale == "en" else [2, 1, 4, 5, 6]
+    for position, index in enumerate(ordered):
+        response = client.get(f"/api/hikes/{UUID(int=index)}/neighbors/{locale}")
+        assert response.status_code == 200
+        data = response.json()
+        for name, offset in [("previous", -1), ("next", 1)]:
+            neighbor_position = position + offset
+            if 0 <= neighbor_position < len(ordered):
+                neighbor_id = ordered[neighbor_position]
+                assert data[name] == {
+                    "id": str(UUID(int=neighbor_id)),
+                    "title": f"{locale} hike {neighbor_id}",
+                    "slug": f"{locale}-hike-{neighbor_id}",
+                }
+            else:
+                assert data[name] is None
+    assert client.get(f"/api/hikes/{UUID(int=999)}/neighbors/{locale}").status_code == 404
+    if locale == "sv":
+        assert client.get(f"/api/hikes/{UUID(int=3)}/neighbors/sv").status_code == 404

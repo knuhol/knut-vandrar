@@ -16,12 +16,38 @@
   --color-muted: #6b6b6b;
   --color-paper: color-mix(in srgb, var(--color-cream) 25%, white);
 
+  --color-cover-shadow: color-mix(in srgb, var(--color-forest-dark) 24%, transparent);
+  --background-map-shadow: linear-gradient(
+    to bottom,
+    var(--color-cover-shadow) 0%,
+    color-mix(in srgb, var(--color-forest-dark) 19%, transparent) 10%,
+    color-mix(in srgb, var(--color-forest-dark) 10%, transparent) 30%,
+    color-mix(in srgb, var(--color-forest-dark) 3%, transparent) 60%,
+    color-mix(in srgb, var(--color-forest-dark) 0%, transparent) 100%
+  );
+  --spacing-map-shadow: calc(var(--spacing) * 12);
+  --spacing-surface-shadow: calc(var(--spacing) * 6);
+  --background-surface-shadow: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-forest) 14%, transparent),
+    color-mix(in srgb, var(--color-forest) 4%, transparent) 40%,
+    color-mix(in srgb, var(--color-forest) 0%, transparent) 100%
+  );
+
   --color-panel-glass: color-mix(in srgb, var(--color-paper) 78%, transparent);
   --blur-panel: 16px;
 
   --spacing: 4px;
+  /* Leave room for language, navigation and the contextual switch on narrow headers. */
+  --spacing-header-brand: clamp(
+    calc(var(--spacing) * 20),
+    calc(100vw - var(--spacing) * 60),
+    calc(var(--spacing) * 47.5)
+  );
+  --spacing-brand-icon: calc(var(--spacing-header-brand) * 112 / 654);
   --container-page: 1240px;
   --container-reading: 68ch;
+  --container-prose: var(--container-reading);
   --container-navigation: 260px;
   --container-media-preview: 320px;
   --container-popover: 30rem;
@@ -42,6 +68,7 @@
   --font-weight-bold: 700;
   --leading-tight: 1.2;
   --leading-relaxed: 1.6;
+  --leading-reading: 1.55;
   --tracking-tight: -0.035em;
   --tracking-widest: 0.16em;
 
@@ -49,11 +76,14 @@
   --radius-sm: 8px;
   --radius-lg: 16px;
   --radius-full: 9999px;
+  --text-shadow-on-image: 0 1px 3px var(--color-ink);
+
   --shadow-*: initial;
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
   --duration-motion: var(--duration-fast);
-  --duration-entrance: var(--duration-fast);
+  --duration-entrance: 600ms;
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-image-reveal: 150ms;
   --duration-fast: 300ms;
   --duration-slow: 800ms;

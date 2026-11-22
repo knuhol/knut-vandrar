@@ -3,3 +3,8 @@
 .dialog::backdrop {
   @apply bg-ink;
 }
+
+.closeControl {
+  top: max(calc(var(--spacing) * 2), env(safe-area-inset-top));
+  right: max(calc(var(--spacing) * 2), env(safe-area-inset-right));
+}

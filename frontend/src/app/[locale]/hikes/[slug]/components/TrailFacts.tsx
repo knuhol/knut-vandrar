@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { IconArrowUpRight as ArrowUpRight } from '@tabler/icons-react'
 
+import { HikeBadge } from './HikeBadge'
 import { TrailTags } from './TrailTags'
 import { TrailRatings } from './TrailRatings'
 import { TrailPracticalities } from './TrailPracticalities'
@@ -28,19 +29,26 @@ export function TrailFacts({
   tags = [],
   ratings,
   details,
+  presentation = 'section',
 }: {
   location: HikingLocation
   locale: Locale
   tags?: TrailTag[]
   ratings?: Ratings
   details?: TrailDetails
+  presentation?: 'section' | 'footer'
 }) {
   const t = useTranslations('Site')
   const countries = new Intl.DisplayNames([locale], { type: 'region' })
   const locationTags = [...new Set(tags)]
 
   return (
-    <HikeSection id="trail" title={t(`locationKind.${location.kind}`)} variant="paper">
+    <HikeSection
+      id="trail"
+      title={t(`locationKind.${location.kind}`)}
+      variant={presentation === 'footer' ? 'plain' : 'paper'}
+      heading={presentation === 'footer' ? 'prominent' : 'visible'}
+    >
       <div className="mb-8 grid items-center gap-8 tablet:grid-cols-2">
         <div className={location.logo_url ? 'min-w-0' : 'min-w-0 tablet:col-span-2'}>
           <dl className="grid gap-4.5 [&_dd]:text-base">
@@ -68,12 +76,11 @@ export function TrailFacts({
                 <dd>
                   <ul className="flex flex-wrap gap-2">
                     {location.country_codes.map((code) => (
-                      <li
-                        key={code}
-                        className="inline-flex items-center gap-2 rounded-full border border-beige bg-paper px-3 py-1.5 text-sm text-forest"
-                      >
-                        <span aria-hidden="true">{countryFlag(code)}</span>
-                        {countries.of(code) ?? code}
+                      <li key={code} className="max-w-full">
+                        <HikeBadge kind="country">
+                          <span aria-hidden="true">{countryFlag(code)}</span>
+                          {countries.of(code) ?? code}
+                        </HikeBadge>
                       </li>
                     ))}
                   </ul>

@@ -7,7 +7,20 @@ type MarkdownNode = {
 
 // Group parsed headings, so fenced code, setext headings, and inline formatting
 // keep their Markdown meaning. Each section ends at the next level-one heading.
-export function collapsibleSections() {
+export function collapsibleSections({ chapterLevel = 2 }: { chapterLevel?: 2 | 3 } = {}) {
+  function shiftContentHeading(node: MarkdownNode): MarkdownNode {
+    if (node.tagName === 'details') {
+      return node
+    }
+    const match = /^h([2-6])$/.exec(node.tagName ?? '')
+    return {
+      ...node,
+      ...(match ? { tagName: `h${String(Math.min(6, Number(match[1]) + chapterLevel - 1))}` } : {}),
+      ...(node.children
+        ? { children: node.children.map((child) => shiftContentHeading(child)) }
+        : {}),
+    }
+  }
   function transform(tree: MarkdownNode) {
     if (!tree.children) {
       return
@@ -31,13 +44,13 @@ export function collapsibleSections() {
               type: 'element',
               tagName: 'summary',
               properties: {},
-              children: [{ ...node, tagName: 'h2' }],
+              children: [{ ...node, tagName: `h${String(chapterLevel)}` }],
             },
           ],
         }
         children.push(section)
       } else if (section) {
-        section.children?.push(node)
+        section.children?.push(shiftContentHeading(node))
       } else {
         children.push(node)
       }
