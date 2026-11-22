@@ -79,7 +79,7 @@
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
   --duration-motion: var(--duration-fast);
-  --duration-entrance: 600ms;
+  --duration-entrance: 700ms;
   --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-image-reveal: 150ms;
   --duration-fast: 300ms;

@@ -14,7 +14,11 @@ export function HikeCollection({ pages }: { pages: Record<HikeCategory, HikesPag
   const offsets = { offset: pages.long_distance.offset, multiDayOffset: pages.multi_day.offset }
 
   return (
-    <div id="hikes" tabIndex={-1} className="pt-9.5 pb-12.5 outline-none tablet:pt-15 tablet:pb-20">
+    <div
+      id="hikes"
+      tabIndex={-1}
+      className="scroll-mt-(--header-height) pt-9.5 pb-12.5 outline-none tablet:pt-15 tablet:pb-20"
+    >
       <Container>
         <div className="grid gap-12.5 tablet:gap-20">
           {hikeCategories.map((category) => {
