@@ -24,9 +24,12 @@ export function InfoCard({
   emphasis?: 'standard' | 'film'
 }) {
   const film = emphasis === 'film'
-  const surface = film
+  const compactSurface = film
     ? 'border-orange bg-orange text-ink [--link-interaction-color:var(--color-ink)]'
-    : 'border-forest-outline border-l-orange bg-paper text-forest'
+    : 'border-forest-outline border-l-orange bg-paper text-forest [--link-interaction-color:var(--color-forest)]'
+  const compactInteraction = film
+    ? 'hover:border-orange-dark hover:bg-orange-dark hover:shadow-sm focus-visible:border-orange-dark focus-visible:bg-orange-dark focus-visible:shadow-sm'
+    : 'hover:border-forest hover:border-l-orange hover:shadow-sm focus-visible:border-forest focus-visible:border-l-orange focus-visible:shadow-sm'
   const interactive = Boolean((href || onClick) && !inactive)
   const Tag = interactive ? (onClick ? 'button' : 'a') : 'article'
 
@@ -56,9 +59,9 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`group relative flex min-h-13 w-full items-center gap-3 rounded-sm border border-l-2 px-3 py-2.5 text-left ${surface} ${interactive ? 'card-interactive cursor-pointer' : 'opacity-60'}`}
+      className={`group relative flex w-full items-center gap-3 text-left min-h-20 rounded-sm border border-l-2 px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-(--duration-fast) ${compactSurface} ${interactive ? `cursor-pointer ${compactInteraction}` : 'opacity-60'}`}
     >
-      <span className="grid size-6 shrink-0 place-items-center [&>svg]:size-5">{icon}</span>
+      <span className="grid shrink-0 place-items-center [&>svg]:size-5 size-6">{icon}</span>
       <span className="min-w-0 flex-1">
         <span
           className={`block font-display text-sm leading-tight ${film ? 'font-bold' : 'font-semibold'}`}
@@ -67,7 +70,7 @@ export function InfoCard({
         </span>
         <span
           data-link-label={interactive ? true : undefined}
-          className={`mt-1 block text-xs leading-relaxed ${film ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
+          className={`mt-1 no-underline! block text-xs leading-relaxed ${film ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
         >
           {description}
         </span>
