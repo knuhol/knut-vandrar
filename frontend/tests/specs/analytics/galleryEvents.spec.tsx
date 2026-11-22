@@ -5,6 +5,9 @@ import { HikeGallery } from '@/app/[locale]/hikes/[slug]/components/HikeGallery/
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
 import { messages } from '@/i18n/messages'
 
+jest.mock('@/config/breakpoints', () => ({
+  responsiveMedia: { tablet: 'tablet-media', desktop: 'desktop-media', wide: 'wide-media' },
+}))
 jest.mock('@/analytics/hikeEvents', () => ({ trackHikeInteraction: jest.fn() }))
 jest.mock('@/components/MediaModal/MediaModal', () => ({
   MediaModal: ({ children, onClose }: { children: ReactNode; onClose: () => void }) => (
@@ -50,7 +53,9 @@ test('records gallery openings, but not navigation between photos', () => {
     hikeTitle: 'Kungsleden',
     locale: 'en',
   })
+  expect(screen.getByText('Photo 1')).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Next photo' }))
+  expect(screen.getByText('Photo 2')).toBeInTheDocument()
   expect(trackHikeInteraction).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('button', { name: 'Close gallery' }))
   fireEvent.click(screen.getByRole('button', { name: 'Open photo 2: Photo 2' }))

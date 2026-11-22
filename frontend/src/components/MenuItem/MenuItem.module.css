@@ -1,0 +1,35 @@
+@reference '../../app/globals.css';
+
+.item {
+  @apply relative flex min-h-11 cursor-pointer items-center gap-2 px-3.5 py-2 text-base font-normal text-forest;
+  text-underline-offset: var(--link-underline-offset);
+}
+
+.item:not([data-level='2']):is(:hover, :focus-visible, [data-highlighted]) {
+  text-decoration: underline;
+  text-decoration-color: var(--color-forest);
+}
+
+.item[data-active][data-level='1'] {
+  @apply font-bold underline decoration-orange decoration-3;
+}
+
+.item[data-level='2'] {
+  @apply pl-6 text-sm;
+  text-decoration: none;
+}
+
+.item[data-level='2']::before {
+  position: absolute;
+  left: calc(var(--spacing) * 1.5);
+  inset-block: calc(var(--spacing) * 2.5);
+  width: calc(var(--spacing) * 0.75);
+  background: var(--color-orange);
+  content: '';
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.item[data-level='2']:is(:hover, :focus-visible, [data-highlighted], [data-active])::before {
+  opacity: 1;
+}

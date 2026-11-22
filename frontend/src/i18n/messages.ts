@@ -1,6 +1,15 @@
 export const messages = {
   sv: {
     Site: {
+      hikeNavigation: 'Fler vandringar',
+      previousHike: 'Föregående vandring',
+      nextHike: 'Nästa vandring',
+      showMainMenu: 'Visa huvudmenyn',
+      showSubmenu: 'Visa undermenyn för vandringen',
+      moreAboutTrail: 'Mer om leden',
+      moreAboutArea: 'Mer om vandringsområdet',
+      collapseChapter: 'Fäll ihop kapitlet',
+      watchFilm: 'Se filmen',
       map: { title: 'Vandringskarta', alt: 'Karta över hela rutten för {title}' },
       privacyPolicy: 'Integritetspolicy',
       gallery: {
@@ -102,6 +111,8 @@ export const messages = {
       translationNoticeDescription:
         'Av praktiska skäl skriver jag mina artiklar på engelska. Den här texten är därför automatiskt översatt från det engelska originalet.',
       pageContents: 'På den här sidan',
+      exploreHike: 'Utforska vandringen',
+      breadcrumbs: 'Brödsmulor',
       about: 'Om vandringen',
       starRating: {
         score: '{value, number} av 5 stjärnor',
@@ -180,6 +191,15 @@ export const messages = {
       equipment: 'Utrustning',
       social_feed: 'Från leden',
       youtube_video: 'Film från vandringen',
+      resourceDescriptions: {
+        route: 'Se rutten och dess etapper på kartan',
+        gpx_collection: 'Utforska etapper och hämta GPX-filer',
+        progress: 'Se hur långt jag har kommit',
+        live_position: 'Se min senaste position på kartan',
+        equipment: 'Se utrustningen jag tog med på vandringen',
+        social_feed: 'Bilder och dagliga uppdateringar från leden',
+        youtube_video: 'Följ hela vandringen i min dokumentär',
+      },
       cardActions: {
         route: 'Visa rutten',
         gpx_collection: 'Visa på Plotaroute',
@@ -209,6 +229,15 @@ export const messages = {
 
   en: {
     Site: {
+      hikeNavigation: 'More hikes',
+      previousHike: 'Previous hike',
+      nextHike: 'Next hike',
+      showMainMenu: 'Show main menu',
+      showSubmenu: 'Show hike submenu',
+      moreAboutTrail: 'More about the trail',
+      moreAboutArea: 'More about the hiking area',
+      collapseChapter: 'Collapse chapter',
+      watchFilm: 'Watch the film',
       map: { title: 'Hike map', alt: 'Map showing the complete route for {title}' },
       previewAccess: {
         title: 'A glimpse of the next step.',
@@ -320,6 +349,8 @@ export const messages = {
       translationNoticeDescription:
         'I write my articles in English for practical reasons. This is an automatic translation of the English original.',
       pageContents: 'On this page',
+      exploreHike: 'Explore this hike',
+      breadcrumbs: 'Breadcrumbs',
       about: 'About the hike',
       starRating: {
         score: '{value, number} out of 5 stars',
@@ -398,6 +429,15 @@ export const messages = {
       equipment: 'Equipment',
       social_feed: 'From the trail',
       youtube_video: 'Film from the hike',
+      resourceDescriptions: {
+        route: 'Explore the route and its stages on the map',
+        gpx_collection: 'Browse stages and download GPX files',
+        progress: 'See how far I have walked',
+        live_position: 'Find my latest position on the map',
+        equipment: 'See the gear I carried on this hike',
+        social_feed: 'Photos and daily updates from the trail',
+        youtube_video: 'Follow the journey in my hiking documentary',
+      },
       cardActions: {
         route: 'View the route',
         gpx_collection: 'View on Plotaroute',
@@ -427,6 +467,15 @@ export const messages = {
 
   cs: {
     Site: {
+      hikeNavigation: 'Další túry',
+      previousHike: 'Předchozí túra',
+      nextHike: 'Následující túra',
+      showMainMenu: 'Zobrazit hlavní menu',
+      showSubmenu: 'Zobrazit podmenu túry',
+      moreAboutTrail: 'Více o stezce',
+      moreAboutArea: 'Více o turistické oblasti',
+      collapseChapter: 'Sbalit kapitolu',
+      watchFilm: 'Pustit film',
       map: { title: 'Mapa hiku', alt: 'Mapa celé trasy hiku {title}' },
       privacyPolicy: 'Zásady ochrany soukromí',
       gallery: {
@@ -530,6 +579,8 @@ export const messages = {
       translationNoticeDescription:
         'Čeština je můj rodný jazyk, ale články píšu anglicky. Tohle je automatický překlad anglického originálu.',
       pageContents: 'Na této stránce',
+      exploreHike: 'Prozkoumat túru',
+      breadcrumbs: 'Drobečková navigace',
       about: 'O hiku',
       starRating: {
         score: '{value, number} z 5 hvězdiček',
@@ -608,6 +659,15 @@ export const messages = {
       equipment: 'Vybavení',
       social_feed: 'Z trailu',
       youtube_video: 'Film z hiku',
+      resourceDescriptions: {
+        route: 'Prohlédni si trasu a její etapy na mapě',
+        gpx_collection: 'Prohlédni si etapy a stáhni GPX soubory',
+        progress: 'Podívej se, kolik už mám za sebou',
+        live_position: 'Najdi mou poslední polohu na mapě',
+        equipment: 'Vybavení, které jsem si vzal na tento hike',
+        social_feed: 'Fotky a každodenní zprávy z trailu',
+        youtube_video: 'Prožij celou cestu v mém dokumentárním filmu',
+      },
       cardActions: {
         route: 'Zobrazit mapu',
         gpx_collection: 'Zobrazit na Plotaroute',

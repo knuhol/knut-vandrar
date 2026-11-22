@@ -47,8 +47,12 @@ export function scrollToElement(
 ) {
   cancelPageScroll()
   const start = window.scrollY
+  // Explicit target margins can opt into edge-aligned scrolling (for example,
+  // a full-bleed visual), while other sections retain the shared reading gap.
   const padding =
-    Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0
+    Number.parseFloat(getComputedStyle(element).scrollMarginTop) ||
+    Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+    0
   const target = Math.max(
     0,
     Math.min(

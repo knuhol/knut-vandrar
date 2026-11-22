@@ -1,0 +1,14 @@
+.recess {
+  scroll-margin-top: var(--header-height);
+}
+
+.recess::before {
+  position: absolute;
+  z-index: 10;
+  inset-inline: 0;
+  top: 0;
+  height: var(--spacing-map-shadow);
+  background: var(--background-map-shadow);
+  content: '';
+  pointer-events: none;
+}

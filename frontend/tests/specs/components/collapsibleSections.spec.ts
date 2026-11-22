@@ -44,3 +44,25 @@ describe('collapsible Markdown sections', () => {
     expect(tree.children[1]).toMatchObject({ tagName: 'details' })
   })
 })
+
+test('nests hike chapters below the page section and shifts their subheadings consistently', () => {
+  const tree = {
+    type: 'root',
+    children: [
+      { type: 'element', tagName: 'h1', children: [{ type: 'text', value: 'Chapter' }] },
+      { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'Topic' }] },
+      { type: 'element', tagName: 'h3', children: [{ type: 'text', value: 'Detail' }] },
+    ],
+  }
+  collapsibleSections({ chapterLevel: 3 })(tree)
+  expect(tree.children).toMatchObject([
+    {
+      tagName: 'details',
+      children: [
+        { tagName: 'summary', children: [{ tagName: 'h3' }] },
+        { tagName: 'h4' },
+        { tagName: 'h5' },
+      ],
+    },
+  ])
+})

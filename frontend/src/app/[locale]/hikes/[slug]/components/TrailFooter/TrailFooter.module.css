@@ -1,0 +1,8 @@
+.surface::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--spacing-surface-shadow);
+  background: var(--background-surface-shadow);
+  content: '';
+  pointer-events: none;
+}

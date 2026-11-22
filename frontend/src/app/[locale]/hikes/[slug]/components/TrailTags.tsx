@@ -12,6 +12,8 @@ import {
   IconShip as Boat,
 } from '@tabler/icons-react'
 
+import { HikeBadge } from './HikeBadge'
+
 import type { TrailTag } from '@/hiking/presentation'
 
 const icons = {
@@ -40,24 +42,22 @@ export function TrailTags({ tags, regions = [] }: { tags: TrailTag[]; regions?: 
   return (
     <ul className="flex flex-wrap gap-2" aria-label={t('label')}>
       {regions.map((region) => (
-        <li
-          key={region}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-sm bg-beige px-2.5 py-1.5 text-sm text-forest"
-        >
-          <MapPin className="size-4 shrink-0" aria-hidden="true" />
-          <span>{region}</span>
+        <li key={region} className="max-w-full">
+          <HikeBadge kind="characteristic">
+            <MapPin className="size-4 shrink-0" aria-hidden="true" />
+            <span>{region}</span>
+          </HikeBadge>
         </li>
       ))}
       {[...new Set(tags)].map((tag) => {
         const Icon = icons[tag]
 
         return (
-          <li
-            key={tag}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-sm bg-beige px-2.5 py-1.5 text-sm text-forest"
-          >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
-            <span>{t(tag)}</span>
+          <li key={tag} className="max-w-full">
+            <HikeBadge kind="characteristic">
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <span>{t(tag)}</span>
+            </HikeBadge>
           </li>
         )
       })}

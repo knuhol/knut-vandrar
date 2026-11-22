@@ -1,8 +1,10 @@
 import Image from 'next/image'
+
 import { getTranslations } from 'next-intl/server'
 
 import { HikeSection } from '../HikeSection/HikeSection'
 
+import { Heading } from '@/components/Heading'
 import { imageUrl } from '@/api/images'
 import type { HikeMapImage } from '@/api/hikes'
 import { responsiveMedia } from '@/config/breakpoints'
@@ -10,9 +12,11 @@ import { responsiveMedia } from '@/config/breakpoints'
 export async function HikeMap({
   images,
   hikeTitle,
+  variant = 'section',
 }: {
   images: HikeMapImage[]
   hikeTitle: string
+  variant?: 'section' | 'landscape'
 }) {
   if (images.length === 0) {
     return null
@@ -21,33 +25,50 @@ export async function HikeMap({
   const t = await getTranslations('Site.map')
   const variants = ['wide', 'desktop', 'tablet'] as const
 
+  const figure = (
+    <figure className={`overflow-hidden bg-cream ${variant === 'section' ? 'rounded-lg' : ''}`}>
+      <picture>
+        {variants.map((variant) => {
+          const image = images.find((item) => item.variant === variant)
+          return image ? (
+            <source
+              key={variant}
+              media={responsiveMedia[variant]}
+              srcSet={imageUrl(image.url)}
+              width={image.width}
+              height={image.height}
+            />
+          ) : null
+        })}
+        <Image
+          src={imageUrl(fallback.url)}
+          alt={t('alt', { title: hikeTitle })}
+          width={fallback.width}
+          height={fallback.height}
+          className="block h-auto w-full"
+          loading="lazy"
+          unoptimized
+        />
+      </picture>
+    </figure>
+  )
+
+  if (variant === 'landscape') {
+    return (
+      <section id="map" aria-labelledby="map-title" className="min-w-0 scroll-mt-(--header-height)">
+        <div className="sr-only">
+          <Heading as="h2" id="map-title" tone="brand">
+            {t('title')}
+          </Heading>
+        </div>
+        {figure}
+      </section>
+    )
+  }
+
   return (
     <HikeSection id="map" title={t('title')}>
-      <figure className="content-enter overflow-hidden rounded-lg bg-cream">
-        <picture>
-          {variants.map((variant) => {
-            const image = images.find((item) => item.variant === variant)
-            return image ? (
-              <source
-                key={variant}
-                media={responsiveMedia[variant]}
-                srcSet={imageUrl(image.url)}
-                width={image.width}
-                height={image.height}
-              />
-            ) : null
-          })}
-          <Image
-            src={imageUrl(fallback.url)}
-            alt={t('alt', { title: hikeTitle })}
-            width={fallback.width}
-            height={fallback.height}
-            className="block h-auto w-full"
-            loading="lazy"
-            unoptimized
-          />
-        </picture>
-      </figure>
+      {figure}
     </HikeSection>
   )
 }

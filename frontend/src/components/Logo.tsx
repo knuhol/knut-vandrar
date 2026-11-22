@@ -6,7 +6,7 @@ import { routing, type Locale } from '@/i18n/routing'
 
 type LogoProps = UIComponentProps<Omit<SVGProps<SVGSVGElement>, 'children'>> & {
   variant?: 'standard' | 'light' | 'monochromatic' | 'monochromaticOrange' | 'monochromaticForest'
-  size?: 'default' | 'compact'
+  size?: 'default' | 'compact' | 'header' | 'icon'
   locale?: Locale
 }
 
@@ -42,13 +42,13 @@ export function Logo({
 
   return (
     <svg
-      viewBox="0 0 654.23364 72.620659"
-      width={654}
+      viewBox={size === 'icon' ? '0 0 112 73' : '0 0 654.23364 72.620659'}
+      width={size === 'icon' ? 112 : 654}
       height={73}
       role="img"
       aria-label={messages[locale].Site.brand}
       {...props}
-      className={`block h-auto ${size === 'compact' ? 'w-48 max-w-full tablet:w-64' : 'w-full max-w-47.5 tablet:w-80 tablet:max-w-none'}`}
+      className={`block h-auto ${size === 'icon' ? 'w-(--spacing-brand-icon)' : size === 'header' ? 'w-full max-w-47.5 tablet:max-w-80' : size === 'compact' ? 'w-48 max-w-full tablet:w-64' : 'w-full max-w-47.5 tablet:w-80 tablet:max-w-none'}`}
     >
       <polygon
         points="-18.9019,-23.042 -18.9019,23.042 -9.541,23.042 -9.541,7.3784 18.9019,-23.042 8.1006,-23.042 -9.541,-4.0283 -9.541,-23.042 "

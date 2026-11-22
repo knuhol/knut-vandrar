@@ -8,6 +8,7 @@ import {
 
 let reduced = false
 let durationToken = '.3s'
+let targetMargin = '0px'
 let nextFrame = 0
 const frames = new Map<number, FrameRequestCallback>()
 const subscriptions: (() => void)[] = []
@@ -32,6 +33,7 @@ function advance(time: number) {
 beforeEach(() => {
   reduced = false
   durationToken = '.3s'
+  targetMargin = '0px'
   nextFrame = 0
   frames.clear()
   jest.spyOn(performance, 'now').mockReturnValue(0)
@@ -45,6 +47,7 @@ beforeEach(() => {
   jest.spyOn(window, 'getComputedStyle').mockImplementation(() => {
     const style = document.createElement('div').style
     style.scrollPaddingTop = '100px'
+    style.scrollMarginTop = targetMargin
     style.setProperty('--duration-motion', durationToken)
     return style
   })
@@ -98,6 +101,14 @@ describe('motion duration', () => {
 })
 
 describe('page scrolling', () => {
+  test('aligns targets with an explicit margin directly below the header', async () => {
+    targetMargin = '64px'
+    const completed = scrollToElement(elementAt(700), { anchor: true })
+    advance(300)
+    await expect(completed).resolves.toBe(true)
+    expect(window.scrollY).toBe(636)
+  })
+
   test('interpolates toward the header offset and stops when canceled', async () => {
     const interrupted = scrollToElement(elementAt(700))
     advance(50)

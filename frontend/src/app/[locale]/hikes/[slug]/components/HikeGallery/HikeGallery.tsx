@@ -5,6 +5,9 @@ import Image from 'next/image'
 import { useRef, useState } from 'react'
 import { HikeSection } from '../HikeSection/HikeSection'
 
+import styles from './HikeGallery.module.css'
+
+import { responsiveMedia } from '@/config/breakpoints'
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
 import { Button } from '@/components/Button'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
@@ -17,6 +20,8 @@ type GalleryPage = Awaited<ReturnType<typeof getPhotos>>
 
 type GalleryPhoto = {
   id: string
+  width: number
+  height: number
   thumbnailSrc: string
   src: string
   alt: string
@@ -80,9 +85,13 @@ function PhotoViewer({
         }
       }}
     >
-      <div className="flex h-full flex-col gap-2">
+      <div className="relative grid h-full w-full place-items-center">
         <div
-          className="relative min-h-0 flex-1 touch-pan-y"
+          className="relative touch-pan-y"
+          style={{
+            aspectRatio: `${String(photo.width)} / ${String(photo.height)}`,
+            width: `min(100%, calc(100dvh * ${String(photo.width / photo.height)}))`,
+          }}
           onTouchStart={(event) => {
             touchStart.current = event.changedTouches[0].clientX
           }}
@@ -108,35 +117,44 @@ function PhotoViewer({
             className="object-contain"
             unoptimized
           />
-        </div>
-        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-          <MediaControl
-            action="previous"
-            label={t('previous')}
-            disabled={loading || index === 0}
-            onClick={() => {
-              void move(-1)
-            }}
-          />
-          <div className="grid min-w-0 gap-1 text-center" aria-live="polite" aria-atomic="true">
-            <p className="text-xs font-semibold text-beige">
-              {t('position', { current: index + 1, total })}
-            </p>
-            {(error || photo.caption) && (
-              <p className="max-h-20 overflow-y-auto text-sm leading-relaxed">
+          <div className={`${styles.previous} absolute top-1/2 -translate-y-1/2`}>
+            <MediaControl
+              action="previous"
+              label={t('previous')}
+              disabled={loading || index === 0}
+              onClick={() => {
+                void move(-1)
+              }}
+            />
+          </div>
+          <div className={`${styles.next} absolute top-1/2 -translate-y-1/2`}>
+            <MediaControl
+              action="next"
+              label={t('next')}
+              disabled={loading || (!hasMore && index === photos.length - 1)}
+              onClick={() => {
+                void move(1)
+              }}
+            />
+          </div>
+          {(error || photo.caption) && (
+            <div className={`${styles.caption} absolute inset-x-0 bottom-0 text-center`}>
+              <p
+                className="inline-block max-h-[50dvh] overflow-y-auto rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl"
+                role={error ? 'alert' : undefined}
+              >
                 {error ? t('loadError') : photo.caption}
               </p>
-            )}
-          </div>
-          <MediaControl
-            action="next"
-            label={t('next')}
-            disabled={loading || (!hasMore && index === photos.length - 1)}
-            onClick={() => {
-              void move(1)
-            }}
-          />
+            </div>
+          )}
         </div>
+        <p
+          className={`${styles.counter} absolute rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {t('position', { current: index + 1, total })}
+        </p>
       </div>
     </MediaModal>
   )
@@ -159,6 +177,8 @@ export function HikeGallery({
   const [error, setError] = useState(false)
   const photos: GalleryPhoto[] = page.items.map((photo) => ({
     id: photo.id,
+    width: photo.width,
+    height: photo.height,
     src: imageUrl(photo.image_url),
     thumbnailSrc: imageUrl(photo.thumbnail_url),
     alt: photo.alt || t('defaultAlt'),
@@ -194,8 +214,13 @@ export function HikeGallery({
   }
 
   return (
-    <HikeSection id="photos" title={t('title')} meta={t('count', { count: page.total })}>
-      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4">
+    <HikeSection
+      id="photos"
+      title={t('title')}
+      heading="hidden"
+      meta={t('count', { count: page.total })}
+    >
+      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4 wide:grid-cols-4">
         {photos.map((photo, index) => (
           <button
             key={photo.id}
@@ -213,7 +238,7 @@ export function HikeGallery({
               alt={photo.alt}
               fill
               className="object-cover"
-              sizes="(min-width: 641px) 33vw, 50vw"
+              sizes={`${responsiveMedia.wide} 25vw, ${responsiveMedia.tablet} 33vw, 50vw`}
               unoptimized
             />
           </button>

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import {
-  IconPlayerPlay as Play,
+  IconPlayerPlayFilled as Play,
   IconMap as Map,
   IconBackpack as Backpack,
   IconMapPin as MapPin,
@@ -46,11 +46,13 @@ export function InfoCards({
   hikeId,
   hikeTitle,
   locale,
+  presentation = 'cards',
 }: {
   cards: Hike['cards']
   hikeId: string
   hikeTitle: string | null
   locale: Locale
+  presentation?: 'cards' | 'compact'
 }) {
   const t = useTranslations('Site')
   const [playing, setPlaying] = useState<{ key: string; id: string }>()
@@ -59,6 +61,15 @@ export function InfoCards({
     return null
   }
 
+  const ordered =
+    presentation === 'compact'
+      ? cards.toSorted((a, b) => {
+          const priority = (type: string) =>
+            type === 'youtube_video' ? 0 : type === 'equipment' ? 1 : 2
+          return priority(a.type) - priority(b.type)
+        })
+      : cards
+
   return (
     <>
       {cards.map((card, index) =>
@@ -66,8 +77,14 @@ export function InfoCards({
           <TrackingPassword key={`${String(index)}-${card.password}`} password={card.password} />
         ) : null,
       )}
-      <section className="grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-        {cards.map((card, index) => {
+      <div
+        className={
+          presentation === 'compact'
+            ? 'grid gap-2'
+            : 'grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3'
+        }
+      >
+        {ordered.map((card, index) => {
           const Icon = icons[card.type]
           const key = `${card.type}-${String(index)}`
 
@@ -79,12 +96,16 @@ export function InfoCards({
                 <InfoCard
                   key={key}
                   icon={<Play aria-hidden="true" />}
-                  title={t('youtube_video')}
+                  title={t(presentation === 'compact' ? 'watchFilm' : 'youtube_video')}
                   onActivate={() => {
                     trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
                   }}
+                  emphasis="film"
+                  variant={presentation === 'compact' ? 'compact' : 'video'}
                   href={card.url}
-                  action={t('video')}
+                  action={t(
+                    presentation === 'compact' ? 'resourceDescriptions.youtube_video' : 'video',
+                  )}
                 />
               )
             }
@@ -93,8 +114,10 @@ export function InfoCards({
               <InfoCard
                 key={key}
                 icon={<Play aria-hidden="true" />}
-                title={t('youtube_video')}
-                action={t('video')}
+                title={t(presentation === 'compact' ? 'watchFilm' : 'youtube_video')}
+                action={t(
+                  presentation === 'compact' ? 'resourceDescriptions.youtube_video' : 'video',
+                )}
                 onClick={() => {
                   if (playing?.key === key) {
                     return
@@ -103,7 +126,8 @@ export function InfoCards({
                   setPlaying({ key, id })
                 }}
                 expanded={playing?.key === key}
-                variant="video"
+                emphasis="film"
+                variant={presentation === 'compact' ? 'compact' : 'video'}
               />
             )
           }
@@ -114,7 +138,9 @@ export function InfoCards({
             <InfoCard
               key={key}
               icon={<Icon aria-hidden="true" />}
-              title={t(card.type)}
+              title={t(presentation === 'compact' ? `cardActions.${card.type}` : card.type)}
+              emphasis={card.type === 'equipment' ? 'equipment' : 'standard'}
+              variant={presentation === 'compact' ? 'compact' : 'default'}
               inactive={inactive}
               message={inactive ? t('inactive') : undefined}
               onActivate={() => {
@@ -127,11 +153,15 @@ export function InfoCards({
                 })
               }}
               href={card.url ?? undefined}
-              action={t(`cardActions.${card.type}`)}
+              action={t(
+                presentation === 'compact'
+                  ? `resourceDescriptions.${card.type}`
+                  : `cardActions.${card.type}`,
+              )}
             />
           )
         })}
-      </section>
+      </div>
       {playing && (
         <VideoModal
           videoId={playing.id}

@@ -9,6 +9,7 @@ import { useRef, useSyncExternalStore } from 'react'
 import type { ComponentProps } from 'react'
 
 import { SectionLink } from '../SectionLink'
+import { MenuItem } from '../MenuItem/MenuItem'
 import { DropdownSurface } from '../DropdownSurface'
 import type { UIComponentProps } from '../uiComponentProps'
 
@@ -106,6 +107,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
           <IconMenu2 className="size-5.5 shrink-0" aria-hidden="true" />
         </DropdownMenu.Trigger>
         <DropdownSurface
+          variant="menu"
           align="end"
           sideOffset={10}
           onCloseAutoFocus={(event) => {
@@ -116,14 +118,14 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
           }}
         >
           {links.map(({ id, ...link }) => (
-            <DropdownMenu.Item key={id} asChild>
+            <MenuItem key={id} asChild active={Boolean(link['aria-current'])}>
               <NavigationLink
                 {...link}
                 onClick={() => {
                   navigating.current = true
                 }}
               />
-            </DropdownMenu.Item>
+            </MenuItem>
           ))}
         </DropdownSurface>
       </DropdownMenu.Root>
