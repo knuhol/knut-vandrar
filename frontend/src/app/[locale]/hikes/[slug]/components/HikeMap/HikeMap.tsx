@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 
 import { HikeSection } from '../HikeSection/HikeSection'
+import { MapViewer } from './MapViewer/MapViewer'
 
 import { Heading } from '@/components/Heading'
 import { imageUrl } from '@/api/images'
@@ -61,14 +62,18 @@ export async function HikeMap({
             {t('title')}
           </Heading>
         </div>
-        {figure}
+        <MapViewer images={images} hikeTitle={hikeTitle}>
+          {figure}
+        </MapViewer>
       </section>
     )
   }
 
   return (
     <HikeSection id="map" title={t('title')}>
-      {figure}
+      <MapViewer images={images} hikeTitle={hikeTitle}>
+        {figure}
+      </MapViewer>
     </HikeSection>
   )
 }

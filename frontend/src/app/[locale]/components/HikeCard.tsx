@@ -7,7 +7,6 @@ import {
 
 import { HikeStats } from './HikeStats'
 import { HikeStatus } from './HikeStatus'
-import { Markdown } from '@/components/Markdown/Markdown'
 
 import { Heading } from '@/components/Heading'
 import { ButtonLink } from '@/components/Button'
@@ -20,8 +19,8 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
   const period = hikeSeason(hike)
 
   return (
-    <article className="card-interactive relative isolate overflow-hidden rounded-lg border border-beige bg-cream">
-      <div className="relative h-60 bg-cream tablet:h-56.25">
+    <article className="card-interactive relative isolate flex h-full flex-col overflow-hidden rounded-lg border border-beige bg-cream">
+      <div className="relative h-60 shrink-0 bg-cream tablet:h-56.25">
         {hike.cover_image_url ? (
           <Image
             src={imageUrl(hike.cover_image_url)}
@@ -38,7 +37,7 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
         )}
         <HikeStatus status={hike.status} className="absolute top-3.75 left-3.75" />
       </div>
-      <div className="p-5.25">
+      <div className="flex flex-1 flex-col p-5.25">
         {period && (
           <p className="mb-2 text-sm text-muted">
             <time dateTime={period.start}>
@@ -46,16 +45,15 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
             </time>
           </p>
         )}
-        <div className="mb-3">
+        <div className="mb-4">
           <Heading as="h3">{hike.translation.title}</Heading>
         </div>
-        <Markdown variant="summary">{hike.translation.summary_markdown}</Markdown>
         <HikeStats
           hike={hike}
           fontSize="base"
-          className="mt-5 gap-x-5 gap-y-3 border-t border-beige pt-3.75 text-forest [&_span]:gap-1.75"
+          className="mt-auto gap-x-5 gap-y-3 text-forest [&_span]:gap-1.75"
         />
-        <div className="mt-5">
+        <div className="mt-4">
           <ButtonLink
             size="small"
             stretched

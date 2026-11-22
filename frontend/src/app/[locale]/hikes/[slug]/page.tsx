@@ -21,6 +21,7 @@ import { TranslationNotice } from './components/TranslationNotice/TranslationNot
 import { HikeFacts } from './components/HikeFacts'
 import { ButtonLink } from '@/components/Button'
 import { Container } from '@/components/Container'
+import { ChapterControls } from '@/components/Chapter/ChapterControls'
 import { Markdown } from '@/components/Markdown/Markdown'
 import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
@@ -98,14 +99,9 @@ export default async function HikePage({ params }: Props) {
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const cards = visibleHikeCards(hike)
-  const isActive = hike.status === 'planned' || hike.status === 'ongoing'
-  const resourceItem: HikeNavigationItem = {
-    id: 'resources',
-    label: t(isActive ? 'followHike' : 'hikeResources'),
-  }
+  const overviewItem: HikeNavigationItem = { id: 'resources', label: t('hikeOverview') }
   const navigationItems: HikeNavigationItem[] = [
-    ...(maps.length > 0 ? [{ id: 'map' as const, label: t('map.title') }] : []),
-    ...(cards.length > 0 ? [resourceItem] : []),
+    overviewItem,
     { id: 'journey', label: t('journey.title') },
     { id: 'story', label: t('about') },
 
@@ -136,7 +132,7 @@ export default async function HikePage({ params }: Props) {
         >
           <HikeFacts hike={hike} endpoints={presentation.endpoints} />
           {cards.length > 0 && (
-            <section aria-label={resourceItem.label}>
+            <section aria-label={t('hikeResources')}>
               <InfoCards
                 cards={cards}
                 hikeId={hike.id}
@@ -176,7 +172,13 @@ export default async function HikePage({ params }: Props) {
       <div className="pt-10 tablet:pt-16">
         <Container>
           <div className="grid gap-12 tablet:gap-16">
-            <HikeSection id="story" title={t('about')} as="article" heading="visible">
+            <HikeSection
+              id="story"
+              title={t('about')}
+              as="article"
+              heading="prominent"
+              meta={<ChapterControls targetId="story" />}
+            >
               <div>
                 {locale !== 'en' && (
                   <div className="mb-6">

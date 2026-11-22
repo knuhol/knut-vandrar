@@ -167,7 +167,21 @@ class HikeWrite(HikeExtra):
     start_point: str | None = Field(default=None, max_length=300)
     end_point: str | None = Field(default=None, max_length=300)
     english: HikeEnglishContent
-    cards: list[InfoCard] = Field(default_factory=list)
+    cards: list[InfoCard] = Field(
+        default_factory=list,
+        description="At most one information card of each type per hike.",
+        json_schema_extra={"x-unique-by": "type"},
+    )
+
+    @field_validator("cards")
+    @classmethod
+    def validate_card_types(cls, cards: list[InfoCard]) -> list[InfoCard]:
+        seen: set[str] = set()
+        for card in cards:
+            if card.type in seen:
+                raise ValueError(f"Only one information card of each type is allowed: {card.type}")
+            seen.add(card.type)
+        return cards
 
     @model_validator(mode="after")
     def validate_timestamps(self) -> "HikeWrite":

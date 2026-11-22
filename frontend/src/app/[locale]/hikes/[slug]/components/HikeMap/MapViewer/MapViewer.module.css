@@ -1,0 +1,22 @@
+.viewport {
+  container-type: size;
+}
+
+.tools {
+  position: absolute;
+  z-index: 20;
+  top: max(calc(var(--spacing) * 2), env(safe-area-inset-top));
+  left: max(calc(var(--spacing) * 2), env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 1.5);
+}
+
+.help {
+  padding: calc(var(--spacing) * 2) calc(var(--spacing) * 4);
+  padding-bottom: max(calc(var(--spacing) * 2), env(safe-area-inset-bottom));
+  background: var(--color-forest-dark);
+  color: var(--color-cream);
+  font-size: var(--text-sm);
+  text-align: center;
+}

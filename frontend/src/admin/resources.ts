@@ -76,6 +76,7 @@ export interface Schema {
   required?: string[]
   properties?: Record<string, Schema>
   items?: Schema
+  'x-unique-by'?: string
   anyOf?: Schema[]
   oneOf?: Schema[]
   minLength?: number
@@ -133,6 +134,25 @@ export function initialValue(schema: Schema): Json {
 
 export function record(value: Json | undefined): Record<string, Json> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+// Preserve the current variant while hiding variants already used by another row.
+export function arrayItemSchema(schema: Schema, values: Json[], index?: number): Schema {
+  const original = schema.items || {}
+  const items = nonNull(original)
+  const key = schema['x-unique-by']
+  if (!key || !items.oneOf) {
+    return original
+  }
+  const current = index === undefined ? undefined : record(values[index])[key]
+  const used = new Set(values.map((value) => record(value)[key]))
+  return {
+    ...items,
+    oneOf: items.oneOf.filter((option) => {
+      const value = resolve(resolve(option).properties?.[key] || {}).const
+      return value === undefined || value === current || !used.has(value)
+    }),
+  }
 }
 
 export function title(value: Json) {

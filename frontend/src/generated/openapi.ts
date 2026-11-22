@@ -5344,7 +5344,9 @@ export const openapi = {
               }
             },
             "type": "array",
-            "title": "Cards"
+            "title": "Cards",
+            "description": "At most one information card of each type per hike.",
+            "x-unique-by": "type"
           }
         },
         "type": "object",

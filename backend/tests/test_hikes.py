@@ -360,29 +360,92 @@ def test_gpx_collection_card_round_trip(client: TestClient) -> None:
 def test_card_display_order_follows_card_type_order(client: TestClient) -> None:
     route = {"type": "route", "url": "https://example.com/route"}
     gpx = {"type": "gpx_collection", "url": "https://www.plotaroute.com/routecollection/18991"}
-    second_route = {"type": "route", "url": "https://example.com/second-route"}
-    response = client.post("/api/hikes", json=_planned_payload(cards=[gpx, route, second_route]))
+    video = {"type": "youtube_video", "url": "https://youtu.be/abcdefghijk"}
+    response = client.post("/api/hikes", json=_planned_payload(cards=[gpx, route, video]))
     assert response.status_code == 201, response.text
     hike = response.json()
-    assert hike["cards"] == [route, second_route, gpx]
+    assert hike["cards"] == [route, video, gpx]
 
     factory = cast(sessionmaker[Session], app.state.testing_session_local)
     with factory.begin() as db:
         card_type = db.get(InfoCardType, "gpx_collection")
         assert card_type is not None
-        card_type.sort_order = 0
+        card_type.sort_order_active = 0
 
     fetched = client.get(f"/api/hikes/{hike['id']}")
     assert fetched.status_code == 200, fetched.text
-    assert fetched.json()["cards"] == [gpx, route, second_route]
+    assert fetched.json()["cards"] == [gpx, route, video]
 
     # Saving the same array must preserve the configured card-type priority.
     saved = client.put(
         f"/api/hikes/{hike['id']}",
-        json=_planned_payload(cards=[route, second_route, gpx]),
+        json=_planned_payload(cards=[route, video, gpx]),
     )
     assert saved.status_code == 200, saved.text
-    assert saved.json()["cards"] == [gpx, route, second_route]
+    assert saved.json()["cards"] == [gpx, route, video]
+
+
+@pytest.mark.parametrize(
+    ("hike_status", "expected_types"),
+    [
+        ("planned", ["gpx_collection", "route", "youtube_video"]),
+        ("ongoing", ["gpx_collection", "route", "youtube_video"]),
+        ("completed", ["route", "youtube_video", "gpx_collection"]),
+        ("aborted", ["route", "youtube_video", "gpx_collection"]),
+    ],
+    ids=[
+        "planned-active-order",
+        "ongoing-active-order",
+        "completed-finished-order",
+        "aborted-finished-order",
+    ],
+)
+def test_card_order_uses_hike_status_for_every_detail_response(
+    client: TestClient, hike_status: str, expected_types: list[str]
+) -> None:
+    route = {"type": "route", "url": "https://example.com/route"}
+    video = {"type": "youtube_video", "url": "https://youtu.be/abcdefghijk"}
+    gpx = {"type": "gpx_collection", "url": "https://www.plotaroute.com/routecollection/18991"}
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory.begin() as db:
+        route_type = db.get(InfoCardType, "route")
+        gpx_type = db.get(InfoCardType, "gpx_collection")
+        assert route_type is not None and gpx_type is not None
+        route_type.sort_order_active = 10
+        route_type.sort_order_finished = 0
+        gpx_type.sort_order_active = 0
+        gpx_type.sort_order_finished = 10
+        video_type = db.get(InfoCardType, "youtube_video")
+        assert video_type is not None
+        video_type.sort_order_active = 20
+        video_type.sort_order_finished = 5
+
+    payload = _planned_payload(
+        status=hike_status,
+        actual_start_at=None if hike_status == "planned" else "2026-05-01T09:00:00Z",
+        actual_end_at="2026-05-05T09:00:00Z" if hike_status in {"completed", "aborted"} else None,
+        cards=[route, gpx, video],
+    )
+    created = client.post("/api/hikes", json=payload)
+    assert created.status_code == 201, created.text
+    hike = created.json()
+    expected = [gpx, route, video] if expected_types[0] == "gpx_collection" else [route, video, gpx]
+    assert hike["cards"] == expected
+    assert client.get(f"/api/hikes/{hike['id']}").json()["cards"] == expected
+    assert client.get(f"/api/hikes/en/{hike['translation']['slug']}").json()["cards"] == expected
+
+    # Changing status switches order without changing either configured priority.
+    next_status = "ongoing" if hike_status in {"completed", "aborted"} else "completed"
+    payload.update(
+        status=next_status,
+        actual_start_at="2026-05-01T09:00:00Z",
+        actual_end_at="2026-05-05T09:00:00Z" if next_status == "completed" else None,
+    )
+    saved = client.put(f"/api/hikes/{hike['id']}", json=payload)
+    assert saved.status_code == 200, saved.text
+    next_expected = [route, video, gpx] if next_status == "completed" else [gpx, route, video]
+    assert saved.json()["cards"] == next_expected
+    assert client.get(f"/api/hikes/{hike['id']}").json()["cards"] == next_expected
 
 
 @pytest.mark.parametrize("password", [None, "1234xss"], ids=["without-password", "with-password"])
@@ -895,3 +958,54 @@ def test_hike_neighbors_follow_localized_listing_order_without_wrapping(
     assert client.get(f"/api/hikes/{UUID(int=999)}/neighbors/{locale}").status_code == 404
     if locale == "sv":
         assert client.get(f"/api/hikes/{UUID(int=3)}/neighbors/sv").status_code == 404
+
+
+@pytest.mark.parametrize("card_type", ["route", "youtube_video", "gpx_collection", "live_position"])
+def test_duplicate_card_types_are_rejected_without_changing_saved_cards(
+    client: TestClient, card_type: str
+) -> None:
+    urls = {
+        "route": "https://example.com/route",
+        "youtube_video": "https://youtu.be/abcdefghijk",
+        "gpx_collection": "https://www.plotaroute.com/routecollection/18991",
+        "live_position": "https://share.garmin.com/hike",
+    }
+    card: dict[str, str] = {"type": card_type, "url": urls[card_type]}
+    if card_type == "live_position":
+        card["state"] = "active"
+    duplicate = {**card, "url": urls[card_type] + "?second=true"}
+    invalid = _planned_payload(cards=[card, duplicate])
+    created = client.post("/api/hikes", json=invalid)
+    assert created.status_code == 422
+    assert any(
+        error["loc"] == ["body", "cards"] and card_type in error["msg"]
+        for error in created.json()["detail"]
+    )
+    assert client.get("/api/hikes").json()["total"] == 0
+
+    valid = client.post("/api/hikes", json=_planned_payload(cards=[card]))
+    assert valid.status_code == 201, valid.text
+    hike = valid.json()
+    updated = client.put(f"/api/hikes/{hike['id']}", json=invalid)
+    assert updated.status_code == 422
+    assert client.get(f"/api/hikes/{hike['id']}").json()["cards"] == hike["cards"]
+
+
+def test_database_rejects_duplicate_types_only_within_the_same_hike(client: TestClient) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    from knut_vandrar_backend.models.hike import HikeInfoCard
+
+    first = client.post("/api/hikes", json=_planned_payload()).json()
+    second = client.post("/api/hikes", json=_planned_payload()).json()
+    assert first["id"] != second["id"]
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory() as db, pytest.raises(IntegrityError), db.begin():
+        db.add(
+            HikeInfoCard(
+                hike_id=UUID(first["id"]),
+                type="route",
+                data={"type": "route", "url": "https://example.com/another-route"},
+            )
+        )
+        db.flush()

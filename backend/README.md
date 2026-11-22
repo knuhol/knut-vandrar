@@ -10,6 +10,19 @@ curl --fail-with-body --request PUT "$API_URL/api/locations/$LOCATION_ID/logo" \
   --data-binary @trail-logo.svg
 ```
 
+Information-card display order is configured per type in `info_card_types`:
+`sort_order_active` applies to planned and ongoing hikes; `sort_order_finished`
+applies to completed and aborted hikes. API detail responses (including create and
+update responses) always return cards in that order, with the saved per-hike order
+as the tie-breaker. The migration copies the previous `sort_order` into both fields,
+preserving existing priorities. Change either field independently to customize an
+order; lower numbers come first. Each hike can have at most one card per type.
+The API rejects duplicate types with a validation error, and the database enforces
+uniqueness on `(hike_id, type)`. The admin editor offers only unused types.
+If existing duplicates are present, migration `022_unique_hike_card_types` reports
+an affected hike/type and stops before changing the table; resolve those duplicates
+and retry. It never chooses or deletes a card automatically.
+
 Hike records may also include optional `start_point` and `end_point` text. The `youtube_video` info card accepts YouTube URLs, including `youtube.com` and `youtu.be` links.
 
 ```sh

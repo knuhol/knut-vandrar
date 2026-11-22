@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 
+import { chapterExpansionEvent } from './chapterState'
+
 import { cancelPageScroll, motionDuration, scrollToElement } from '@/navigation/motion'
 
 export function Chapter({ children }: { children?: ReactNode }) {
@@ -112,6 +114,23 @@ export function Chapter({ children }: { children?: ReactNode }) {
         details.dataset.expanded = String(expanded)
       }
     }
+    function expandFromControl(event: Event) {
+      const next = (event as CustomEvent<unknown>).detail
+      if (!details || typeof next !== 'boolean') {
+        return
+      }
+      operation += 1
+      animation?.cancel()
+      animation = null
+      if (pending) {
+        cancelPageScroll()
+      }
+      pending = false
+      expanded = next
+      details.dataset.expanded = String(next)
+      details.open = next
+    }
+    details.addEventListener(chapterExpansionEvent, expandFromControl)
     summary.addEventListener('mousedown', pointerDown)
     summary.addEventListener('click', toggle)
     details.addEventListener('toggle', sync)
@@ -124,6 +143,7 @@ export function Chapter({ children }: { children?: ReactNode }) {
       summary.removeEventListener('mousedown', pointerDown)
       summary.removeEventListener('click', toggle)
       details.removeEventListener('toggle', sync)
+      details.removeEventListener(chapterExpansionEvent, expandFromControl)
     }
   }, [])
 

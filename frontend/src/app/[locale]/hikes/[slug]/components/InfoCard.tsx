@@ -28,6 +28,13 @@ export function InfoCard({
   emphasis?: 'standard' | 'film' | 'equipment'
 }) {
   const compact = variant === 'compact'
+  const film = variant === 'video' || emphasis === 'film'
+  const compactSurface = film
+    ? 'border-orange bg-orange text-ink [--link-interaction-color:var(--color-ink)]'
+    : 'border-forest-outline border-l-orange bg-paper text-forest [--link-interaction-color:var(--color-forest)]'
+  const compactInteraction = film
+    ? 'hover:border-orange-dark hover:bg-orange-dark hover:shadow-sm focus-visible:border-orange-dark focus-visible:bg-orange-dark focus-visible:shadow-sm'
+    : 'hover:border-forest hover:border-l-orange hover:shadow-sm focus-visible:border-forest focus-visible:border-l-orange focus-visible:shadow-sm'
   const interactive = Boolean((href || onClick) && !inactive && !message)
   const Tag = interactive ? (onClick ? 'button' : 'a') : 'article'
 
@@ -57,7 +64,7 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`group relative flex w-full items-center gap-3 text-left ${compact ? 'min-h-13 rounded-sm border border-forest-outline border-l-2 border-l-orange bg-paper px-3 py-2.5 text-forest transition-[border-color,box-shadow] duration-(--duration-fast) [--link-interaction-color:var(--color-forest)]' : `min-h-20 rounded-lg p-4 ${inactive ? 'bg-beige text-muted' : variant === 'video' ? 'bg-orange text-ink' : 'bg-paper text-forest'}`} ${interactive ? (compact ? 'cursor-pointer hover:border-forest hover:border-l-orange hover:shadow-sm focus-visible:border-forest focus-visible:border-l-orange focus-visible:shadow-sm' : 'card-interactive cursor-pointer') : 'opacity-60'}`}
+      className={`group relative flex w-full items-center gap-3 text-left ${compact ? `min-h-13 rounded-sm border border-l-2 px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-(--duration-fast) ${compactSurface}` : `min-h-20 rounded-lg p-4 ${inactive ? 'bg-beige text-muted' : variant === 'video' ? 'bg-orange text-ink' : 'bg-paper text-forest'}`} ${interactive ? (compact ? `cursor-pointer ${compactInteraction}` : 'card-interactive cursor-pointer') : 'opacity-60'}`}
     >
       <span
         className={`grid shrink-0 place-items-center [&>svg]:size-5 ${compact ? 'size-6' : `size-9 rounded-full ${inactive ? 'bg-forest/10' : variant === 'video' ? 'bg-ink/10' : 'bg-cream'}`}`}
@@ -73,7 +80,7 @@ export function InfoCard({
         {(message || action) && (
           <span
             data-link-label={interactive ? true : undefined}
-            className={`mt-1 block ${compact ? 'text-xs leading-relaxed' : 'text-sm'} ${variant === 'video' ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
+            className={`mt-1 block ${compact ? 'text-xs leading-relaxed' : 'text-sm'} ${film ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
           >
             {message || action}
           </span>

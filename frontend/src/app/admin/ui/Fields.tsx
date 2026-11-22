@@ -14,6 +14,7 @@ import { fieldApplies, variantApplies, type FieldContext } from '@/admin/fieldCo
 
 import {
   orderedFields,
+  arrayItemSchema,
   fieldGroups,
   fieldWidgets,
   valuesEqual,
@@ -247,11 +248,27 @@ export function Fields({
   if (field.type === 'array' && field.items) {
     const items = field.items
     const current = Array.isArray(value) ? value : []
+    function selectableItems(index?: number): Schema {
+      const schema = arrayItemSchema(field, current, index)
+      return field['x-unique-by'] && schema.oneOf
+        ? {
+            ...schema,
+            oneOf: schema.oneOf.filter((option) =>
+              variantApplies(option, root, index === undefined ? undefined : current[index]),
+            ),
+          }
+        : schema
+    }
+    const addition = selectableItems()
+    const canAdd = !addition.oneOf || addition.oneOf.length > 0
     const addButton = (
       <Button
         variant="outlined"
+        disabled={!canAdd}
         onClick={() => {
-          onChange([...current, initialValue(items)])
+          if (canAdd) {
+            onChange([...current, initialValue(addition)])
+          }
         }}
       >
         {messages.add}
@@ -275,7 +292,7 @@ export function Fields({
               <Fields
                 context={root}
                 references={references}
-                schema={items}
+                schema={selectableItems(index)}
                 reference={relation}
                 value={entry}
                 label={`${labelText} ${text(index + 1)}`}

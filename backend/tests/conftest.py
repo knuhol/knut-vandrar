@@ -54,21 +54,27 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
                 Language(code="sv", name="Swedish", enabled=True, is_source=False),
                 Language(code="cs", name="Czech", enabled=True, is_source=False),
                 InfoCardType(
-                    type="route", sort_order=1, data_structure=RouteCard.model_json_schema()
+                    type="route",
+                    sort_order_active=1,
+                    sort_order_finished=1,
+                    data_structure=RouteCard.model_json_schema(),
                 ),
                 InfoCardType(
                     type="youtube_video",
-                    sort_order=2,
+                    sort_order_active=2,
+                    sort_order_finished=2,
                     data_structure=YouTubeVideoCard.model_json_schema(),
                 ),
                 InfoCardType(
                     type="live_position",
-                    sort_order=3,
+                    sort_order_active=3,
+                    sort_order_finished=3,
                     data_structure=LivePositionCard.model_json_schema(),
                 ),
                 InfoCardType(
                     type="gpx_collection",
-                    sort_order=7,
+                    sort_order_active=7,
+                    sort_order_finished=7,
                     data_structure=GpxCollectionCard.model_json_schema(),
                 ),
                 TranslationProfile(
