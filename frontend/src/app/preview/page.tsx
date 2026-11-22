@@ -42,7 +42,9 @@ export default async function PreviewPage({
         <div className="mb-8">
           <Logo size="compact" />
         </div>
-        <Eyebrow>{t.eyebrow}</Eyebrow>
+        <div className="mb-1">
+          <Eyebrow>{t.eyebrow}</Eyebrow>
+        </div>
         <Heading className="text-3xl" id="preview-title" tone="brand">
           {t.title}
         </Heading>

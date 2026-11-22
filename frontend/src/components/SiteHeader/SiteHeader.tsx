@@ -65,7 +65,9 @@ export function SiteHeader({
       data-site-header
       className={`${active ? styles.contextAvailable : ''} sticky top-0 z-40 border-b border-beige bg-cream shadow-sm`}
     >
-      <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3 tablet:gap-6.25 tablet:px-8 tablet:py-5.5 desktop:gap-11">
+      <div
+        className={`${styles.frame} mx-auto flex max-w-page items-center px-4 py-3 tablet:px-8 tablet:py-5.5`}
+      >
         <div className={`${styles.brand} relative h-11 w-47.5 shrink-0 tablet:w-64 desktop:w-80`}>
           <div className={styles.brandFull}>{brand}</div>
           <div className={styles.brandIcon}>{brandIcon ?? brand}</div>
@@ -75,7 +77,7 @@ export function SiteHeader({
             <div
               inert={reading}
               aria-hidden={reading ? true : undefined}
-              className={`${styles.pane} ${reading ? styles.inactive : ''} flex min-w-0 items-center justify-end gap-2.5 tablet:gap-6.25 desktop:gap-11`}
+              className={`${styles.pane} ${reading ? styles.inactive : ''} flex min-w-0 items-center justify-end`}
             >
               {navigation}
               {languages}

@@ -140,7 +140,7 @@ function PhotoViewer({
           {(error || photo.caption) && (
             <div className={`${styles.caption} absolute inset-x-0 bottom-0 text-center`}>
               <p
-                className="inline-block max-h-[50dvh] overflow-y-auto rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl"
+                className={`${styles.overlayText} inline-block max-h-[50dvh] overflow-y-auto`}
                 role={error ? 'alert' : undefined}
               >
                 {error ? t('loadError') : photo.caption}
@@ -149,7 +149,7 @@ function PhotoViewer({
           )}
         </div>
         <p
-          className={`${styles.counter} absolute rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl`}
+          className={`${styles.overlayText} ${styles.counter} absolute`}
           aria-live="polite"
           aria-atomic="true"
         >
@@ -220,7 +220,7 @@ export function HikeGallery({
       heading="hidden"
       meta={t('count', { count: page.total })}
     >
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:gap-5 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4 wide:grid-cols-4 wide:gap-5">
         {photos.map((photo, index) => (
           <button
             key={photo.id}

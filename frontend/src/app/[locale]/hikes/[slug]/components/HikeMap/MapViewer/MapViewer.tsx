@@ -14,6 +14,7 @@ import type { HikeMapImage } from '@/api/hikes'
 
 const minimumZoom = 1
 const maximumZoom = 4
+const zoomStep = 0.5
 
 function MapLightbox({
   image,
@@ -68,7 +69,9 @@ function MapLightbox({
       onKeyDown={(event) => {
         if (['+', '=', '-', '0'].includes(event.key)) {
           event.preventDefault()
-          changeZoom(event.key === '0' ? minimumZoom : zoom + (event.key === '-' ? -0.5 : 0.5))
+          changeZoom(
+            event.key === '0' ? minimumZoom : zoom + (event.key === '-' ? -zoomStep : zoomStep),
+          )
         }
         const element = viewport.current
         if (element) {
@@ -93,7 +96,7 @@ function MapLightbox({
             label={t('zoomIn')}
             disabled={zoom === maximumZoom}
             onClick={() => {
-              changeZoom(zoom + 0.5)
+              changeZoom(zoom + zoomStep)
             }}
           />
           <MediaControl
@@ -101,7 +104,7 @@ function MapLightbox({
             label={t('zoomOut')}
             disabled={zoom === minimumZoom}
             onClick={() => {
-              changeZoom(zoom - 0.5)
+              changeZoom(zoom - zoomStep)
             }}
           />
           <MediaControl
@@ -146,6 +149,9 @@ function MapLightbox({
             if (event.currentTarget.hasPointerCapture(event.pointerId)) {
               event.currentTarget.releasePointerCapture(event.pointerId)
             }
+          }}
+          onLostPointerCapture={() => {
+            dragging.current = null
           }}
           onPointerCancel={() => {
             dragging.current = null

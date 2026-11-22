@@ -24,7 +24,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .landscape::before {
-    animation: landscape-reveal var(--duration-entrance) ease-out both;
+    animation: landscape-reveal var(--duration-entrance) var(--ease-entrance) both;
   }
 }
 

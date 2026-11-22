@@ -13,8 +13,7 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
   const format = useFormatter()
   const start = hike.status === 'planned' ? hike.planned_start_at : hike.actual_start_at
   const end = hike.status === 'planned' ? hike.planned_end_at : hike.actual_end_at
-  const hasStats =
-    hike.duration_days != null || hike.distance_km != null || hike.ascent_m != null
+  const hasStats = hike.duration_days != null || hike.distance_km != null || hike.ascent_m != null
 
   return (
     <div className="min-w-0">
@@ -59,11 +58,7 @@ export function HikeFacts({ hike, endpoints }: { hike: Hike; endpoints?: HikeEnd
                 <>
                   <dt className="sr-only">{t('hikeStats')}</dt>
                   <dd>
-                    <HikeStats
-                      hike={hike}
-                      fontSize="lg"
-                      className="gap-x-3 gap-y-3 text-forest tablet:gap-x-4 wide:text-xl [&_span]:gap-2"
-                    />
+                    <HikeStats hike={hike} variant="overview" />
                   </dd>
                 </>
               )}

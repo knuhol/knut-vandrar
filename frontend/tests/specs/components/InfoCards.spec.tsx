@@ -84,7 +84,7 @@ test('copy button confirms copying without an extra message below the password',
     },
   ])
 
-  fireEvent.click(screen.getByRole('button', { name: 'Copy password' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
 
   await waitFor(() => {
     expect(screen.getByRole('button', { name: 'Copied!' })).toBeInTheDocument()
@@ -106,7 +106,7 @@ test('clipboard failure leaves the password visible with manual copy instruction
     },
   ])
 
-  fireEvent.click(screen.getByRole('button', { name: 'Copy password' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
 
   await waitFor(() => {
     expect(screen.getByRole('status')).toHaveTextContent('Select the password')
@@ -140,13 +140,15 @@ test('resource activation sends stable context and preserves native link behavio
 
 test('inactive resource cards do not send events', () => {
   renderCards([{ type: 'live_position', state: 'inactive', url: null, password: null }])
-  fireEvent.click(screen.getByText(messages.en.Site.live_position))
+  fireEvent.click(screen.getByText(messages.en.Site.resourceTitles.live_position))
   expect(trackHikeInteraction).not.toHaveBeenCalled()
 })
 
 test('opening and reopening a video records one event per opening', () => {
   renderCards([{ type: 'youtube_video', url: 'https://youtu.be/abcdefghijk' }])
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(messages.en.Site.video) }))
+  fireEvent.click(
+    screen.getByRole('button', { name: new RegExp(messages.en.Site.resourceTitles.youtube_video) }),
+  )
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'video_open',
     hikeId: 'hike-123',
@@ -155,12 +157,18 @@ test('opening and reopening a video records one event per opening', () => {
   })
   expect(trackHikeInteraction).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('button', { name: 'Close video' }))
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(messages.en.Site.video) }))
+  fireEvent.click(
+    screen.getByRole('button', { name: new RegExp(messages.en.Site.resourceTitles.youtube_video) }),
+  )
   expect(trackHikeInteraction).toHaveBeenCalledTimes(2)
 })
 
-test('external video fallback records an opening without changing the link into a button', () => {
-  renderCards([{ type: 'youtube_video', url: 'https://example.com/film' }])
+test.each([
+  'https://example.com/film',
+  'https://example.com/abcdefghijk',
+  'https://youtu.be/incomplete',
+])('keeps unsupported video URLs as external links: %s', (url) => {
+  renderCards([{ type: 'youtube_video', url }])
   fireEvent.click(screen.getByRole('link'))
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'video_open',

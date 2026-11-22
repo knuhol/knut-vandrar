@@ -1,3 +1,5 @@
+@reference '../../../../../globals.css';
+
 .previous {
   left: max(calc(var(--spacing) * 2), env(safe-area-inset-left));
 }
@@ -16,4 +18,8 @@
 .counter {
   top: max(calc(var(--spacing) * 2), env(safe-area-inset-top));
   left: max(calc(var(--spacing) * 2), env(safe-area-inset-left));
+}
+
+.overlayText {
+  @apply rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl;
 }

@@ -1,5 +1,18 @@
 @reference '../../app/globals.css';
 
+.frame {
+  --header-gap: calc(var(--spacing) * 2.5);
+  gap: var(--header-gap);
+
+  @variant tablet {
+    --header-gap: calc(var(--spacing) * 6.25);
+  }
+
+  @variant desktop {
+    --header-gap: calc(var(--spacing) * 11);
+  }
+}
+
 .brand {
   transition: width var(--duration-fast) var(--ease-entrance);
 }
@@ -30,6 +43,7 @@
 
 .pane {
   min-width: 0;
+  gap: var(--header-gap);
   transition: visibility var(--duration-fast);
 }
 
@@ -51,7 +65,8 @@
 }
 
 .switcherHidden {
-  @apply -ml-2.5 w-0 tablet:-ml-6.25 desktop:-ml-11;
+  width: 0;
+  margin-left: calc(-1 * var(--header-gap));
   visibility: hidden;
   opacity: 0;
 }

@@ -45,12 +45,10 @@ export function hasHikeJourney(details: HikeDetails) {
 export function HikeJourney({
   details,
   status,
-  facts,
   more,
 }: {
   details: HikeDetails
   status: Hike['status']
-  facts?: ReactNode
   more?: ReactNode
 }) {
   const t = useTranslations('Site.journey')
@@ -76,14 +74,13 @@ export function HikeJourney({
       : []),
   ]
 
-  if (!hasHikeJourney(details) && !facts) {
+  if (!hasHikeJourney(details)) {
     return null
   }
 
   return (
-    <HikeSection id="journey" title={t('title')} variant="plain" heading="hidden">
+    <HikeSection id="journey" title={t('title')} heading="hidden">
       <div className="grid items-start gap-8 tablet:grid-cols-2 desktop:grid-cols-3">
-        {facts && <div className="min-w-0">{facts}</div>}
         {routeItems.length > 0 && (
           <div>
             <div className="mb-4">

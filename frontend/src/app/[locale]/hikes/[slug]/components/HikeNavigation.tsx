@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { useTranslations } from 'next-intl'
-import { IconChevronDown, IconFold } from '@tabler/icons-react'
+import { IconChevronDown } from '@tabler/icons-react'
 
 import type { HikeSectionId } from './hikeSections'
 
@@ -22,8 +21,8 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
   const [chapter, setChapter] = useState<Chapter | null>(null)
   const [expanded, setExpanded] = useState(false)
   const sentinel = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
   const { setActive, slot, siteMenuOpen, setSiteMenuOpen } = useReadingNavigation()
-  const t = useTranslations('Site')
 
   useEffect(() => {
     let frame = 0
@@ -118,6 +117,14 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
         }}
       >
         <DropdownMenu.Trigger
+          ref={trigger}
+          onPointerDown={(event) => {
+            if (expanded && event.button === 0 && !event.ctrlKey) {
+              // Closing on pointer-down must also suppress the browser's native focus scroll.
+              event.preventDefault()
+              setExpanded(false)
+            }
+          }}
           className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2 text-left text-lg font-semibold"
           title={chapter ? `${currentLabel} / ${chapter.title}` : currentLabel}
         >
@@ -127,20 +134,15 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
           <span className="truncate">{chapter?.title ?? currentLabel}</span>
           <IconChevronDown className="size-4 shrink-0" aria-hidden="true" />
         </DropdownMenu.Trigger>
-        <DropdownSurface align="center" sideOffset={6} variant="menu">
-          {chapter && (
-            <MenuItem asChild>
-              <button
-                type="button"
-                onClick={() => {
-                  chapter.element.querySelector('summary')?.click()
-                }}
-              >
-                <IconFold className="size-4" aria-hidden="true" />
-                {t('collapseChapter')}
-              </button>
-            </MenuItem>
-          )}
+        <DropdownSurface
+          align="center"
+          sideOffset={6}
+          onCloseAutoFocus={(event) => {
+            // Restoring focus to the sticky header must not scroll its layout position into view.
+            event.preventDefault()
+            trigger.current?.focus({ preventScroll: true })
+          }}
+        >
           {items.map(({ id, label: title }) => (
             <DropdownMenu.Group key={id}>
               <MenuItem asChild active={activeId === id}>
@@ -180,18 +182,6 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
           ))}
         </DropdownSurface>
       </DropdownMenu.Root>
-      {chapter && (
-        <button
-          type="button"
-          className="hidden min-h-11 shrink-0 cursor-pointer items-center gap-2 border-l border-beige pl-3 text-xs desktop:flex"
-          onClick={() => {
-            chapter.element.querySelector('summary')?.click()
-          }}
-        >
-          <IconFold className="size-4" aria-hidden="true" />
-          {t('collapseChapter')}
-        </button>
-      )}
     </nav>
   )
 

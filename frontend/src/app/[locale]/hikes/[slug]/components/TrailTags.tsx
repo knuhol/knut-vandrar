@@ -12,7 +12,7 @@ import {
   IconShip as Boat,
 } from '@tabler/icons-react'
 
-import { HikeBadge } from './HikeBadge'
+import { FactTag } from './FactTag'
 
 import type { TrailTag } from '@/hiking/presentation'
 
@@ -43,10 +43,10 @@ export function TrailTags({ tags, regions = [] }: { tags: TrailTag[]; regions?: 
     <ul className="flex flex-wrap gap-2" aria-label={t('label')}>
       {regions.map((region) => (
         <li key={region} className="max-w-full">
-          <HikeBadge kind="characteristic">
+          <FactTag kind="characteristic">
             <MapPin className="size-4 shrink-0" aria-hidden="true" />
             <span>{region}</span>
-          </HikeBadge>
+          </FactTag>
         </li>
       ))}
       {[...new Set(tags)].map((tag) => {
@@ -54,10 +54,10 @@ export function TrailTags({ tags, regions = [] }: { tags: TrailTag[]; regions?: 
 
         return (
           <li key={tag} className="max-w-full">
-            <HikeBadge kind="characteristic">
+            <FactTag kind="characteristic">
               <Icon className="size-4 shrink-0" aria-hidden="true" />
               <span>{t(tag)}</span>
-            </HikeBadge>
+            </FactTag>
           </li>
         )
       })}

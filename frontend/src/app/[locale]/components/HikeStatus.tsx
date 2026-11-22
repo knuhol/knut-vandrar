@@ -9,18 +9,12 @@ const colors = {
   aborted: 'bg-muted text-cream',
 }
 
-export function HikeStatus({
-  status,
-  className = '',
-}: {
-  status: HikeSummary['status']
-  className?: string
-}) {
+export function HikeStatus({ status }: { status: HikeSummary['status'] }) {
   const t = useTranslations('Site')
 
   return (
     <span
-      className={`inline-flex rounded-full px-3.25 py-1 font-statistic text-sm font-bold ${colors[status]} ${className}`}
+      className={`inline-flex rounded-full px-3.25 py-1 font-statistic text-sm font-bold ${colors[status]}`}
     >
       {t(status)}
     </span>

@@ -29,21 +29,11 @@ test.each([false, null])('does not infer a loop when hike loop status is %s', (i
   expect(hasHikeJourney({ ...loop, isLoop })).toBe(false)
 })
 
-test('keeps the combined route section available when only hike facts exist', () => {
-  render(
+test('omits the route section when the hike has no journey details', () => {
+  const { container } = render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
-      <HikeJourney
-        details={{ ...loop, isLoop: null }}
-        status="completed"
-        facts={<p>280 km over 14 days</p>}
-        more={<a href="#trail">More about the trail</a>}
-      />
+      <HikeJourney details={{ ...loop, isLoop: null }} status="completed" />
     </NextIntlClientProvider>,
   )
-  expect(screen.getByText('280 km over 14 days')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'More about the trail' })).toHaveAttribute(
-    'href',
-    '#trail',
-  )
-  expect(document.getElementById('journey')).toBeInTheDocument()
+  expect(container).toBeEmptyDOMElement()
 })

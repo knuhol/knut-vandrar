@@ -36,7 +36,7 @@ export function HikeCollection({ pages }: { pages: Record<HikeCategory, HikesPag
             return (
               <section key={category.id} aria-labelledby={`${category.id}-title`}>
                 <div id={category.id} tabIndex={-1} className="mb-7 outline-none">
-                  <div className="mb-2.5">
+                  <div className="mb-1">
                     <Eyebrow>{t('collectionEyebrow')}</Eyebrow>
                   </div>
                   <div className="mb-2.5">

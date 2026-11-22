@@ -12,7 +12,6 @@ export function FactItems({
     label: string
     icon: ReactNode
     count?: number
-    description?: string | null
   }[]
 }) {
   const format = useFormatter()
@@ -22,7 +21,7 @@ export function FactItems({
       {items.map((item) => (
         <li key={item.id} className="max-w-full">
           <FactTag>
-            <div className="flex flex-row gap-0.5 items-center ">
+            <span className="flex items-center gap-0.5">
               {item.count !== undefined && (
                 <>
                   <span className="shrink-0 font-sans text-base leading-tight font-semibold tabular-nums whitespace-nowrap">
@@ -36,13 +35,8 @@ export function FactItems({
               <span className="shrink-0 [&_svg]:size-5" aria-hidden="true">
                 {item.icon}
               </span>
-            </div>
-            <span className="min-w-0 wrap-anywhere">
-              {item.label}
-              {item.description && (
-                <span className="mt-1 block text-xs text-muted">{item.description}</span>
-              )}
             </span>
+            <span className="min-w-0 wrap-anywhere">{item.label}</span>
           </FactTag>
         </li>
       ))}

@@ -2,7 +2,6 @@ import Image from 'next/image'
 
 import { getTranslations } from 'next-intl/server'
 
-import { HikeSection } from '../HikeSection/HikeSection'
 import { MapViewer } from './MapViewer/MapViewer'
 
 import { Heading } from '@/components/Heading'
@@ -13,11 +12,9 @@ import { responsiveMedia } from '@/config/breakpoints'
 export async function HikeMap({
   images,
   hikeTitle,
-  variant = 'section',
 }: {
   images: HikeMapImage[]
   hikeTitle: string
-  variant?: 'section' | 'landscape'
 }) {
   if (images.length === 0) {
     return null
@@ -27,7 +24,7 @@ export async function HikeMap({
   const variants = ['wide', 'desktop', 'tablet'] as const
 
   const figure = (
-    <figure className={`overflow-hidden bg-cream ${variant === 'section' ? 'rounded-lg' : ''}`}>
+    <figure className="overflow-hidden bg-cream">
       <picture>
         {variants.map((variant) => {
           const image = images.find((item) => item.variant === variant)
@@ -54,26 +51,16 @@ export async function HikeMap({
     </figure>
   )
 
-  if (variant === 'landscape') {
-    return (
-      <section id="map" aria-labelledby="map-title" className="min-w-0 scroll-mt-(--header-height)">
-        <div className="sr-only">
-          <Heading as="h2" id="map-title" tone="brand">
-            {t('title')}
-          </Heading>
-        </div>
-        <MapViewer images={images} hikeTitle={hikeTitle}>
-          {figure}
-        </MapViewer>
-      </section>
-    )
-  }
-
   return (
-    <HikeSection id="map" title={t('title')}>
+    <section id="map" aria-labelledby="map-title" className="min-w-0 scroll-mt-(--header-height)">
+      <div className="sr-only">
+        <Heading as="h2" id="map-title" tone="brand">
+          {t('title')}
+        </Heading>
+      </div>
       <MapViewer images={images} hikeTitle={hikeTitle}>
         {figure}
       </MapViewer>
-    </HikeSection>
+    </section>
   )
 }

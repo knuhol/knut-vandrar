@@ -34,9 +34,6 @@
     color-mix(in srgb, var(--color-forest) 0%, transparent) 100%
   );
 
-  --color-panel-glass: color-mix(in srgb, var(--color-paper) 78%, transparent);
-  --blur-panel: 16px;
-
   --spacing: 4px;
   /* Leave room for language, navigation and the contextual switch on narrow headers. */
   --spacing-header-brand: clamp(
@@ -48,7 +45,6 @@
   --container-page: 1240px;
   --container-reading: 68ch;
   --container-prose: var(--container-reading);
-  --container-navigation: 260px;
   --container-media-preview: 320px;
   --container-popover: 30rem;
   --breakpoint-tablet: 641px;
@@ -67,8 +63,8 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --leading-tight: 1.2;
-  --leading-relaxed: 1.6;
   --leading-reading: 1.55;
+  --leading-relaxed: var(--leading-reading);
   --tracking-tight: -0.035em;
   --tracking-widest: 0.16em;
 

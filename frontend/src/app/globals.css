@@ -3,6 +3,10 @@
 @import '../styles/interactions.css';
 
 @layer base {
+  p {
+    line-height: var(--leading-reading);
+  }
+
   html {
     scroll-padding-top: var(--section-scroll-offset);
   }
