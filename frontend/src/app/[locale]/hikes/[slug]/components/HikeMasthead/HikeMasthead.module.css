@@ -2,6 +2,7 @@
   z-index: 2;
   overflow: visible;
   min-height: calc(100svh - var(--header-height));
+  text-shadow: var(--text-shadow-on-image);
 }
 
 .shade {
@@ -30,6 +31,12 @@
   }
 }
 
-.readable {
-  text-shadow: var(--text-shadow-on-image);
+.landscape svg {
+  filter: drop-shadow(var(--text-shadow-on-image));
+}
+
+.status {
+  display: inline-flex;
+  text-shadow: none;
+  filter: drop-shadow(var(--shadow-badge-on-image));
 }

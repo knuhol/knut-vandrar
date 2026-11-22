@@ -49,6 +49,11 @@ export function TrailFacts({
       variant={presentation === 'footer' ? 'plain' : 'paper'}
       heading={presentation === 'footer' ? 'prominent' : 'visible'}
     >
+      {presentation === 'footer' && (
+        <p className="mb-8 max-w-reading text-base leading-relaxed text-forest">
+          {t(location.kind === 'trail' ? 'trailGeneralIntro' : 'areaGeneralIntro')}
+        </p>
+      )}
       <div className="mb-8 grid items-center gap-8 tablet:grid-cols-2">
         <div className={location.logo_url ? 'min-w-0' : 'min-w-0 tablet:col-span-2'}>
           <dl className="grid gap-4.5 [&_dd]:text-base">
@@ -98,14 +103,14 @@ export function TrailFacts({
           )}
         </div>
         {location.logo_url && (
-          <div className="min-w-0 w-full">
+          <div className="flex min-w-0 w-full h-full items-end">
             <Image
               src={imageUrl(location.logo_url)}
               alt=""
               width={320}
               height={160}
               sizes="(min-width: 641px) 33vw, 100vw"
-              className="block h-auto max-h-28 w-full max-w-full object-contain object-left tablet:max-h-40"
+              className="block h-auto max-h-25 tablet:max-h-30 w-full max-w-80 tablet:max-w-100 object-contain object-left"
               unoptimized
             />
           </div>

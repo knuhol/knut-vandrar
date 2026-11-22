@@ -61,30 +61,26 @@ export function InfoCards({
     return null
   }
 
-  const ordered =
-    presentation === 'compact'
-      ? cards.toSorted((a, b) => {
-          const priority = (type: string) =>
-            type === 'youtube_video' ? 0 : type === 'equipment' ? 1 : 2
-          return priority(a.type) - priority(b.type)
-        })
-      : cards
-
   return (
     <>
-      {cards.map((card, index) =>
-        card.type === 'live_position' && card.state === 'active' && card.url && card.password ? (
-          <TrackingPassword key={`${String(index)}-${card.password}`} password={card.password} />
-        ) : null,
-      )}
       <div
         className={
           presentation === 'compact'
-            ? 'grid gap-2'
+            ? 'grid grid-cols-1 gap-2 tablet:grid-cols-2 desktop:grid-cols-1'
             : 'grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3'
         }
       >
-        {ordered.map((card, index) => {
+        {cards.map((card, index) =>
+          card.type === 'live_position' && card.state === 'active' && card.url && card.password ? (
+            <div
+              key={`${String(index)}-${card.password}`}
+              className="col-span-full grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-1"
+            >
+              <TrackingPassword password={card.password} />
+            </div>
+          ) : null,
+        )}
+        {cards.map((card, index) => {
           const Icon = icons[card.type]
           const key = `${card.type}-${String(index)}`
 
@@ -96,16 +92,14 @@ export function InfoCards({
                 <InfoCard
                   key={key}
                   icon={<Play aria-hidden="true" />}
-                  title={t(presentation === 'compact' ? 'watchFilm' : 'youtube_video')}
+                  title={t('resourceTitles.youtube_video')}
                   onActivate={() => {
                     trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
                   }}
                   emphasis="film"
                   variant={presentation === 'compact' ? 'compact' : 'video'}
                   href={card.url}
-                  action={t(
-                    presentation === 'compact' ? 'resourceDescriptions.youtube_video' : 'video',
-                  )}
+                  action={t('resourceDescriptions.youtube_video')}
                 />
               )
             }
@@ -114,10 +108,8 @@ export function InfoCards({
               <InfoCard
                 key={key}
                 icon={<Play aria-hidden="true" />}
-                title={t(presentation === 'compact' ? 'watchFilm' : 'youtube_video')}
-                action={t(
-                  presentation === 'compact' ? 'resourceDescriptions.youtube_video' : 'video',
-                )}
+                title={t('resourceTitles.youtube_video')}
+                action={t('resourceDescriptions.youtube_video')}
                 onClick={() => {
                   if (playing?.key === key) {
                     return
@@ -138,7 +130,7 @@ export function InfoCards({
             <InfoCard
               key={key}
               icon={<Icon aria-hidden="true" />}
-              title={t(presentation === 'compact' ? `cardActions.${card.type}` : card.type)}
+              title={t(`resourceTitles.${card.type}`)}
               emphasis={card.type === 'equipment' ? 'equipment' : 'standard'}
               variant={presentation === 'compact' ? 'compact' : 'default'}
               inactive={inactive}
@@ -153,11 +145,7 @@ export function InfoCards({
                 })
               }}
               href={card.url ?? undefined}
-              action={t(
-                presentation === 'compact'
-                  ? `resourceDescriptions.${card.type}`
-                  : `cardActions.${card.type}`,
-              )}
+              action={t(`resourceDescriptions.${card.type}`)}
             />
           )
         })}

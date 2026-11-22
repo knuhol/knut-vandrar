@@ -26,15 +26,26 @@ test('keeps the film, packing list and route actions directly accessible in the 
       />
     </NextIntlClientProvider>,
   )
-  expect(screen.getByRole('link', { name: /View packing list/ })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /Detailed equipment list/ })).toHaveAttribute(
     'href',
     'https://example.com/equipment',
   )
-  expect(screen.getByRole('link', { name: /View the route/ })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /Route details/ })).toHaveAttribute(
     'href',
     'https://example.com/route',
   )
-  fireEvent.click(screen.getByRole('button', { name: /Watch the film/ }))
+  const resourceActions = [...screen.getAllByRole('link'), ...screen.getAllByRole('button')]
+  expect(resourceActions[0]).toHaveAccessibleName(/Route details/)
+  expect(resourceActions[1]).toHaveAccessibleName(/Detailed equipment list/)
+  expect(
+    resourceActions[0].compareDocumentPosition(resourceActions[1]) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
+  expect(
+    resourceActions[1].compareDocumentPosition(resourceActions[2]) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: /Film from the hike/ }))
   expect(screen.getByRole('dialog')).toHaveTextContent('abcdefghijk')
   expect(trackHikeInteraction).toHaveBeenCalledWith({
     name: 'video_open',

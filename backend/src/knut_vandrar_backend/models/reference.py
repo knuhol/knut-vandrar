@@ -20,10 +20,18 @@ class Language(Base):
 
 class InfoCardType(Base):
     __tablename__ = "info_card_types"
-    __table_args__ = (CheckConstraint("sort_order >= 0", name="ck_info_card_type_sort_order"),)
+    __table_args__ = (
+        CheckConstraint("sort_order_active >= 0", name="ck_info_card_type_order_active"),
+        CheckConstraint("sort_order_finished >= 0", name="ck_info_card_type_order_finished"),
+    )
 
     type: Mapped[str] = mapped_column(String(50), primary_key=True)
-    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sort_order_active: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    sort_order_finished: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     data_structure: Mapped[dict[str, Any]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )

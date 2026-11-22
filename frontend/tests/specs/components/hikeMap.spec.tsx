@@ -1,4 +1,7 @@
+import { NextIntlClientProvider } from 'next-intl'
+
 import { render, screen } from '@testing-library/react'
+import { messages } from '@/i18n/messages'
 
 import { HikeMap } from '@/app/[locale]/hikes/[slug]/components/HikeMap/HikeMap'
 import type { HikeMapImage } from '@/api/hikes'
@@ -24,7 +27,11 @@ const images: HikeMapImage[] = ['mobile', 'tablet', 'desktop', 'wide'].map((vari
 }))
 
 test('shows a lazy complete-route image with responsive sources and a map landmark', async () => {
-  const { container } = render(await HikeMap({ images, hikeTitle: 'Bergslagsleden' }))
+  const { container } = render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      {await HikeMap({ images, hikeTitle: 'Bergslagsleden' })}
+    </NextIntlClientProvider>,
+  )
   expect(screen.getByRole('heading', { name: 'Hike map' })).toBeInTheDocument()
   const image = screen.getByRole('img', {
     name: 'Map showing the complete route for Bergslagsleden',
@@ -51,7 +58,11 @@ test('omits the map entirely when no generated images exist', async () => {
 })
 
 test('supports a partial set of stored formats', async () => {
-  const { container } = render(await HikeMap({ images: [images[2]], hikeTitle: 'Partial' }))
+  const { container } = render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      {await HikeMap({ images: [images[2]], hikeTitle: 'Partial' })}
+    </NextIntlClientProvider>,
+  )
   expect(screen.getByRole('img')).toHaveAttribute('src', images[2].url)
   expect(container.querySelectorAll('source')).toHaveLength(1)
 })

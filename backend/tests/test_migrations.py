@@ -327,3 +327,183 @@ def test_editor_metadata_migration_preserves_existing_records(monkeypatch: Monke
             assert connection.execute(sa.text(f"SELECT COUNT(*) FROM {table}")).scalar() == 2
             assert [column["name"] for column in inspect(connection).get_columns(table)] == ["id"]
     engine.dispose()
+
+
+def test_card_status_order_migration_preserves_priorities_and_card_data() -> None:
+    import pytest
+    import sqlalchemy as sa
+    from sqlalchemy.exc import IntegrityError
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    migration = ScriptDirectory.from_config(config).get_revision("021_status_card_order")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    try:
+        with (
+            engine.begin() as connection,
+            Operations.context(MigrationContext.configure(connection)),
+        ):
+            metadata = sa.MetaData()
+            types = sa.Table(
+                "info_card_types",
+                metadata,
+                sa.Column("type", sa.String(50), primary_key=True),
+                sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
+                sa.Column("data_structure", sa.JSON(), nullable=False),
+                sa.CheckConstraint("sort_order >= 0", name="ck_info_card_type_sort_order"),
+            )
+            cards = sa.Table(
+                "hike_info_cards",
+                metadata,
+                sa.Column("id", sa.Integer(), primary_key=True),
+                sa.Column("type", sa.String(50), sa.ForeignKey("info_card_types.type")),
+                sa.Column("data", sa.JSON(), nullable=False),
+            )
+            metadata.create_all(connection)
+            connection.execute(
+                types.insert(),
+                [
+                    {"type": "route", "sort_order": 9, "data_structure": {"type": "object"}},
+                    {
+                        "type": "youtube_video",
+                        "sort_order": 2,
+                        "data_structure": {"type": "object"},
+                    },
+                ],
+            )
+            connection.execute(
+                cards.insert(),
+                {"id": 1, "type": "route", "data": {"url": "https://example.com/route"}},
+            )
+            before_types = connection.execute(
+                sa.text("SELECT type, data_structure FROM info_card_types ORDER BY type")
+            ).all()
+            before_cards = connection.execute(sa.text("SELECT * FROM hike_info_cards")).all()
+
+            migration.module.upgrade()
+            assert connection.execute(
+                sa.text(
+                    "SELECT type, sort_order_active, sort_order_finished FROM info_card_types ORDER BY type"
+                )
+            ).all() == [("route", 9, 9), ("youtube_video", 2, 2)]
+            assert "sort_order" not in {
+                column["name"] for column in inspect(connection).get_columns("info_card_types")
+            }
+            connection.execute(
+                sa.text("UPDATE info_card_types SET sort_order_finished = 0 WHERE type = 'route'")
+            )
+            assert connection.execute(
+                sa.text(
+                    "SELECT sort_order_active, sort_order_finished FROM info_card_types WHERE type = 'route'"
+                )
+            ).one() == (9, 0)
+            for column in ("sort_order_active", "sort_order_finished"):
+                with pytest.raises(IntegrityError), connection.begin_nested():
+                    connection.execute(sa.text(f"UPDATE info_card_types SET {column} = -1"))
+
+            migration.module.downgrade()
+            assert connection.execute(
+                sa.text("SELECT type, sort_order FROM info_card_types ORDER BY type")
+            ).all() == [("route", 9), ("youtube_video", 2)]
+            assert (
+                connection.execute(
+                    sa.text("SELECT type, data_structure FROM info_card_types ORDER BY type")
+                ).all()
+                == before_types
+            )
+            assert (
+                connection.execute(sa.text("SELECT * FROM hike_info_cards")).all() == before_cards
+            )
+    finally:
+        engine.dispose()
+
+
+def test_unique_card_type_migration_preserves_rows_and_enforces_per_hike_uniqueness() -> None:
+    import pytest
+    import sqlalchemy as sa
+    from sqlalchemy.exc import IntegrityError
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    migration = ScriptDirectory.from_config(config).get_revision("022_unique_hike_card_types")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    try:
+        with (
+            engine.begin() as connection,
+            Operations.context(MigrationContext.configure(connection)),
+        ):
+            metadata = sa.MetaData()
+            cards = sa.Table(
+                "hike_info_cards",
+                metadata,
+                sa.Column("id", sa.Integer(), primary_key=True),
+                sa.Column("hike_id", sa.String(), nullable=False),
+                sa.Column("type", sa.String(), nullable=False),
+                sa.Column("data", sa.JSON(), nullable=False),
+            )
+            cards.create(connection)
+            connection.execute(
+                cards.insert(),
+                [
+                    {"id": 1, "hike_id": "first", "type": "route", "data": {"url": "one"}},
+                    {"id": 2, "hike_id": "second", "type": "route", "data": {"url": "two"}},
+                ],
+            )
+            before = connection.execute(cards.select().order_by(cards.c.id)).all()
+            migration.module.upgrade()
+            assert connection.execute(cards.select().order_by(cards.c.id)).all() == before
+            with pytest.raises(IntegrityError), connection.begin_nested():
+                connection.execute(
+                    cards.insert(),
+                    {"id": 3, "hike_id": "first", "type": "route", "data": {"url": "three"}},
+                )
+            connection.execute(
+                cards.insert(),
+                {"id": 4, "hike_id": "first", "type": "youtube_video", "data": {"url": "video"}},
+            )
+            migration.module.downgrade()
+            connection.execute(
+                cards.insert(),
+                {"id": 3, "hike_id": "first", "type": "route", "data": {"url": "three"}},
+            )
+            assert connection.execute(sa.select(sa.func.count()).select_from(cards)).scalar() == 4
+    finally:
+        engine.dispose()
+
+
+def test_unique_card_type_migration_refuses_to_discard_existing_duplicates() -> None:
+    import pytest
+    import sqlalchemy as sa
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    migration = ScriptDirectory.from_config(config).get_revision("022_unique_hike_card_types")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    try:
+        with (
+            engine.begin() as connection,
+            Operations.context(MigrationContext.configure(connection)),
+        ):
+            connection.execute(
+                sa.text(
+                    "CREATE TABLE hike_info_cards (id INTEGER PRIMARY KEY, hike_id TEXT NOT NULL, type TEXT NOT NULL, data TEXT NOT NULL)"
+                )
+            )
+            connection.execute(
+                sa.text(
+                    "INSERT INTO hike_info_cards VALUES (1, 'first', 'route', 'one'), (2, 'first', 'route', 'two')"
+                )
+            )
+            before = connection.execute(sa.text("SELECT * FROM hike_info_cards ORDER BY id")).all()
+            with pytest.raises(RuntimeError, match="first.*route"):
+                migration.module.upgrade()
+            assert (
+                connection.execute(sa.text("SELECT * FROM hike_info_cards ORDER BY id")).all()
+                == before
+            )
+            assert inspect(connection).get_unique_constraints("hike_info_cards") == []
+    finally:
+        engine.dispose()

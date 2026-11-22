@@ -117,6 +117,26 @@ Calculate progress using **distance along the planned GPX route**, **not** strai
 - Use clear status labels such as active, stale, inactive and finished; do not infer a person's safety or precise real-time position from a delayed satellite feed.
 - Decide polling frequency, Garmin authentication, session lifecycle, publication rules and retention during implementation planning.
 
+## TODO: Hike-specific geographic description
+
+Status: deferred. Parked because the additional geographic data and processing are
+not worth the overhead for now. Do not implement until explicitly requested.
+
+- Derive a concise geographic label from the hike's selected GPX geometry, such as
+  `Jämtland · Sweden`, without repeating the trail name.
+- Determine countries and regions from the particular route, not the full trail or
+  hiking area's metadata. An area spanning Sweden and Norway does not mean the hike
+  visited both countries.
+- Respect selected stages, partial routes and stopping points. Distinguish planned
+  route coverage from the completed portion of finished or aborted hikes.
+- Use suitably detailed boundary data; existing simplified country-inset outlines
+  are insufficient for reliable border classification. Handle ambiguity explicitly.
+- Store structured geographic results, refresh them when route inputs change, and
+  return localized labels through the API using deterministic formatting.
+- Consider an optional editorial override for natural regional names or border cases.
+- Keep the removed geographic line off the cover until reliable hike-specific data
+  is available.
+
 ## Implementation order (future; no work authorized yet)
 
 1. **Geographic data foundation:** GPX upload/validation, original-file retention, normalized GeoJSON, planned vs recorded routes, route bounds/distances and stage associations.

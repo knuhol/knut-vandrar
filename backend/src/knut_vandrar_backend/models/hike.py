@@ -255,7 +255,10 @@ class HikeSlugAlias(Base):
 
 class HikeInfoCard(Base):
     __tablename__ = "hike_info_cards"
-    __table_args__ = (CheckConstraint("sort_order >= 0", name="ck_hike_info_card_sort_order"),)
+    __table_args__ = (
+        CheckConstraint("sort_order >= 0", name="ck_hike_info_card_sort_order"),
+        UniqueConstraint("hike_id", "type", name="uq_hike_info_card_type"),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     hike_id: Mapped[UUID] = mapped_column(ForeignKey("hikes.id", ondelete="CASCADE"))

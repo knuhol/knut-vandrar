@@ -8,6 +8,7 @@ import { Heading } from '@/components/Heading'
 import { Container } from '@/components/Container'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
+import { hasCompleteHikeStats } from '@/hiking/stats'
 import { hikeSeason } from '@/hiking/season'
 import { imageUrl } from '@/api/images'
 import type { Hike } from '@/api/hikes'
@@ -16,6 +17,7 @@ import { Link } from '@/i18n/navigation'
 export function HikeMasthead({ hike }: { hike: Hike }) {
   const t = useTranslations('Site')
   const period = hikeSeason(hike)
+  const hasCompleteStats = hasCompleteHikeStats(hike)
 
   return (
     <header
@@ -39,13 +41,13 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
         <Container>
           <nav
             aria-label={t('breadcrumbs')}
-            className={`${styles.readable} links-on-dark inline-flex max-w-full text-sm text-cream`}
+            className="links-on-dark inline-flex max-w-full text-sm text-cream"
           >
             <ol className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <li>
                 <Link
                   href={{ pathname: '/', hash: 'hikes' }}
-                  className="text-cream underline decoration-2 decoration-transparent hover:decoration-current focus-visible:decoration-current"
+                  className="text-cream no-underline decoration-2 hover:underline focus-visible:underline"
                 >
                   {t('hikes')}
                 </Link>
@@ -59,10 +61,12 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
       <Container>
         <div className="content-enter pt-32 pb-12 tablet:pt-40 tablet:pb-16">
           <div className="mb-5 flex flex-wrap items-center gap-3">
-            <HikeStatus status={hike.status} />
+            <span className={styles.status}>
+              <HikeStatus status={hike.status} />
+            </span>
           </div>
           {period && (
-            <div className={`${styles.readable} mb-5`}>
+            <div className="mb-2">
               <Eyebrow tone="inverse">
                 <time dateTime={period.start}>
                   {t('hikeSeason', { season: t(`seasons.${period.season}`), year: period.year })}
@@ -76,13 +80,11 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
               {hike.translation.tagline}
             </p>
           )}
-          <div className="mt-8">
-            <HikeStats
-              hike={{ ...hike, ascent_m: null }}
-              fontSize="xl"
-              className="gap-x-6 gap-y-3 [&_span]:gap-2"
-            />
-          </div>
+          {hasCompleteStats && (
+            <div className="mt-8">
+              <HikeStats hike={hike} fontSize="xl" className="gap-x-6 gap-y-3 [&_span]:gap-2" />
+            </div>
+          )}
         </div>
       </Container>
     </header>

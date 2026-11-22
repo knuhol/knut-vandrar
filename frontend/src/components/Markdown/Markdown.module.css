@@ -91,7 +91,7 @@
 
 .prose summary::before {
   content: counter(chapter, decimal-leading-zero);
-  @apply w-8 font-statistic text-base leading-tight text-muted;
+  @apply w-8 font-statistic text-base leading-tight text-orange-dark;
 }
 
 .prose summary::-webkit-details-marker {
@@ -127,7 +127,6 @@
   background: var(--color-orange);
   content: '';
   opacity: 0;
-  transition: opacity var(--duration-fast) ease;
 }
 
 .prose summary:is(:hover, :focus-visible, :active) :is(h2, h3)::before,
