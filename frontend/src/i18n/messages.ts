@@ -620,7 +620,7 @@ export const messages = {
       navigation: 'Navigace',
       hikes: 'Hiky',
       aboutMe: 'O mně',
-      title: 'Hike po hiku.',
+      title: 'Jeden hike za druhým.',
       intro:
         'Dlouhé dny na trailu. Drobné okamžiky, na které rád vzpomínám. Tohle jsou moje hiky po Švédsku.',
       explore: 'Prozkoumat hiky',
