@@ -1,8 +1,22 @@
 'use client'
 
-import { IconArrowLeft, IconArrowRight, IconX } from '@tabler/icons-react'
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconX,
+  IconZoomIn,
+  IconZoomOut,
+  IconArrowsMinimize,
+} from '@tabler/icons-react'
 
-const icons = { close: IconX, previous: IconArrowLeft, next: IconArrowRight }
+const icons = {
+  close: IconX,
+  previous: IconArrowLeft,
+  next: IconArrowRight,
+  zoomIn: IconZoomIn,
+  zoomOut: IconZoomOut,
+  reset: IconArrowsMinimize,
+}
 
 export function MediaControl({
   action,

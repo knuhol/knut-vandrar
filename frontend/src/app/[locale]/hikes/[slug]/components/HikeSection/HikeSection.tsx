@@ -45,9 +45,9 @@ export function HikeSection({
           </Heading>
         </div>
         {meta && (
-          <span className={`text-sm ${variant === 'contrast' ? 'text-beige' : 'text-muted'}`}>
+          <div className={`text-sm ${variant === 'contrast' ? 'text-beige' : 'text-muted'}`}>
             {meta}
-          </span>
+          </div>
         )}
       </div>
       {children}

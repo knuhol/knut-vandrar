@@ -38,7 +38,7 @@ from knut_vandrar_backend.api.schemas.hike import (
 from knut_vandrar_backend.api.schemas.location import AchievementRead
 from knut_vandrar_backend.api.schemas.pagination import Limit, Offset, Page
 from knut_vandrar_backend.database.dependencies import get_db
-from knut_vandrar_backend.models.enums import TranslationReviewStatus
+from knut_vandrar_backend.models.enums import HikeStatus, TranslationReviewStatus
 from knut_vandrar_backend.models.hike import (
     Hike,
     HikeCoverImage,
@@ -439,11 +439,16 @@ def _translation(db: Session, hike_id: UUID, locale: str) -> HikeTranslation | N
 
 def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Request) -> HikeRead:
     card_adapter = TypeAdapter(InfoCard)
+    card_order = (
+        InfoCardType.sort_order_active
+        if hike.status in {HikeStatus.PLANNED, HikeStatus.ONGOING}
+        else InfoCardType.sort_order_finished
+    )
     ordered_cards = db.scalars(
         select(HikeInfoCard)
         .join(InfoCardType, HikeInfoCard.type == InfoCardType.type)
         .where(HikeInfoCard.hike_id == hike.id)
-        .order_by(InfoCardType.sort_order, HikeInfoCard.sort_order, HikeInfoCard.id)
+        .order_by(card_order, HikeInfoCard.sort_order, HikeInfoCard.id)
     )
     cards = [card_adapter.validate_python(item.data) for item in ordered_cards]
     return HikeRead(
@@ -618,6 +623,8 @@ def _replace_cards(db: Session, hike: Hike, payload: HikeWrite) -> None:
             ) from exc
 
     hike.cards.clear()
+    # Delete the previous rows before inserting replacements with the same unique type.
+    db.flush()
     for index, data in enumerate(cards):
         db.add(
             HikeInfoCard(

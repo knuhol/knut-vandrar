@@ -1,3 +1,5 @@
+@reference '../../../../../globals.css';
+
 .recess {
   scroll-margin-top: var(--header-height);
 }
@@ -11,4 +13,52 @@
   background: var(--background-map-shadow);
   content: '';
   pointer-events: none;
+}
+
+.hint {
+  display: none;
+}
+
+@variant desktop {
+  /* Only the map contributes to the row height; the sidebar fills that row. */
+  .withMap .sidebar {
+    position: relative;
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  .withMap .viewport {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--color-forest) var(--color-beige);
+  }
+
+  .withMap .viewport::-webkit-scrollbar {
+    width: calc(var(--spacing) * 2.5);
+  }
+
+  .withMap .viewport::-webkit-scrollbar-track {
+    background: var(--color-beige);
+  }
+
+  .withMap .viewport::-webkit-scrollbar-thumb {
+    border: calc(var(--spacing) * 0.5) solid var(--color-beige);
+    border-radius: var(--radius-full);
+    background: var(--color-forest);
+  }
+
+  .withMap .hint {
+    position: absolute;
+    z-index: 20;
+    inset: auto calc(var(--spacing) * 4) calc(var(--spacing) * 3);
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .hint button {
+    pointer-events: auto;
+  }
 }

@@ -20,10 +20,23 @@ export function TrackingPassword({ password }: { password: string }) {
   }
 
   return (
-    <div className="mb-6 rounded-sm bg-cream/10 p-4 text-cream">
-      <p className="mb-2 text-sm">{t('trackingPassword')}</p>
-      <div className="flex flex-col items-start gap-3 tablet:flex-row tablet:items-center">
-        <code className="min-w-0 w-full text-base break-all whitespace-pre-wrap select-all tablet:w-auto tablet:flex-1">
+    <div className="rounded-sm border border-forest-outline bg-forest-soft p-3 text-forest">
+      <p className="mb-2 text-sm font-semibold">{t('trackingPassword')}</p>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <code
+          className="block min-w-0 truncate rounded-sm border border-forest-outline bg-paper px-3 py-2 text-base text-forest select-all"
+          title={password}
+          onDoubleClick={(event) => {
+            event.preventDefault()
+            const selection = window.getSelection()
+            if (selection) {
+              const range = document.createRange()
+              range.selectNodeContents(event.currentTarget)
+              selection.removeAllRanges()
+              selection.addRange(range)
+            }
+          }}
+        >
           {password}
         </code>
         <Button variant="secondary" size="small" onClick={() => void copyPassword()}>
@@ -38,7 +51,7 @@ export function TrackingPassword({ password }: { password: string }) {
         </Button>
       </div>
       {status === 'failed' && (
-        <p role="status" className="mt-3 text-sm">
+        <p role="status" className="mt-3 text-sm leading-relaxed text-forest">
           {t('trackingPasswordCopyFailed')}
         </p>
       )}
