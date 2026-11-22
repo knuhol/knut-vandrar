@@ -86,7 +86,9 @@ export function Hero() {
             <SocialLinks profiles={['instagram', 'youtube']} variant="compact" />
           </div>
           <div className="min-w-0 desktop:col-start-1 desktop:row-start-1">
-            <Eyebrow>{t('heroEyebrow')}</Eyebrow>
+            <div className="mb-1">
+              <Eyebrow>{t('heroEyebrow')}</Eyebrow>
+            </div>
             <div className="mb-4.5 max-w-80 tablet:max-w-162.5">
               <Heading tone="brand">{t('title')}</Heading>
             </div>

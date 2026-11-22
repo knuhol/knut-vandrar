@@ -14,7 +14,6 @@ test('keeps the film, packing list and route actions directly accessible in the 
   render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
       <InfoCards
-        presentation="compact"
         hikeId="test-hike"
         hikeTitle="Test hike"
         locale="en"

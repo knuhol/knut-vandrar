@@ -76,14 +76,12 @@ test('moves reading controls into the existing header and preserves chapter and 
   }
   jest.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -1, 800, 56))
   jest.spyOn(chapter, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -1, 800, 500))
-  const collapse = jest.spyOn(summary, 'click')
   fireEvent.scroll(window)
   const header = screen.getByRole('banner')
   expect(sentinel).toBeEmptyDOMElement()
   await within(header).findByRole('button', { name: 'The story / Preparation' })
   expect(container.querySelectorAll('[data-site-header]')).toHaveLength(1)
-  fireEvent.click(within(header).getByRole('button', { name: 'collapseChapter' }))
-  expect(collapse).toHaveBeenCalledTimes(1)
+  expect(within(header).queryByRole('button', { name: 'collapseChapter' })).not.toBeInTheDocument()
   const menu = within(header).getByRole('button', { name: 'showMainMenu' })
   expect(menu.querySelector('svg')).toHaveClass('tabler-icon-arrow-right')
   fireEvent.click(menu)
@@ -146,4 +144,34 @@ test('releases the dropdown scroll lock when an anchor returns above the reading
   await waitFor(() => {
     expect(within(header).getByRole('link', { name: 'Home' })).toBeInTheDocument()
   })
+})
+
+test('closing the section picker restores focus without scrolling the sticky header into view', async () => {
+  render(
+    <ReadingNavigationProvider>
+      <SiteHeader
+        brand={<span>Brand</span>}
+        navigation={<a href="#home">Home</a>}
+        languages={<span>EN</span>}
+      />
+      <HikeNavigation label="Sections" items={items} />
+    </ReadingNavigationProvider>,
+  )
+  const trigger = await screen.findByRole('button', { name: 'The story' })
+  const focus = jest.spyOn(trigger, 'focus')
+  fireEvent(trigger, new MouseEvent('pointerdown', { button: 0, bubbles: true, cancelable: true }))
+  await screen.findByRole('menu')
+  const closePointer = new MouseEvent('pointerdown', {
+    button: 0,
+    bubbles: true,
+    cancelable: true,
+  })
+  fireEvent(trigger, closePointer)
+  expect(closePointer.defaultPrevented).toBe(true)
+  await waitFor(() => {
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    expect(document.body).not.toHaveAttribute('data-scroll-locked')
+  })
+  expect(focus.mock.calls.every(([options]) => options?.preventScroll === true)).toBe(true)
 })

@@ -10,7 +10,6 @@ export function HikeSection({
   meta,
   children,
   as: Tag = 'section',
-  variant = 'plain',
   heading = 'visible',
 }: {
   id: HikeSectionId
@@ -18,15 +17,10 @@ export function HikeSection({
   meta?: ReactNode
   children: ReactNode
   as?: 'section' | 'article'
-  variant?: 'plain' | 'panel' | 'paper' | 'contrast'
   heading?: 'visible' | 'hidden' | 'prominent'
 }) {
   return (
-    <Tag
-      id={id}
-      className={`min-w-0 rounded-lg ${variant === 'plain' ? '' : 'p-5 tablet:p-8'} ${variant === 'panel' ? 'bg-cream' : ''} ${variant === 'paper' ? 'border border-beige bg-paper' : ''} ${variant === 'contrast' ? 'bg-forest text-cream' : ''}`}
-      aria-labelledby={`${id}-title`}
-    >
+    <Tag id={id} className="min-w-0" aria-labelledby={`${id}-title`}>
       <div
         className={
           heading === 'hidden'
@@ -39,16 +33,12 @@ export function HikeSection({
             as="h2"
             id={`${id}-title`}
             className={heading === 'prominent' ? 'text-3xl' : 'text-xl'}
-            tone={variant === 'contrast' ? 'inverse' : 'brand'}
+            tone="brand"
           >
             {title}
           </Heading>
         </div>
-        {meta && (
-          <div className={`text-sm ${variant === 'contrast' ? 'text-beige' : 'text-muted'}`}>
-            {meta}
-          </div>
-        )}
+        {meta && <div className="text-sm text-muted">{meta}</div>}
       </div>
       {children}
     </Tag>

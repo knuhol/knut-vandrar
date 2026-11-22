@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { IconMenu2 } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
-import { useRef, useSyncExternalStore } from 'react'
+import { useRef, useState, useSyncExternalStore } from 'react'
 
 import type { ComponentProps } from 'react'
 
@@ -64,6 +64,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
   const hikesActive = hikeActive || atHikes
   const homeActive = homeRouteActive && !hikesActive
   const navigating = useRef(false)
+  const [open, setOpen] = useState(false)
   const links = [
     {
       id: 'home',
@@ -99,7 +100,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
           <NavigationLink key={id} {...link} />
         ))}
       </nav>
-      <DropdownMenu.Root>
+      <DropdownMenu.Root open={open} onOpenChange={setOpen}>
         <DropdownMenu.Trigger
           className={`order-3 inline-flex cursor-pointer items-center justify-center rounded-sm border border-beige bg-transparent p-2 text-forest hover:bg-beige active:bg-beige data-[state=open]:bg-beige focus:outline-none ${styles.menuTrigger}`}
           aria-label={t('navigation')}
@@ -107,7 +108,6 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
           <IconMenu2 className="size-5.5 shrink-0" aria-hidden="true" />
         </DropdownMenu.Trigger>
         <DropdownSurface
-          variant="menu"
           align="end"
           sideOffset={10}
           onCloseAutoFocus={(event) => {
@@ -123,6 +123,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
                 {...link}
                 onClick={() => {
                   navigating.current = true
+                  setOpen(false)
                 }}
               />
             </MenuItem>

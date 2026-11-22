@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
-import { HikeBadge } from './HikeBadge'
+import { FactTag } from './FactTag'
 
 import { Heading } from '@/components/Heading'
 import type { HikeDetails } from '@/hiking/details'
@@ -55,7 +55,7 @@ export function HikeAchievements({
       <ul className="flex flex-wrap items-start gap-2">
         {items.map(({ id, label, description, Icon }) => (
           <li key={id} className="max-w-full">
-            <HikeBadge kind="milestone">
+            <FactTag kind="milestone">
               <Icon className="size-5 shrink-0 text-orange-dark" aria-hidden="true" />
               <span className="min-w-0">
                 {label}
@@ -63,7 +63,7 @@ export function HikeAchievements({
                   <span className="mt-1 block text-xs font-normal text-muted">{description}</span>
                 )}
               </span>
-            </HikeBadge>
+            </FactTag>
           </li>
         ))}
       </ul>

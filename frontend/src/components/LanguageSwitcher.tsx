@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { IconChevronDown as ChevronDown, IconWorld as Globe } from '@tabler/icons-react'
 
+import { MenuItem } from './MenuItem/MenuItem'
 import { DropdownSurface } from './DropdownSurface'
 import type { UIComponentProps } from './uiComponentProps'
 
@@ -44,7 +45,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
         }}
       >
         {routing.locales.map((language) => (
-          <DropdownMenu.Item key={language} asChild>
+          <MenuItem key={language} active={language === locale} asChild>
             <Link
               href={`/api/language?${new URLSearchParams({
                 locale,
@@ -62,7 +63,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
             >
               {t(`languages.${language}`)}
             </Link>
-          </DropdownMenu.Item>
+          </MenuItem>
         ))}
       </DropdownSurface>
     </DropdownMenu.Root>
