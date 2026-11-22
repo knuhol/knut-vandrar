@@ -80,7 +80,7 @@ export function InfoCards({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-2 tablet:grid-cols-2 desktop:grid-cols-1">
+      <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 desktop:grid-cols-1">
         {tracking?.state === 'active' && tracking.url && tracking.password && (
           <div className="col-span-full grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-1">
             <TrackingPassword key={tracking.password} password={tracking.password} />
