@@ -11,8 +11,6 @@ import { collapsibleSections } from './collapsibleSections'
 const variants = {
   rich: styles.prose,
   article: `${styles.prose} ${styles.article}`,
-  lead: `${styles.prose} text-xl`,
-  summary: 'line-clamp-3 text-base text-muted tablet:min-h-[3lh] [&_p]:m-0',
 }
 
 export function Markdown({
@@ -24,26 +22,20 @@ export function Markdown({
 }>) {
   return (
     <div className={variants[variant]}>
-      {variant === 'summary' ? (
-        <ReactMarkdown allowedElements={['p', 'em', 'strong']} unwrapDisallowed>
-          {children}
-        </ReactMarkdown>
-      ) : (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[[collapsibleSections, { chapterLevel: variant === 'article' ? 3 : 2 }]]}
-          components={{
-            details: ({ children: content }) => <Chapter>{content}</Chapter>,
-            table: ({ children: content }) => (
-              <div className={styles.tableScroll}>
-                <table>{content}</table>
-              </div>
-            ),
-          }}
-        >
-          {children}
-        </ReactMarkdown>
-      )}
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[[collapsibleSections, { chapterLevel: variant === 'article' ? 3 : 2 }]]}
+        components={{
+          details: ({ children: content }) => <Chapter>{content}</Chapter>,
+          table: ({ children: content }) => (
+            <div className={styles.tableScroll}>
+              <table>{content}</table>
+            </div>
+          ),
+        }}
+      >
+        {children}
+      </ReactMarkdown>
     </div>
   )
 }

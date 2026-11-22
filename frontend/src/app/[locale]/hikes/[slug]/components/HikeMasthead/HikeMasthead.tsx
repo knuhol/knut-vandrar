@@ -66,7 +66,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
             </span>
           </div>
           {period && (
-            <div className="mb-2">
+            <div className="mb-1">
               <Eyebrow tone="inverse">
                 <time dateTime={period.start}>
                   {t('hikeSeason', { season: t(`seasons.${period.season}`), year: period.year })}
@@ -82,7 +82,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
           )}
           {hasCompleteStats && (
             <div className="mt-8">
-              <HikeStats hike={hike} fontSize="xl" className="gap-x-6 gap-y-3 [&_span]:gap-2" />
+              <HikeStats hike={hike} variant="cover" />
             </div>
           )}
         </div>

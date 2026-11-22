@@ -3,20 +3,18 @@ import { IconCalendar, IconMountain, IconFootsteps } from '@tabler/icons-react'
 
 import type { HikeSummary } from '@/api/hikes'
 
-const fontSizes = {
-  base: 'text-base',
-  lg: 'text-lg',
-  xl: 'text-xl',
+const variants = {
+  card: 'gap-x-5 gap-y-3 text-base text-forest [&_span]:gap-1.75',
+  cover: 'gap-x-6 gap-y-3 text-xl [&_span]:gap-2',
+  overview: 'gap-x-3 gap-y-3 text-lg text-forest tablet:gap-x-4 wide:text-xl [&_span]:gap-2',
 }
 
 export function HikeStats({
   hike,
-  fontSize = 'base',
-  className = '',
+  variant = 'card',
 }: {
   hike: Pick<HikeSummary, 'duration_days' | 'distance_km' | 'ascent_m'>
-  fontSize?: keyof typeof fontSizes
-  className?: string
+  variant?: keyof typeof variants
 }) {
   const t = useTranslations('Site')
   const format = useFormatter()
@@ -27,7 +25,7 @@ export function HikeStats({
 
   return (
     <div
-      className={`flex flex-wrap items-center font-statistic [&_span]:inline-flex [&_span]:items-center [&_span]:whitespace-nowrap [&_svg]:size-4.5 [&_svg]:shrink-0 ${fontSizes[fontSize]} ${className}`}
+      className={`flex flex-wrap items-center font-statistic [&_span]:inline-flex [&_span]:items-center [&_span]:whitespace-nowrap [&_svg]:size-4.5 [&_svg]:shrink-0 ${variants[variant]}`}
     >
       {hike.duration_days !== null && (
         <span>

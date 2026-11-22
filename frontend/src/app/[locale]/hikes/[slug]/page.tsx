@@ -13,7 +13,7 @@ import { HikeNavigation, type HikeNavigationItem } from './components/HikeNaviga
 import { HikeSection } from './components/HikeSection/HikeSection'
 import { HikeMasthead } from './components/HikeMasthead/HikeMasthead'
 import { HikeOverview } from './components/HikeOverview/HikeOverview'
-import { HikeJourney } from './components/HikeJourney'
+import { HikeJourney, hasHikeJourney } from './components/HikeJourney'
 import { TrailFooter } from './components/TrailFooter/TrailFooter'
 import { TrailFacts } from './components/TrailFacts'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
@@ -99,10 +99,11 @@ export default async function HikePage({ params }: Props) {
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const cards = visibleHikeCards(hike)
+  const hasJourney = hasHikeJourney(presentation.details)
   const overviewItem: HikeNavigationItem = { id: 'resources', label: t('hikeOverview') }
   const navigationItems: HikeNavigationItem[] = [
     overviewItem,
-    { id: 'journey', label: t('journey.title') },
+    ...(hasJourney ? [{ id: 'journey' as const, label: t('journey.title') }] : []),
     { id: 'story', label: t('about') },
 
     ...(galleryPage.total > 0 ? [{ id: 'photos' as const, label: t('gallery.title') }] : []),
@@ -126,7 +127,7 @@ export default async function HikePage({ params }: Props) {
         <HikeOverview
           map={
             maps.length > 0 ? (
-              <HikeMap images={maps} hikeTitle={hike.translation.title} variant="landscape" />
+              <HikeMap images={maps} hikeTitle={hike.translation.title} />
             ) : undefined
           }
         >
@@ -138,35 +139,36 @@ export default async function HikePage({ params }: Props) {
                 hikeId={hike.id}
                 hikeTitle={hike.english_title}
                 locale={locale}
-                presentation="compact"
               />
             </section>
           )}
         </HikeOverview>
-        <div className="bg-forest-soft py-8 tablet:py-12">
-          <Container>
-            <HikeJourney
-              details={presentation.details}
-              status={hike.status}
-              more={
-                hike.location && (
-                  <ButtonLink
-                    size="small"
-                    variant="secondary"
-                    href={{
-                      pathname: '/hikes/[slug]',
-                      params: { slug: hike.translation.slug },
-                      hash: 'trail',
-                    }}
-                  >
-                    {t(hike.location.kind === 'trail' ? 'moreAboutTrail' : 'moreAboutArea')}
-                    <IconArrowDown className="size-4" aria-hidden="true" />
-                  </ButtonLink>
-                )
-              }
-            />
-          </Container>
-        </div>
+        {hasJourney && (
+          <div className="bg-forest-soft py-8 tablet:py-12">
+            <Container>
+              <HikeJourney
+                details={presentation.details}
+                status={hike.status}
+                more={
+                  hike.location && (
+                    <ButtonLink
+                      size="small"
+                      variant="secondary"
+                      href={{
+                        pathname: '/hikes/[slug]',
+                        params: { slug: hike.translation.slug },
+                        hash: 'trail',
+                      }}
+                    >
+                      {t(hike.location.kind === 'trail' ? 'moreAboutTrail' : 'moreAboutArea')}
+                      <IconArrowDown className="size-4" aria-hidden="true" />
+                    </ButtonLink>
+                  )
+                }
+              />
+            </Container>
+          </div>
+        )}
       </section>
       <HikeNavigation label={t('pageContents')} items={navigationItems} />
       <div className="pt-10 tablet:pt-16">
@@ -217,7 +219,6 @@ export default async function HikePage({ params }: Props) {
               tags={locationData.tags}
               ratings={locationData.ratings}
               details={locationData.details}
-              presentation="footer"
             />
           </Container>
         </TrailFooter>

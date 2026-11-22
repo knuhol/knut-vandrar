@@ -8,8 +8,7 @@ labels and country inset are now the default. No persistent renderer service is 
 
 ## Provider permission
 
-The project owner confirmed permission for bulk static generation on 20 November
-2026. The generator still requires the explicit environment acknowledgement below.
+The project owner confirmed permission for bulk static generation on 20 November 2026. The generator still requires the explicit environment acknowledgement below.
 
 Provider terms reviewed 20 November 2026:
 
@@ -97,13 +96,13 @@ level 1, at most 1/2/3/4 distinct waterways at levels 2/3/4/5). Area names use
 uppercase lettering with wider spacing. Label density never changes terrain or
 land-cover zoom thresholds; wetland icon patterns are suppressed in illustrations.
 
-| Level | Outdoor landmarks, maximum | Area names, maximum | Geographic context |
-| --- | --- | --- | --- |
-| 1 | 0 | 1 | Major settlements only |
-| 2 | 2 | 1 | Major settlements only |
-| 3 | 4 | 1 | A few peaks, waters and settlements |
-| 4 | 6 | 2 | More geographic context |
-| 5 | 8 | 3 | Richest geographic context |
+| Level | Outdoor landmarks, maximum | Area names, maximum | Geographic context                  |
+| ----- | -------------------------- | ------------------- | ----------------------------------- |
+| 1     | 0                          | 1                   | Major settlements only              |
+| 2     | 2                          | 1                   | Major settlements only              |
+| 3     | 4                          | 1                   | A few peaks, waters and settlements |
+| 4     | 6                          | 2                   | More geographic context             |
+| 5     | 8                          | 3                   | Richest geographic context          |
 
 These are candidate limits, not guaranteed visible label counts. Collision handling
 may show fewer. Density budgets and spacing are centralized in `maps/config.json`.
@@ -222,12 +221,12 @@ existing Natural Earth raster background is retained.
 
 ## Dimensions and freshness
 
-| Screen range | Variant | Pixels | Ratio |
-|---|---|---|---|
-| Below 641 px | mobile | 1280 × 1280 | 1:1 |
-| 641–1000 px | tablet | 1600 × 1200 | 4:3 |
-| 1001–1499 px | desktop | 2400 × 1600 | 3:2 |
-| 1500 px and above | wide | 2880 × 1620 | 16:9 |
+| Screen range      | Variant | Pixels      | Ratio |
+| ----------------- | ------- | ----------- | ----- |
+| Below 641 px      | mobile  | 1280 × 1280 | 1:1   |
+| 641–1000 px       | tablet  | 1600 × 1200 | 4:3   |
+| 1001–1499 px      | desktop | 2400 × 1600 | 3:2   |
+| 1500 px and above | wide    | 2880 × 1620 | 16:9  |
 
 These reflect the current site breakpoints. Images render at device pixel ratio 2,
 with 48 CSS pixels of route padding and a maximum zoom of 14. Dimensions and padding
@@ -280,7 +279,6 @@ Check `--check`, `--force`, export/import and backup behavior, then run `--all`.
 Provider-backed visual validation and bulk generation were completed for the five
 local hikes on 20 November 2026. Each hike has four stored variants.
 
-
 ## Map API
 
 - `GET /api/hikes/{hike_id}/maps` returns the available variants with dimensions,
@@ -307,9 +305,10 @@ See `maps/TOPOGRAPHY.md` for shared elevation and contour runtime configuration.
 
 ## Hike page display
 
-The server fetches map metadata alongside gallery metadata. A Hike map section
-follows the story, with a corresponding contents-menu link; both are omitted
-when no stored images exist. Section headings and alternative text are translated
+The server fetches map metadata alongside gallery metadata. The map leads the hike
+overview immediately after the cover. On desktop it occupies two thirds of the row;
+the accompanying facts and resources scroll independently within its height. With no
+stored maps, the overview shows its facts and resources without an empty map slot. Section headings and alternative text are translated
 into English, Swedish and Czech. Geographic names stay local within the images.
 
 A native `picture` selects mobile/tablet/desktop/wide variants at the existing
@@ -317,4 +316,6 @@ breakpoints. `next.config.mjs` derives picture media values from the design-toke
 CSS at build time; no additional environment configuration is needed. Images
 retain their full aspect ratio, are lazy-loaded and bypass redundant image
 recompression. The browser downloads the selected variant, with a fallback for
-partial image sets. No interactive map renderer is shipped to public pages.
+partial image sets. Selecting the map opens a full-screen image viewer with zoom,
+panning and keyboard controls. It uses the largest stored image; no interactive
+map renderer or tile requests are shipped to public pages.

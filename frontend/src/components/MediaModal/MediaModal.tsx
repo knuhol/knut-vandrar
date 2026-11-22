@@ -30,7 +30,7 @@ export function MediaModal({
     const overflow = document.body.style.overflow
     const padding = document.body.style.paddingRight
     const scrollbar = window.innerWidth - document.documentElement.clientWidth
-    const currentPadding = Number.parseFloat(getComputedStyle(document.body).paddingRight)
+    const currentPadding = Number.parseFloat(getComputedStyle(document.body).paddingRight) || 0
     document.body.style.overflow = 'hidden'
     document.body.style.paddingRight = `${String(currentPadding + scrollbar)}px`
     element.showModal()

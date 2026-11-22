@@ -32,13 +32,31 @@ const icons = {
 }
 
 function youtubeId(url: string) {
-  const parsed = new URL(url)
+  const parsed = URL.parse(url)
 
-  if (parsed.hostname === 'youtu.be') {
-    return parsed.pathname.slice(1).split('/')[0]
+  if (!parsed) {
+    return undefined
   }
 
-  return parsed.searchParams.get('v') ?? parsed.pathname.split('/').at(-1)
+  if (parsed.hostname === 'youtu.be') {
+    const id = parsed.pathname.slice(1).split('/')[0]
+    return id && /^[\w-]{11}$/.test(id) ? id : undefined
+  }
+
+  if (
+    ![
+      'youtube.com',
+      'www.youtube.com',
+      'm.youtube.com',
+      'youtube-nocookie.com',
+      'www.youtube-nocookie.com',
+    ].includes(parsed.hostname)
+  ) {
+    return undefined
+  }
+
+  const id = parsed.searchParams.get('v') ?? parsed.pathname.split('/').at(-1)
+  return id && /^[\w-]{11}$/.test(id) ? id : undefined
 }
 
 export function InfoCards({
@@ -46,16 +64,15 @@ export function InfoCards({
   hikeId,
   hikeTitle,
   locale,
-  presentation = 'cards',
 }: {
   cards: Hike['cards']
   hikeId: string
   hikeTitle: string | null
   locale: Locale
-  presentation?: 'cards' | 'compact'
 }) {
   const t = useTranslations('Site')
-  const [playing, setPlaying] = useState<{ key: string; id: string }>()
+  const [playing, setPlaying] = useState<string>()
+  const tracking = cards.find((card) => card.type === 'live_position')
 
   if (cards.length === 0) {
     return null
@@ -63,63 +80,40 @@ export function InfoCards({
 
   return (
     <>
-      <div
-        className={
-          presentation === 'compact'
-            ? 'grid grid-cols-1 gap-2 tablet:grid-cols-2 desktop:grid-cols-1'
-            : 'grid grid-cols-1 items-stretch gap-4 tablet:grid-cols-2 desktop:grid-cols-3'
-        }
-      >
-        {cards.map((card, index) =>
-          card.type === 'live_position' && card.state === 'active' && card.url && card.password ? (
-            <div
-              key={`${String(index)}-${card.password}`}
-              className="col-span-full grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-1"
-            >
-              <TrackingPassword password={card.password} />
-            </div>
-          ) : null,
+      <div className="grid grid-cols-1 gap-2 tablet:grid-cols-2 desktop:grid-cols-1">
+        {tracking?.state === 'active' && tracking.url && tracking.password && (
+          <div className="col-span-full grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-1">
+            <TrackingPassword key={tracking.password} password={tracking.password} />
+          </div>
         )}
-        {cards.map((card, index) => {
+        {cards.map((card) => {
           const Icon = icons[card.type]
-          const key = `${card.type}-${String(index)}`
 
           if (card.type === 'youtube_video') {
             const id = youtubeId(card.url)
 
-            if (!id || !/^[\w-]{11}$/.test(id)) {
-              return (
-                <InfoCard
-                  key={key}
-                  icon={<Play aria-hidden="true" />}
-                  title={t('resourceTitles.youtube_video')}
-                  onActivate={() => {
-                    trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
-                  }}
-                  emphasis="film"
-                  variant={presentation === 'compact' ? 'compact' : 'video'}
-                  href={card.url}
-                  action={t('resourceDescriptions.youtube_video')}
-                />
-              )
-            }
-
             return (
               <InfoCard
-                key={key}
+                key={card.type}
                 icon={<Play aria-hidden="true" />}
                 title={t('resourceTitles.youtube_video')}
-                action={t('resourceDescriptions.youtube_video')}
-                onClick={() => {
-                  if (playing?.key === key) {
-                    return
-                  }
+                description={t('resourceDescriptions.youtube_video')}
+                href={id ? undefined : card.url}
+                onActivate={() => {
                   trackHikeInteraction({ name: 'video_open', hikeId, hikeTitle, locale })
-                  setPlaying({ key, id })
                 }}
-                expanded={playing?.key === key}
+                onClick={
+                  id
+                    ? () => {
+                        if (playing) {
+                          return
+                        }
+                        setPlaying(id)
+                      }
+                    : undefined
+                }
+                expanded={Boolean(playing)}
                 emphasis="film"
-                variant={presentation === 'compact' ? 'compact' : 'video'}
               />
             )
           }
@@ -128,13 +122,10 @@ export function InfoCards({
 
           return (
             <InfoCard
-              key={key}
+              key={card.type}
               icon={<Icon aria-hidden="true" />}
               title={t(`resourceTitles.${card.type}`)}
-              emphasis={card.type === 'equipment' ? 'equipment' : 'standard'}
-              variant={presentation === 'compact' ? 'compact' : 'default'}
               inactive={inactive}
-              message={inactive ? t('inactive') : undefined}
               onActivate={() => {
                 trackHikeInteraction({
                   name: 'hike_resource_click',
@@ -145,14 +136,14 @@ export function InfoCards({
                 })
               }}
               href={card.url ?? undefined}
-              action={t(`resourceDescriptions.${card.type}`)}
+              description={inactive ? t('inactive') : t(`resourceDescriptions.${card.type}`)}
             />
           )
         })}
       </div>
       {playing && (
         <VideoModal
-          videoId={playing.id}
+          videoId={playing}
           onClose={() => {
             setPlaying(undefined)
           }}

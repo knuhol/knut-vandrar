@@ -35,7 +35,9 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
             <PhotoQuestion className="size-12 shrink-0" aria-hidden="true" />
           </div>
         )}
-        <HikeStatus status={hike.status} className="absolute top-3.75 left-3.75" />
+        <div className="absolute top-3.75 left-3.75">
+          <HikeStatus status={hike.status} />
+        </div>
       </div>
       <div className="flex flex-1 flex-col p-5.25">
         {period && (
@@ -48,11 +50,9 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
         <div className="mb-4">
           <Heading as="h3">{hike.translation.title}</Heading>
         </div>
-        <HikeStats
-          hike={hike}
-          fontSize="base"
-          className="mt-auto gap-x-5 gap-y-3 text-forest [&_span]:gap-1.75"
-        />
+        <div className="mt-auto">
+          <HikeStats hike={hike} />
+        </div>
         <div className="mt-4">
           <ButtonLink
             size="small"

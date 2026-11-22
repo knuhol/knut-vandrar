@@ -32,7 +32,7 @@ export function PageHeader({
           }
         >
           <div className="min-w-0">
-            <div className="mb-5">
+            <div className="mb-1">
               <Eyebrow>{eyebrow}</Eyebrow>
             </div>
             <Heading tone="brand">{title}</Heading>
