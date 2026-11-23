@@ -56,7 +56,11 @@ function PhotoViewer({
   const touchStart = useRef<number | null>(null)
   const [index, setIndex] = useState(initialIndex)
   const photo = photos[index]
-  const [slide, setSlide] = useState<{ from: number; direction: number } | null>(null)
+  const [slide, setSlide] = useState<{
+    from: number
+    direction: number
+    captionBelow: boolean
+  } | null>(null)
   const [loadedSource, setLoadedSource] = useState<string | null>(null)
   const sliding = slide !== null && loadedSource === photo.src
   const displayedPhotos = slide ? [photos[slide.from], photo] : [photo]
@@ -69,7 +73,8 @@ function PhotoViewer({
   const caption = useRef<HTMLDivElement>(null)
   const previous = useRef<HTMLDivElement>(null)
   const next = useRef<HTMLDivElement>(null)
-  const [captionFitsBelow, setCaptionFitsBelow] = useState(false)
+  const [captionLayout, setCaptionLayout] = useState<{ id: string; below: boolean } | null>(null)
+  const captionFitsBelow = captionLayout?.id === photo.id && captionLayout.below && !error
   const [previousFitsOutside, setPreviousFitsOutside] = useState(false)
   const [nextFitsOutside, setNextFitsOutside] = useState(false)
   const showCaption = Boolean(error || photo.caption)
@@ -119,8 +124,9 @@ function PhotoViewer({
       const captionHeight = text?.getBoundingClientRect().height ?? 0
       const previousWidth = previousArrow.getBoundingClientRect().width
       const nextWidth = nextArrow.getBoundingClientRect().width
-      setCaptionFitsBelow(
-        captionHeight > 0 && captionHeight <= viewerBounds.bottom - imageBounds.bottom,
+      const below = captionHeight > 0 && captionHeight <= viewerBounds.bottom - imageBounds.bottom
+      setCaptionLayout((current) =>
+        current?.id === photo.id && current.below === below ? current : { id: photo.id, below },
       )
       setPreviousFitsOutside(
         previousWidth > 0 && previousWidth <= imageBounds.left - viewerBounds.left,
@@ -137,13 +143,14 @@ function PhotoViewer({
     return () => {
       observer.disconnect()
     }
-  }, [showCaption])
+  }, [photo.id, showCaption])
 
   function showPhoto(nextIndex: number, direction: number) {
     const visibleIndex = slide && !sliding ? slide.from : index
     const animate =
       nextIndex !== visibleIndex && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    setSlide(animate ? { from: visibleIndex, direction } : null)
+    const captionBelow = slide && !sliding ? slide.captionBelow : captionFitsBelow
+    setSlide(animate ? { from: visibleIndex, direction, captionBelow } : null)
     setIndex(nextIndex)
   }
 
@@ -181,11 +188,29 @@ function PhotoViewer({
     >
       <div
         ref={viewport}
-        className="relative grid h-full w-full place-items-center overflow-hidden"
+        className="relative grid h-full w-full touch-pan-y place-items-center overflow-hidden"
+        onTouchStart={(event) => {
+          touchStart.current = event.changedTouches[0].clientX
+        }}
+        onTouchEnd={(event) => {
+          if (touchStart.current !== null) {
+            const distance = event.changedTouches[0].clientX - touchStart.current
+            if (Math.abs(distance) > 50) {
+              void move(distance > 0 ? -1 : 1)
+            }
+          }
+          touchStart.current = null
+        }}
+        onTouchCancel={() => {
+          touchStart.current = null
+        }}
       >
         {displayedPhotos.map((image) => {
           const outgoing = image !== photo
           const animation = sliding && (outgoing ? styles.slideOut : styles.slideIn)
+          const showError = !outgoing && error
+          const captionText = showError ? t('loadError') : image.caption
+          const captionBelow = outgoing ? slide?.captionBelow : captionFitsBelow
 
           return (
             <div
@@ -225,33 +250,31 @@ function PhotoViewer({
                         }
                   }
                 />
+                {captionText && (
+                  <div
+                    ref={outgoing ? undefined : caption}
+                    className={`${styles.caption} absolute inset-x-0 text-center ${captionBelow ? 'top-full' : 'bottom-0'}`}
+                  >
+                    <p
+                      className={`${styles.overlayText} inline-block max-h-[50dvh] overflow-y-auto ${outgoing ? '' : 'pointer-events-auto'}`}
+                      role={showError ? 'alert' : undefined}
+                    >
+                      {captionText}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )
         })}
         <div
           ref={imageFrame}
-          className="relative touch-pan-y"
+          className="pointer-events-none relative"
           style={photoFrameStyle(photo)}
-          onTouchStart={(event) => {
-            touchStart.current = event.changedTouches[0].clientX
-          }}
-          onTouchEnd={(event) => {
-            if (touchStart.current !== null) {
-              const distance = event.changedTouches[0].clientX - touchStart.current
-              if (Math.abs(distance) > 50) {
-                void move(distance > 0 ? -1 : 1)
-              }
-            }
-            touchStart.current = null
-          }}
-          onTouchCancel={() => {
-            touchStart.current = null
-          }}
         >
           <div
             ref={previous}
-            className={`${styles.previous} absolute top-1/2 flex w-max -translate-y-1/2 ${previousFitsOutside ? 'right-full' : 'left-0'}`}
+            className={`${styles.previous} pointer-events-auto absolute top-1/2 flex w-max -translate-y-1/2 ${previousFitsOutside ? 'right-full' : 'left-0'}`}
           >
             <MediaControl
               action="previous"
@@ -264,7 +287,7 @@ function PhotoViewer({
           </div>
           <div
             ref={next}
-            className={`${styles.next} absolute top-1/2 flex w-max -translate-y-1/2 ${nextFitsOutside ? 'left-full' : 'right-0'}`}
+            className={`${styles.next} pointer-events-auto absolute top-1/2 flex w-max -translate-y-1/2 ${nextFitsOutside ? 'left-full' : 'right-0'}`}
           >
             <MediaControl
               action="next"
@@ -275,19 +298,6 @@ function PhotoViewer({
               }}
             />
           </div>
-          {showCaption && (
-            <div
-              ref={caption}
-              className={`${styles.caption} absolute inset-x-0 text-center ${captionFitsBelow && !error ? 'top-full' : 'bottom-0'}`}
-            >
-              <p
-                className={`${styles.overlayText} inline-block max-h-[50dvh] overflow-y-auto`}
-                role={error ? 'alert' : undefined}
-              >
-                {error ? t('loadError') : photo.caption}
-              </p>
-            </div>
-          )}
         </div>
         <p
           className={`${styles.overlayText} ${styles.counter} absolute`}

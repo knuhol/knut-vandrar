@@ -120,11 +120,11 @@ test('moves the photo caption and arrows outside only when there is room', () =>
     renderGallery()
     fireEvent.click(screen.getByRole('button', { name: 'Open photo 1: Photo 1' }))
     const caption = screen.getByText('Photo 1').parentElement
-    const frame = caption?.parentElement
-    const viewer = frame?.parentElement
     const previous = screen.getByRole('button', { name: 'Previous photo' }).parentElement
     const next = screen.getByRole('button', { name: 'Next photo' }).parentElement
-    if (!caption || !frame || !viewer || !previous || !next) {
+    const frame = previous?.parentElement
+    const viewer = frame?.parentElement
+    if (!caption || !previous || !next || !frame || !viewer) {
       throw new Error('Missing gallery controls')
     }
     jest.spyOn(caption, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 70))
@@ -163,7 +163,8 @@ test('keeps the old photo visible until the incoming photo can slide in', async 
     throw new Error('Missing photo slide')
   }
   expect(slide).toHaveClass('invisible')
-  expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+  expect(slide).toContainElement(viewer.getByText('Photo 2'))
+  expect(viewer.getByAltText('Photo 1').parentElement).toContainElement(viewer.getByText('Photo 1'))
 
   frame.style.position = 'relative'
   incoming.width = 400
@@ -174,6 +175,7 @@ test('keeps the old photo visible until the incoming photo can slide in', async 
   })
   fireEvent.animationEnd(slide)
   expect(viewer.queryByAltText('Photo 1')).not.toBeInTheDocument()
+  expect(viewer.queryByText('Photo 1')).not.toBeInTheDocument()
 
   window.matchMedia = jest.fn().mockReturnValue({ matches: true })
   fireEvent.click(viewer.getByRole('button', { name: 'Previous photo' }))
