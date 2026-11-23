@@ -3,12 +3,11 @@
   a {
     -webkit-tap-highlight-color: transparent;
   }
-}
 
-/* Site-wide policy: suppress browser and component focus outlines. */
-:focus,
-:focus-visible {
-  outline: none !important;
+  :focus-visible {
+    outline: var(--focus-outline-width) solid var(--color-orange);
+    outline-offset: var(--focus-outline-offset, var(--focus-outline-width));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
