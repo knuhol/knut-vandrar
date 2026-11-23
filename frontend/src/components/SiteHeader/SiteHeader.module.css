@@ -44,6 +44,13 @@
   transition: visibility var(--duration-fast);
 }
 
+.readingPane {
+  @variant max-tablet {
+    /* Balance the wider menu switcher against the logo to center on the whole bar. */
+    padding-inline-start: calc(var(--spacing-header-switcher) - var(--spacing-brand-icon));
+  }
+}
+
 .inactive {
   visibility: hidden;
 }

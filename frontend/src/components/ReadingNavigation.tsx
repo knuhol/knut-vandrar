@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
 type ReadingNavigationState = {
   active: boolean
@@ -21,12 +21,18 @@ const ReadingNavigationContext = createContext<ReadingNavigationState>({
 })
 
 export function ReadingNavigationProvider({ children }: { children: ReactNode }) {
-  const [active, setActive] = useState(false)
+  const [active, setReadingActive] = useState(false)
   const [siteMenuOpen, setSiteMenuOpen] = useState(false)
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
+  const setActive = useCallback((next: boolean) => {
+    setReadingActive(next)
+    if (!next) {
+      setSiteMenuOpen(false)
+    }
+  }, [])
   const value = useMemo(
     () => ({ active, setActive, siteMenuOpen, setSiteMenuOpen, slot, setSlot }),
-    [active, siteMenuOpen, slot],
+    [active, setActive, siteMenuOpen, slot],
   )
 
   return <ReadingNavigationContext value={value}>{children}</ReadingNavigationContext>

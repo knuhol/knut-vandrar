@@ -40,13 +40,14 @@
   );
 
   --spacing: 4px;
-  /* Leave room for language, navigation and the contextual switch on narrow headers. */
+  /* Match the mobile wordmark on main, including room for its two menu controls. */
   --spacing-header-brand: clamp(
-    calc(var(--spacing) * 20),
-    calc(100vw - var(--spacing) * 60),
+    0px,
+    calc(100vw - var(--spacing) * 42),
     calc(var(--spacing) * 47.5)
   );
   --spacing-brand-icon: calc(var(--spacing-header-brand) * 112 / 654);
+  --spacing-header-switcher: calc(var(--spacing) * 11);
   --container-page: 1240px;
   --container-reading: 68ch;
   --container-prose: var(--container-reading);
