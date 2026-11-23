@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { IconFold, IconArrowsVertical } from '@tabler/icons-react'
 
-import { setChapterExpanded } from './chapterState'
+import { setDisclosureExpanded } from '../Disclosure/disclosureState'
 
 export function ChapterControls({ targetId }: { targetId: string }) {
   const t = useTranslations('Site')
@@ -55,13 +55,13 @@ export function ChapterControls({ targetId }: { targetId: string }) {
       type="button"
       aria-controls={targetId}
       aria-expanded={allExpanded}
-      className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm font-semibold text-forest hover:underline focus-visible:underline"
+      className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm font-semibold text-forest hover:text-ink focus-visible:text-ink"
       onClick={() => {
         document
           .getElementById(targetId)
           ?.querySelectorAll<HTMLDetailsElement>('details[data-chapter]')
           .forEach((chapter) => {
-            setChapterExpanded(chapter, !allExpanded)
+            setDisclosureExpanded(chapter, !allExpanded)
           })
       }}
     >

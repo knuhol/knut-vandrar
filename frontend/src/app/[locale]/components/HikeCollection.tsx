@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl'
 
 import { HikeCard } from './HikeCard'
-import { Eyebrow } from '@/components/Eyebrow'
 import { Pill, PillLink } from '@/components/Pill'
 import { Container } from '@/components/Container'
 import { Heading } from '@/components/Heading'
@@ -40,11 +39,8 @@ export function HikeCollection({ pages }: { pages: Record<HikeCategory, HikesPag
             return (
               <section key={category.id} aria-labelledby={`${category.id}-title`}>
                 <div id={category.id} tabIndex={-1} className="mb-7 outline-none">
-                  <div className="mb-1">
-                    <Eyebrow>{t('collectionEyebrow')}</Eyebrow>
-                  </div>
                   <div className="mb-2.5">
-                    <Heading as="h2" id={`${category.id}-title`}>
+                    <Heading as="h2" id={`${category.id}-title`} eyebrow={t('collectionEyebrow')}>
                       {t(category.title)}
                     </Heading>
                   </div>

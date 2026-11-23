@@ -30,7 +30,7 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
         }
         brandIcon={
           <Link data-link-kind="brand" href="/" locale={locale} className="block w-full">
-            <Logo variant="monochromaticForest" size="icon" locale={locale} />
+            <Logo variant={logoVariant} size="icon" locale={locale} />
           </Link>
         }
         navigation={<Navigation locale={locale} />}

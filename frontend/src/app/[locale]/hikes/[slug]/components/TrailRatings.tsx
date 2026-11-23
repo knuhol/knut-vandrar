@@ -1,6 +1,7 @@
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useTranslations } from 'next-intl'
 
+import { Disclosure } from '@/components/Disclosure/Disclosure'
 import { Heading } from '@/components/Heading'
 import { StarRating } from '@/components/StarRating'
 import type { TrailRatings as Ratings } from '@/hiking/presentation'
@@ -27,7 +28,7 @@ export function TrailRatings({ ratings }: { ratings: Ratings }) {
           .filter((category) => ratings[category] !== null)
           .map((category) => (
             <li key={category}>
-              <details>
+              <Disclosure>
                 <summary
                   className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-sm ${category === 'difficulty' ? 'text-orange-dark' : 'text-forest'} [&::-webkit-details-marker]:hidden`}
                 >
@@ -35,10 +36,10 @@ export function TrailRatings({ ratings }: { ratings: Ratings }) {
                   <span className="sr-only">{t('moreInfo')}</span>
                   <IconInfoCircle className="size-5 shrink-0" aria-hidden="true" />
                 </summary>
-                <p className="mb-3 text-sm leading-relaxed text-muted">
+                <p className="pb-3 text-sm leading-relaxed text-muted">
                   {t(`${category}.description`)}
                 </p>
-              </details>
+              </Disclosure>
               <StarRating
                 value={ratings[category] ?? 0}
                 tone={category === 'difficulty' ? 'caution' : 'default'}

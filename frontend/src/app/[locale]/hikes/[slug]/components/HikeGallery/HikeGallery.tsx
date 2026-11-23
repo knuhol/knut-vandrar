@@ -220,7 +220,7 @@ export function HikeGallery({
       heading="hidden"
       meta={t('count', { count: page.total })}
     >
-      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4 wide:grid-cols-4 wide:gap-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:gap-4 lg:grid-cols-4">
         {photos.map((photo, index) => (
           <button
             key={photo.id}

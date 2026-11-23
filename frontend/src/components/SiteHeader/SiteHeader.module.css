@@ -13,10 +13,6 @@
   }
 }
 
-.brand {
-  transition: width var(--duration-fast) var(--ease-entrance);
-}
-
 .brandFull,
 .brandIcon {
   position: absolute;
@@ -29,16 +25,17 @@
 }
 
 .track {
+  /* Keep the slide separate from layout changes in the adjacent controls. */
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   width: 200%;
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
   transition: transform var(--duration-fast) var(--ease-entrance);
 }
 
 .trackReading {
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
 }
 
 .pane {
@@ -58,10 +55,7 @@
 
 .switcher {
   overflow: hidden;
-  transition:
-    opacity var(--duration-fast) ease,
-    width var(--duration-fast) var(--ease-entrance),
-    margin-left var(--duration-fast) var(--ease-entrance);
+  transition: opacity var(--duration-fast) ease;
 }
 
 .switcherHidden {

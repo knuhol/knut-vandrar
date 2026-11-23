@@ -66,7 +66,15 @@
 
 .prose details {
   @apply mb-0 overflow-clip;
+  --chapter-number-width: calc(var(--spacing) * 8);
+  --chapter-heading-gap: calc(var(--spacing) * 4);
+  --chapter-indent: 0px;
   counter-increment: chapter;
+
+  @variant tablet {
+    --chapter-heading-gap: calc(var(--spacing) * 6);
+    --chapter-indent: calc(var(--chapter-number-width) + var(--chapter-heading-gap));
+  }
 }
 
 .prose details + details {
@@ -78,7 +86,7 @@
 }
 
 .prose details > :not(summary) {
-  @apply tablet:ml-14;
+  margin-inline-start: var(--chapter-indent);
 }
 
 .prose details > summary + * {
@@ -86,31 +94,31 @@
 }
 
 .prose summary {
-  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-4 py-4 text-forest tablet:gap-6;
+  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-baseline py-4 text-forest;
+  gap: var(--chapter-heading-gap);
 }
 
 .prose summary::before {
   content: counter(chapter, decimal-leading-zero);
-  @apply w-8 font-statistic text-base leading-tight text-orange-dark;
+  @apply font-statistic text-base leading-tight text-orange-dark;
+  width: var(--chapter-number-width);
 }
 
 .prose summary::-webkit-details-marker {
   display: none;
 }
 
-.prose summary::after {
-  content: '';
+.chapterArrow {
   width: 0;
   height: 0;
   border-top: calc(var(--spacing) * 1.5) solid transparent;
   border-bottom: calc(var(--spacing) * 1.5) solid transparent;
   border-left: calc(var(--spacing) * 2) solid var(--color-forest);
-  transition: transform var(--chapter-toggle-duration, var(--duration-motion)) ease-out;
   align-self: center;
 }
 
-.prose details[data-expanded='true'] > summary::after,
-.prose details[open]:not([data-expanded]) > summary::after {
+.prose details[data-expanded='true'] > summary > .chapterArrow,
+.prose details[open]:not([data-expanded]) > summary > .chapterArrow {
   transform: rotate(90deg);
 }
 
@@ -137,6 +145,10 @@
 
 .article {
   line-height: var(--leading-reading);
+}
+
+.article details {
+  max-inline-size: calc(var(--container-prose) + var(--chapter-indent));
 }
 
 .article p,
