@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Analytics } from './components/Analytics/Analytics'
 import { ReadingNavigationProvider } from '@/components/ReadingNavigation'
-import { ImageMotion } from '@/components/ImageMotion'
 import { FocusIndicator } from '@/components/FocusIndicator'
 
 import '../globals.css'
@@ -74,7 +73,6 @@ export default async function LocaleLayout({
           <StructuredData data={identityData(locale)} />
           <PageMotion />
           <FocusIndicator />
-          <ImageMotion />
           <ReadingNavigationProvider>
             <Header locale={locale} />
             <main id="content" className="flex min-w-0 flex-1 flex-col">

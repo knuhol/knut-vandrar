@@ -91,12 +91,13 @@ test('End loads later pages and jumps to the last photo, and Home returns to the
 
 test('opens the first fullscreen photo with P and records one gallery opening', () => {
   renderGallery()
+  expect(screen.getByAltText('Photo 1')).toHaveClass('image-reveal')
   fireEvent.keyDown(window, { key: 'p', metaKey: true })
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
   fireEvent.keyDown(window, { key: 'p' })
   const viewer = within(screen.getByRole('dialog'))
-  expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+  expect(viewer.getByAltText('Photo 1')).toHaveClass('image-reveal')
 
   fireEvent.keyDown(window, { key: 'p' })
   expect(trackHikeInteraction).toHaveBeenCalledTimes(1)

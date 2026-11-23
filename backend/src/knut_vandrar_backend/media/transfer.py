@@ -28,6 +28,7 @@ from knut_vandrar_backend.media.archive import (
     schema_revision,
     unpack_archive,
 )
+from knut_vandrar_backend.media.covers import COVER_DERIVATIVE_TYPES
 from knut_vandrar_backend.media.progress import Progress
 from knut_vandrar_backend.media.recovery import (
     publish_photo,
@@ -73,7 +74,12 @@ def _validate_images(asset: Asset, staging: Path) -> None:
         if asset.kind != "photo":
             content_type = detect_image_type(path.read_bytes())
             is_cover_original = asset.kind == "cover" and variant == "original"
-            if content_type != asset.content_type and not (
+            expected_type = (
+                COVER_DERIVATIVE_TYPES.get(variant, asset.content_type)
+                if asset.kind == "cover"
+                else asset.content_type
+            )
+            if content_type != expected_type and not (
                 is_cover_original
                 and asset.content_type == "image/webp"
                 and content_type != "image/svg+xml"

@@ -1,7 +1,7 @@
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 
 import styles from './HikeMasthead.module.css'
+import { HikeCoverPicture } from './HikeCoverPicture'
 
 import { Heading } from '@/components/Heading'
 import { Container } from '@/components/Container'
@@ -9,7 +9,6 @@ import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { hasCompleteHikeStats } from '@/hiking/stats'
 import { hikeCoverSources } from '@/api/images'
-import { responsiveMedia } from '@/config/breakpoints'
 import type { Hike } from '@/api/hikes'
 import { Link } from '@/i18n/navigation'
 
@@ -23,19 +22,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
       className={`${styles.landscape} relative isolate flex items-end overflow-hidden bg-forest text-cream`}
     >
       {covers && (
-        <picture className="absolute inset-0 -z-20 overflow-hidden">
-          <source media={responsiveMedia.belowTablet} srcSet={covers.card} />
-          <Image
-            src={covers.mobile}
-            alt={hike.translation.title}
-            fill
-            className={`${styles.photo} object-cover`}
-            loading="eager"
-            fetchPriority="high"
-            unoptimized
-            sizes="100vw"
-          />
-        </picture>
+        <HikeCoverPicture key={covers.mobile} covers={covers} title={hike.translation.title} />
       )}
       <div className={`${styles.shade} pointer-events-none absolute inset-0 -z-10`} />
       <div className="absolute inset-x-0 top-0 z-10 py-5 tablet:py-7">

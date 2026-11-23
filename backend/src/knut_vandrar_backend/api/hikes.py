@@ -39,6 +39,11 @@ from knut_vandrar_backend.api.schemas.hike import (
 from knut_vandrar_backend.api.schemas.location import AchievementRead
 from knut_vandrar_backend.api.schemas.pagination import Limit, Offset, Page
 from knut_vandrar_backend.database.dependencies import get_db
+from knut_vandrar_backend.media.covers import (
+    AVIF_COVER_VARIANTS,
+    COVER_DERIVATIVE_TYPES,
+    COVER_VARIANTS,
+)
 from knut_vandrar_backend.models.enums import HikeStatus, TranslationReviewStatus
 from knut_vandrar_backend.models.hike import (
     CoverVariant,
@@ -70,7 +75,6 @@ from knut_vandrar_backend.translations.core import (
 
 router = APIRouter(prefix="/api/hikes", tags=["hikes"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
-COVER_VARIANTS = {"image": (3840, 86), "mobile": (1600, 82), "card": (960, 82)}
 
 
 @router.get("", response_model=Page[HikeSummaryRead])
@@ -219,11 +223,11 @@ def get_hike_cover_image(
     variant: CoverVariant | None = None,
     v: str | None = None,
 ) -> Response:
-    asset: HikeCoverAsset | HikeCoverImage | None = (
-        db.get(HikeCoverAsset, (hike_id, variant)) if variant is not None else None
-    )
-    if asset is not None:
-        content_type = "image/webp"
+    derivative = db.get(HikeCoverAsset, (hike_id, variant)) if variant is not None else None
+    asset: HikeCoverAsset | HikeCoverImage
+    if derivative is not None:
+        asset = derivative
+        content_type = COVER_DERIVATIVE_TYPES[derivative.kind]
     else:
         cover = db.get(HikeCoverImage, hike_id)
         if cover is None:
@@ -412,7 +416,9 @@ def upload_hike_cover_image(
     translation = _translation(db, hike.id, SOURCE_LOCALE)
     if translation is None:
         raise HTTPException(status_code=409, detail="English source translation is missing")
-    variants, content_type = optimize_images(content, COVER_VARIANTS)
+    variants, content_type = optimize_images(
+        content, COVER_VARIANTS, avif_variants=AVIF_COVER_VARIANTS
+    )
     cover_image = db.get(HikeCoverImage, hike.id, with_for_update=True) or HikeCoverImage(
         hike_id=hike.id
     )
@@ -585,10 +591,14 @@ def _cover_sources(hike: Hike, request: Request) -> HikeCoverSources | None:
     variants = {
         key: str(url.include_query_params(variant=key, v=asset.sha256))
         for key, asset in cover.assets.items()
-        if key in ("mobile", "card")
+        if key in COVER_DERIVATIVE_TYPES
     }
     return HikeCoverSources(
-        full=full, mobile=variants.get("mobile", full), card=variants.get("card", full)
+        full=full,
+        desktop=variants.get("desktop", full),
+        wide=variants.get("wide"),
+        mobile=variants.get("mobile", full),
+        card=variants.get("card", full),
     )
 
 

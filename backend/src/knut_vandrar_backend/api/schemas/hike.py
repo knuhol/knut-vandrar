@@ -264,6 +264,8 @@ class HikeNeighborsRead(BaseModel):
 
 class HikeCoverSources(BaseModel):
     full: str
+    desktop: str | None = None
+    wide: str | None = None
     mobile: str
     card: str
 

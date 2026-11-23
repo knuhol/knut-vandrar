@@ -57,6 +57,7 @@ IMAGE_RESPONSES: dict[int | str, dict[str, Any]] = {
                 "image/jpeg",
                 "image/gif",
                 "image/webp",
+                "image/avif",
                 "image/svg+xml",
             )
         },
@@ -72,6 +73,8 @@ def detect_image_type(content: bytes) -> str:
         return "image/jpeg"
     if content.startswith((b"GIF87a", b"GIF89a")):
         return "image/gif"
+    if len(content) >= 12 and content[4:12] in (b"ftypavif", b"ftypavis"):
+        return "image/avif"
     if len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP":
         return "image/webp"
     normalized = content.lstrip().lower()
@@ -88,7 +91,7 @@ def detect_image_type(content: bytes) -> str:
     if root.tag in {"{http://www.w3.org/2000/svg}svg", "svg"}:
         return "image/svg+xml"
     raise HTTPException(
-        status_code=415, detail="Supported image types are PNG, JPEG, GIF, WebP, and SVG"
+        status_code=415, detail="Supported image types are PNG, JPEG, GIF, WebP, AVIF, and SVG"
     )
 
 
@@ -107,6 +110,7 @@ def optimize_images(
     *,
     lossless: bool = False,
     allow_heif: bool = False,
+    avif_variants: frozenset[str] = frozenset(),
 ) -> tuple[dict[str, bytes], str]:
     """Normalize raster uploads for delivery; retain scalable SVG documents."""
     from PIL import Image, ImageOps, UnidentifiedImageError
@@ -143,7 +147,12 @@ def optimize_images(
                     )
                     image.info.clear()
                     output = BytesIO()
-                    image.save(output, format="WEBP", quality=quality, method=6, lossless=lossless)
+                    if name in avif_variants:
+                        image.save(output, format="AVIF", quality=quality, speed=6)
+                    else:
+                        image.save(
+                            output, format="WEBP", quality=quality, method=6, lossless=lossless
+                        )
                     images[name] = output.getvalue()
                 return images, "image/webp"
     except (UnidentifiedImageError, OSError, ValueError) as error:

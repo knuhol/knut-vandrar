@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from knut_vandrar_backend.api.hikes import _duration_days
 from knut_vandrar_backend.main import app
+from knut_vandrar_backend.media.covers import backfill_desktop_covers
 from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike, HikeCoverAsset, HikeCoverImage, HikeTranslation
 from knut_vandrar_backend.models.reference import InfoCardType
@@ -195,7 +196,7 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
     assert stale.status_code == 307
     assert stale.headers["cache-control"] == "no-store"
     assert client.get(stale.headers["location"]).content == served.content
-    for variant, size in [("mobile", (1600, 800)), ("card", (960, 480))]:
+    for variant, size in [("desktop", (2560, 1280)), ("mobile", (1600, 800)), ("card", (960, 480))]:
         derivative = client.get(image_url, params={"variant": variant})
         assert derivative.status_code == 200
         assert derivative.headers["etag"] != served.headers["etag"]
@@ -204,6 +205,11 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
         assert cached.headers["cache-control"] == "public, max-age=31536000, immutable"
         with Image.open(BytesIO(derivative.content)) as image:
             assert image.size == size
+    wide = client.get(sources["wide"])
+    assert wide.headers["content-type"] == "image/avif"
+    assert wide.headers["cache-control"] == "public, max-age=31536000, immutable"
+    with Image.open(BytesIO(wide.content)) as image:
+        assert image.size == (3840, 1920)
     assert client.get(image_url, params={"variant": "original"}).status_code == 422
     with _db_session(client) as db:
         original = db.get(HikeCoverAsset, (UUID(hike["id"]), "original"))
@@ -221,7 +227,7 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
         assert db.get(HikeCoverAsset, (UUID(hike["id"]), "original")) is None
 
 
-@pytest.mark.parametrize("variant", [None, "card", "mobile"])
+@pytest.mark.parametrize("variant", [None, "card", "mobile", "desktop"])
 def test_cover_revalidation_does_not_load_image_bytes(
     client: TestClient, variant: str | None
 ) -> None:
@@ -248,13 +254,41 @@ def test_cover_revalidation_does_not_load_image_bytes(
     assert not any(re.search(r"\.content\b", statement) for statement in statements)
 
 
+def test_backfill_desktop_cover_keeps_the_existing_master_and_is_idempotent(
+    client: TestClient,
+) -> None:
+    hike_id = UUID(client.post("/api/hikes", json=_planned_payload()).json()["id"])
+    cover_url = f"/api/hikes/{hike_id}/cover-image"
+    assert client.put(cover_url, content=_png_image((2700, 1350))).status_code == 200
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    with factory.begin() as db:
+        cover = db.get(HikeCoverImage, hike_id)
+        assert cover is not None
+        desktop_digest = cover.assets["desktop"].sha256
+        wide_digest = cover.assets["wide"].sha256
+        master_digest = cover.sha256
+        original_digest = cover.assets["original"].sha256
+        del cover.assets["desktop"]
+        del cover.assets["wide"]
+
+    assert backfill_desktop_covers(factory) == 1
+    assert backfill_desktop_covers(factory) == 0
+    with factory() as db:
+        cover = db.get(HikeCoverImage, hike_id)
+        assert cover is not None
+        assert cover.sha256 == master_digest
+        assert cover.assets["original"].sha256 == original_digest
+        assert cover.assets["desktop"].sha256 == desktop_digest
+        assert cover.assets["wide"].sha256 == wide_digest
+
+
 def test_replacing_raster_cover_with_svg_removes_old_variants(client: TestClient) -> None:
     hike = client.post("/api/hikes", json=_planned_payload()).json()
     url = f"/api/hikes/{hike['id']}/cover-image"
     assert client.put(url, content=_png_image((40, 20))).status_code == 200
     svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"/>'
     assert client.put(url, content=svg).status_code == 200
-    for variant in ("card", "mobile"):
+    for variant in ("card", "mobile", "desktop", "wide"):
         response = client.get(url, params={"variant": variant})
         assert response.content == svg
         assert response.headers["content-type"] == "image/svg+xml"

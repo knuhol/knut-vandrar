@@ -158,8 +158,8 @@ class Hike(Base):
     )
 
 
-CoverVariant = Literal["card", "mobile"]
-COVER_ASSET_NAMES = frozenset({"original", "card", "mobile"})
+CoverVariant = Literal["card", "mobile", "desktop", "wide"]
+COVER_ASSET_NAMES = frozenset({"original", "card", "mobile", "desktop", "wide"})
 
 
 class HikeCoverImage(Base):
@@ -188,7 +188,10 @@ class HikeCoverImage(Base):
 class HikeCoverAsset(Base):
     __tablename__ = "hike_cover_assets"
     __table_args__ = (
-        CheckConstraint("kind IN ('original', 'card', 'mobile')", name="ck_hike_cover_asset_kind"),
+        CheckConstraint(
+            "kind IN ('original', 'card', 'mobile', 'desktop', 'wide')",
+            name="ck_hike_cover_asset_kind",
+        ),
     )
 
     hike_id: Mapped[UUID] = mapped_column(

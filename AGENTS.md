@@ -38,3 +38,12 @@
 - Use the shared `FocusIndicator` to suppress focus decoration after touch input, including when a modal opens or a menu restores focus. Preserve actual focus management for dialogs and menus, and restore the visible indicator when keyboard input resumes. Limit hover-only decoration to devices that support hover so it clears after touch interactions.
 - When a tap or click closes a chapter, release focus from its header after the closing animation finishes. Release it immediately if reduced motion skips the animation. Keep focus on the header when closing with the keyboard.
 - When refactoring or cleaning up, check for files and other artifacts that are no longer used and remove them when safe.
+
+
+## Image delivery and motion
+
+- On a cold direct visit, measure image bounds and `scrollY` separately. Repeat reloads from the top and from an existing scroll position in the environment where the bug occurs. A stable image box or empty layout-shift trace can coexist with browser scroll anchoring. Keep About’s scroll-anchoring override scoped to its article.
+- Use `RevealImage` for intentional fades. Establish the initial opacity in CSS before any image pixels can paint and reveal once the image is ready. Keep reduced-motion and no-script visits immediately visible. Avoid document-wide load listeners that start a fade after an image has already appeared. Keep gallery slide motion independent of the image reveal.
+- Send the hike masthead before awaiting gallery, map, and adjacent-hike requests. Keep the displayed and prefetched responsive URLs identical. Prefer the stored mobile, desktop WebP, or wide AVIF variant for the viewport. Use content-versioned URLs for immutable browser caching. Keep background prefetch concurrency bounded and prioritize an explicitly selected hike.
+- Verify image changes with a cold direct browser visit, a deliberately delayed image, and reduced motion. Check the sequence of opacity and scroll positions instead of relying on a screenshot of the final state. Measure representative encoded files before changing quality or dimensions.
+- Apply the cover asset migration before generating new variants on an existing deployment. Backfill missing derivatives from stored originals with the media CLI and keep archives and destinations on matching Alembic revisions.

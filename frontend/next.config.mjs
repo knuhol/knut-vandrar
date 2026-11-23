@@ -25,7 +25,7 @@ if (!publicApiUrl) {
 // Picture media queries must use the same values as Tailwind's design tokens.
 const tokenCss = fs.readFileSync(path.join(__dirname, 'src/styles/tokens.css'), 'utf8')
 const breakpoints = Object.fromEntries(
-  [...tokenCss.matchAll(/--breakpoint-([a-z]+):\s*([\d.]+px);/g)].map((match) => [
+  [...tokenCss.matchAll(/--breakpoint-([a-z]+(?:-[a-z]+)*):\s*([\d.]+px);/g)].map((match) => [
     match[1],
     match[2],
   ]),

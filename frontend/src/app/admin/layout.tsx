@@ -6,8 +6,6 @@ import '../globals.css'
 import { AdminTheme } from './ui/AdminTheme'
 import { EnvironmentBanner } from './ui/EnvironmentBanner'
 
-import { ImageMotion } from '@/components/ImageMotion'
-
 import { serverConfig } from '@/config/server'
 import messages from '@/admin/messages/en.json'
 
@@ -30,7 +28,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
           <AdminTheme>
             <EnvironmentBanner environment={serverConfig.deploymentEnvironment} />
-            <ImageMotion />
             {children}
           </AdminTheme>
         </AppRouterCacheProvider>
