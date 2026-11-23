@@ -6,7 +6,7 @@ import { disclosureExpansionEvent } from './disclosureState'
 
 import { cancelPageScroll, motionDuration, scrollToElement } from '@/navigation/motion'
 
-export function useDisclosure({ scrollBeforeClosing = false } = {}) {
+export function useDisclosure({ scrollBeforeClosing = false, blurOnPointerClose = false } = {}) {
   const element = useRef<HTMLDetailsElement>(null)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
     let pending = false
     details.dataset.expanded = String(expanded)
 
-    function setExpanded(next: boolean, fromSummary = false) {
+    function setExpanded(next: boolean, { fromSummary = false, blurAfterClose = false } = {}) {
       if (!details || !summary || next === expanded) {
         return
       }
@@ -62,6 +62,9 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
           }
           details.open = expanded
           animation = null
+          if (!expanded && blurAfterClose) {
+            summary?.blur()
+          }
         }
         const duration = motionDuration(details)
         const arrowStart = arrow && getComputedStyle(arrow).transform
@@ -123,7 +126,10 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
         return
       }
       event.preventDefault()
-      setExpanded(!expanded, true)
+      setExpanded(!expanded, {
+        fromSummary: true,
+        blurAfterClose: blurOnPointerClose && event.detail > 0,
+      })
     }
 
     function pointerDown(event: MouseEvent) {
@@ -135,9 +141,8 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
       ) {
         return
       }
-      // Taking focus must not move the reader away from the current position.
+      // Prevent the browser from scrolling a sticky chapter heading into view.
       event.preventDefault()
-      summary?.focus({ preventScroll: true })
     }
     function sync() {
       if (!animation && !pending && details) {
@@ -167,7 +172,7 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
       details.removeEventListener('toggle', sync)
       details.removeEventListener(disclosureExpansionEvent, expandFromControl)
     }
-  }, [scrollBeforeClosing])
+  }, [blurOnPointerClose, scrollBeforeClosing])
 
   return element
 }

@@ -8,6 +8,11 @@
     outline: var(--focus-outline-width) solid var(--color-orange);
     outline-offset: var(--focus-outline-offset, var(--focus-outline-width));
   }
+
+  /* Safari can carry focus-visible through a focus change triggered by a tap. */
+  :root[data-touch-input] :focus-visible {
+    outline: none;
+  }
 }
 
 @utility focus-inset {

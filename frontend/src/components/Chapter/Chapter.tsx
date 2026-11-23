@@ -5,7 +5,7 @@ import { useId, type ReactNode } from 'react'
 import { useDisclosure } from '../Disclosure/useDisclosure'
 
 export function Chapter({ children }: { children?: ReactNode }) {
-  const element = useDisclosure({ scrollBeforeClosing: true })
+  const element = useDisclosure({ scrollBeforeClosing: true, blurOnPointerClose: true })
   const id = useId()
 
   return (
