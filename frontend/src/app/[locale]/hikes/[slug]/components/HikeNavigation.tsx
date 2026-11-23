@@ -22,7 +22,7 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
   const [expanded, setExpanded] = useState(false)
   const sentinel = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
-  const { setActive, slot, siteMenuOpen, setSiteMenuOpen } = useReadingNavigation()
+  const { setActive, slot, siteMenuOpen } = useReadingNavigation()
 
   useEffect(() => {
     let frame = 0
@@ -30,9 +30,13 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
       const style = getComputedStyle(document.documentElement)
       const headerHeight = Number.parseFloat(style.getPropertyValue('--header-height')) || 0
       const padding = Number.parseFloat(style.scrollPaddingTop) || headerHeight
-      setActive(
-        Boolean(sentinel.current && sentinel.current.getBoundingClientRect().top <= headerHeight),
+      const active = Boolean(
+        sentinel.current && sentinel.current.getBoundingClientRect().top <= headerHeight + 1,
       )
+      setActive(active)
+      if (!active) {
+        setExpanded(false)
+      }
       const target = getAnchorScrollTarget()
       let current = items[0]?.id
       for (const { id } of items) {
@@ -100,9 +104,8 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
       window.removeEventListener('resize', schedule)
       document.removeEventListener('toggle', schedule, true)
       setActive(false)
-      setSiteMenuOpen(false)
     }
-  }, [items, setActive, setSiteMenuOpen])
+  }, [items, setActive])
 
   const currentLabel = items.find(({ id }) => id === activeId)?.label ?? label
   const controls = (

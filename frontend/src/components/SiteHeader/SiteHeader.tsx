@@ -87,7 +87,7 @@ export function SiteHeader({
               id="header-submenu"
               inert={!reading}
               aria-hidden={!reading ? true : undefined}
-              className={`${styles.pane} ${!reading ? styles.inactive : ''} min-w-0`}
+              className={`${styles.pane} ${styles.readingPane} ${!reading ? styles.inactive : ''} flex justify-center tablet:justify-end`}
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ export function SiteHeader({
           onClick={() => {
             setSiteMenuOpen(!siteMenuOpen)
           }}
-          className={`${styles.switcher} ${!active ? styles.switcherHidden : ''} grid size-11 shrink-0 cursor-pointer place-items-center text-forest hover:text-forest-dark`}
+          className={`${styles.switcher} ${!active ? styles.switcherHidden : ''} grid size-(--spacing-header-switcher) shrink-0 cursor-pointer place-items-center text-forest hover:text-forest-dark`}
         >
           {reading ? (
             <IconArrowRight className="size-5" aria-hidden="true" />

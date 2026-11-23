@@ -138,6 +138,7 @@ export default async function HikePage({ params }: Props) {
       />
       <HikeMasthead hike={hike} />
       <section className="relative bg-cream" aria-label={t('hikeFacts')}>
+        <HikeNavigation label={t('pageContents')} items={navigationItems} />
         <HikeOverview
           map={
             maps.length > 0 ? (
@@ -184,7 +185,6 @@ export default async function HikePage({ params }: Props) {
           </div>
         )}
       </section>
-      <HikeNavigation label={t('pageContents')} items={navigationItems} />
       <Container>
         <div className="@container/hike-story relative isolate">
           {showFootsteps && <FootstepTrail />}

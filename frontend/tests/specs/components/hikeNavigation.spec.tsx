@@ -74,7 +74,9 @@ test('moves reading controls into the existing header and preserves chapter and 
   if (!sentinel || !chapter || !summary) {
     throw new Error('Missing reading landmarks')
   }
-  jest.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -1, 800, 56))
+  const position = jest
+    .spyOn(sentinel, 'getBoundingClientRect')
+    .mockReturnValue(new DOMRect(0, -1, 800, 56))
   jest.spyOn(chapter, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -1, 800, 500))
   fireEvent.scroll(window)
   const header = screen.getByRole('banner')
@@ -90,9 +92,21 @@ test('moves reading controls into the existing header and preserves chapter and 
   expect(within(header).queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()
   fireEvent.keyDown(menu, { key: 'Escape' })
   expect(menu).toHaveAttribute('aria-expanded', 'true')
+
+  fireEvent.click(menu)
+  position.mockReturnValue(new DOMRect(0, 500, 800, 0))
+  fireEvent.scroll(window)
+  await waitFor(() => {
+    expect(within(header).queryByRole('button', { name: 'showSubmenu' })).not.toBeInTheDocument()
+  })
+
+  position.mockReturnValue(new DOMRect(0, -1, 800, 0))
+  fireEvent.scroll(window)
+  await within(header).findByRole('button', { name: 'The story / Preparation' })
+  expect(within(header).getByRole('button', { name: 'showMainMenu' })).toBeInTheDocument()
 })
 
-test('releases the dropdown scroll lock when an anchor returns above the reading section', async () => {
+test('keeps contextual navigation available when jumping back to the map overview', async () => {
   const scroll = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   const { container } = render(
     <ReadingNavigationProvider>
@@ -102,7 +116,6 @@ test('releases the dropdown scroll lock when an anchor returns above the reading
         languages={<span>EN</span>}
       />
       <PageMotion />
-      <HikeOverview map={<section id="map">Map overview</section>}>Resource links</HikeOverview>
       <HikeNavigation
         label="Sections"
         items={[
@@ -110,18 +123,23 @@ test('releases the dropdown scroll lock when an anchor returns above the reading
           { id: 'photos', label: 'Photographs' },
         ]}
       />
+      <HikeOverview map={<section id="map">Map overview</section>}>Resource links</HikeOverview>
       <section id="photos">Photos</section>
     </ReadingNavigationProvider>,
   )
   const sentinel = container.querySelector<HTMLElement>('[data-hike-navigation]')
   const overview = document.getElementById('resources')
-  if (!sentinel || !overview) {
+  const photos = document.getElementById('photos')
+  if (!sentinel || !overview || !photos) {
     throw new Error('Missing overview landmarks')
   }
   const position = jest
     .spyOn(sentinel, 'getBoundingClientRect')
     .mockReturnValue(new DOMRect(0, -1, 800, 0))
-  jest.spyOn(overview, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -500, 800, 500))
+  const overviewPosition = jest
+    .spyOn(overview, 'getBoundingClientRect')
+    .mockReturnValue(new DOMRect(0, -500, 800, 500))
+  const photoPosition = jest.spyOn(photos, 'getBoundingClientRect')
   fireEvent.scroll(window)
   const header = screen.getByRole('banner')
   const trigger = await within(header).findByRole('button', { name: 'Photographs' })
@@ -139,6 +157,15 @@ test('releases the dropdown scroll lock when an anchor returns above the reading
     expect(scroll).toHaveBeenCalled()
   })
   expect(window.location.hash).toBe('#resources')
+  position.mockReturnValue(new DOMRect(0, 0.5, 800, 0))
+  overviewPosition.mockReturnValue(new DOMRect(0, 0.5, 800, 500))
+  photoPosition.mockReturnValue(new DOMRect(0, 500, 800, 500))
+  fireEvent.scroll(window)
+  const mapTrigger = await within(header).findByRole('button', { name: 'More from this hike' })
+  fireEvent.keyDown(mapTrigger, { key: 'ArrowDown' })
+  expect(await screen.findByRole('menuitem', { name: 'Photographs' })).toBeInTheDocument()
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+
   position.mockReturnValue(new DOMRect(0, 500, 800, 0))
   fireEvent.scroll(window)
   await waitFor(() => {
