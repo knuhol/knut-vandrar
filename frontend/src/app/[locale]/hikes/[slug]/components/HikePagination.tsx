@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl'
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react'
 
+import { HikeKeyboardNavigation } from './HikeKeyboardNavigation'
+
 import type { getHikeNeighbors } from '@/api/hikes'
 import { Link } from '@/i18n/navigation'
 
@@ -19,6 +21,10 @@ export function HikePagination({
       aria-label={t('hikeNavigation')}
       className="grid grid-cols-1 gap-6 tablet:grid-cols-2 border-t border-beige pt-8"
     >
+      <HikeKeyboardNavigation
+        previousSlug={neighbors.previous?.slug}
+        nextSlug={neighbors.next?.slug}
+      />
       {(['previous', 'next'] as const).map((direction) => {
         const neighbor = neighbors[direction]
         if (!neighbor) {
@@ -31,6 +37,7 @@ export function HikePagination({
           <Link
             key={direction}
             href={{ pathname: '/hikes/[slug]', params: { slug: neighbor.slug } }}
+            aria-keyshortcuts={next ? 'ArrowRight' : 'ArrowLeft'}
             data-link-kind="directional"
             className={`directional-link group block min-w-0 text-forest ${next ? 'text-left tablet:col-start-2 tablet:text-right' : ''}`}
           >
