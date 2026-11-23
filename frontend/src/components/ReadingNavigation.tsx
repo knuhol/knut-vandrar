@@ -21,7 +21,7 @@ const ReadingNavigationContext = createContext<ReadingNavigationState>({
 })
 
 export function ReadingNavigationProvider({ children }: { children: ReactNode }) {
-  const [active, setReadingActive] = useState(false)
+  const [readingActive, setReadingActive] = useState(false)
   const [siteMenuOpen, setSiteMenuOpen] = useState(false)
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
   const setActive = useCallback((next: boolean) => {
@@ -31,8 +31,8 @@ export function ReadingNavigationProvider({ children }: { children: ReactNode })
     }
   }, [])
   const value = useMemo(
-    () => ({ active, setActive, siteMenuOpen, setSiteMenuOpen, slot, setSlot }),
-    [active, setActive, siteMenuOpen, slot],
+    () => ({ active: readingActive, setActive, siteMenuOpen, setSiteMenuOpen, slot, setSlot }),
+    [readingActive, setActive, siteMenuOpen, slot],
   )
 
   return <ReadingNavigationContext value={value}>{children}</ReadingNavigationContext>
