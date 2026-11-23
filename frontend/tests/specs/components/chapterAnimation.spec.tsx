@@ -124,6 +124,28 @@ test('an explicit chapter toggle uses the same height and arrow animation', () =
   expect(details).not.toHaveAttribute('open')
 })
 
+test('closing a chapter clears pointer focus and preserves keyboard focus', () => {
+  render(
+    <Chapter>
+      <summary tabIndex={0}>Preparation</summary>
+      <p>Chapter text</p>
+    </Chapter>,
+  )
+  const summary = screen.getByText('Preparation')
+  fireEvent.click(summary)
+  summary.focus()
+
+  fireEvent.click(summary, { detail: 0 })
+  animations[1].onfinish?.()
+  expect(summary).toHaveFocus()
+
+  fireEvent.click(summary)
+  fireEvent.click(summary, { detail: 1 })
+  expect(summary).toHaveFocus()
+  animations[3].onfinish?.()
+  expect(summary).not.toHaveFocus()
+})
+
 test('rating information animates when the info icon is clicked', () => {
   const { container } = render(
     <NextIntlClientProvider locale="en" messages={messages.en}>

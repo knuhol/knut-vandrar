@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 import { Analytics } from './components/Analytics/Analytics'
 import { ReadingNavigationProvider } from '@/components/ReadingNavigation'
 import { ImageMotion } from '@/components/ImageMotion'
+import { FocusIndicator } from '@/components/FocusIndicator'
 
 import '../globals.css'
 import { heading, body, numbers } from '@/styles/fonts'
@@ -72,6 +73,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <StructuredData data={identityData(locale)} />
           <PageMotion />
+          <FocusIndicator />
           <ImageMotion />
           <ReadingNavigationProvider>
             <Header locale={locale} />

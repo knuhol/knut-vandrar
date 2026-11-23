@@ -137,10 +137,28 @@
   opacity: 0;
 }
 
-.prose summary:is(:hover, :focus-visible, :active) :is(h2, h3)::before,
+:where(:root:not([data-touch-input])) .prose summary:focus-visible :is(h2, h3)::before,
 .prose details[data-expanded='true'] > summary :is(h2, h3)::before,
 .prose details[open]:not([data-expanded]) > summary :is(h2, h3)::before {
   opacity: 1;
+}
+
+.prose summary:focus-visible {
+  outline: none;
+
+  @media (forced-colors: active) {
+    outline: var(--focus-outline-width) solid Highlight;
+  }
+}
+
+:where(:root:not([data-touch-input])) .prose summary:focus-visible > .chapterArrow {
+  border-left-color: var(--color-orange-dark);
+}
+
+@media (hover: hover) {
+  :where(:root:not([data-touch-input])) .prose summary:hover :is(h2, h3)::before {
+    opacity: 1;
+  }
 }
 
 .article {
