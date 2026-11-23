@@ -1,6 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
 
 import { Chapter } from '@/components/Chapter/Chapter'
+import { setDisclosureExpanded } from '@/components/Disclosure/disclosureState'
+import { TrailRatings } from '@/app/[locale]/hikes/[slug]/components/TrailRatings'
+import { messages } from '@/i18n/messages'
 
 jest.mock('@/navigation/motion', () => ({
   cancelPageScroll: jest.fn(),
@@ -8,19 +12,33 @@ jest.mock('@/navigation/motion', () => ({
   scrollToElement: jest.fn().mockResolvedValue(true),
 }))
 
-type AnimationStub = { onfinish: (() => void) | null; cancel: () => void }
+type AnimationStub = {
+  onfinish: (() => void) | null
+  cancel: () => void
+  pause: () => void
+  play: () => void
+}
 const animations: AnimationStub[] = []
 const originalAnimate = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'animate')
+const animate = jest.fn<ReturnType<HTMLElement['animate']>, Parameters<HTMLElement['animate']>>(
+  () => {
+    const animation: AnimationStub = {
+      onfinish: null,
+      cancel: jest.fn(),
+      pause: jest.fn(),
+      play: jest.fn(),
+    }
+    animations.push(animation)
+    return animation as unknown as Animation
+  },
+)
 
 beforeEach(() => {
   animations.length = 0
+  animate.mockClear()
   Object.defineProperty(HTMLElement.prototype, 'animate', {
     configurable: true,
-    value: jest.fn(() => {
-      const animation: AnimationStub = { onfinish: null, cancel: jest.fn() }
-      animations.push(animation)
-      return animation as unknown as Animation
-    }),
+    value: animate,
   })
 })
 
@@ -35,7 +53,10 @@ afterEach(() => {
 test('starts closing the disclosure indicator with the content rather than after it finishes', () => {
   const { container } = render(
     <Chapter>
-      <summary>Preparation</summary>
+      <summary>
+        Preparation
+        <span data-disclosure-arrow aria-hidden="true" />
+      </summary>
       <p>Chapter text</p>
     </Chapter>,
   )
@@ -57,9 +78,79 @@ test('starts closing the disclosure indicator with the content rather than after
   fireEvent.click(summary)
   expect(details).toHaveAttribute('open')
   expect(details).toHaveAttribute('data-expanded', 'false')
-  expect(summary.style.getPropertyValue('--chapter-toggle-duration')).toBe('300ms')
+  const arrow = summary.querySelector('[data-disclosure-arrow]')
+  expect(animate.mock.contexts).toEqual([details, arrow, details, arrow])
+  expect(animate.mock.calls.map(([, timing]) => timing)).toEqual(
+    Array.from({ length: 4 }, () => ({ duration: 300, easing: 'ease-out', fill: 'backwards' })),
+  )
   act(() => {
-    animations[1].onfinish?.()
+    animations[2].onfinish?.()
   })
+  expect(details).not.toHaveAttribute('open')
+})
+
+test('an explicit chapter toggle uses the same height and arrow animation', () => {
+  const { container } = render(
+    <Chapter>
+      <summary>
+        Preparation
+        <span data-disclosure-arrow aria-hidden="true" />
+      </summary>
+      <p>Chapter text</p>
+    </Chapter>,
+  )
+  const details = container.querySelector('details')
+  if (!details) {
+    throw new Error('Missing chapter')
+  }
+
+  jest
+    .spyOn(details, 'getBoundingClientRect')
+    .mockImplementation(() => new DOMRect(0, 0, 500, details.open ? 120 : 32))
+  setDisclosureExpanded(details, true)
+  expect(details).toHaveAttribute('open')
+  expect(animate).toHaveBeenCalledTimes(2)
+  expect(animate).toHaveBeenNthCalledWith(1, [{ height: '32px' }, { height: '120px' }], {
+    duration: 300,
+    easing: 'ease-out',
+    fill: 'backwards',
+  })
+
+  setDisclosureExpanded(details, false)
+  expect(details).toHaveAttribute('open')
+  expect(details).toHaveAttribute('data-expanded', 'false')
+  expect(animate).toHaveBeenCalledTimes(4)
+  animations[2].onfinish?.()
+  expect(details).not.toHaveAttribute('open')
+})
+
+test('rating information animates when the info icon is clicked', () => {
+  const { container } = render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      <TrailRatings
+        ratings={{
+          facilities: 6,
+          maintenance: null,
+          resupplies: null,
+          publicTransport: null,
+          difficulty: null,
+        }}
+      />
+    </NextIntlClientProvider>,
+  )
+  const details = container.querySelector('details')
+  const icon = details?.querySelector('summary svg')
+  if (!details || !icon) {
+    throw new Error('Missing rating info disclosure')
+  }
+
+  fireEvent.click(icon)
+  expect(details).toHaveAttribute('open')
+  expect(animate.mock.contexts).toEqual([details])
+
+  fireEvent.click(icon)
+  expect(details).toHaveAttribute('open')
+  expect(animate.mock.contexts).toEqual([details, details])
+  animations[1].onfinish?.()
   expect(details).not.toHaveAttribute('open')
 })

@@ -3,7 +3,6 @@ import { useTranslations } from 'next-intl'
 
 import styles from './HikeMasthead.module.css'
 
-import { Eyebrow } from '@/components/Eyebrow'
 import { Heading } from '@/components/Heading'
 import { Container } from '@/components/Container'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
@@ -65,16 +64,18 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
               <HikeStatus status={hike.status} />
             </span>
           </div>
-          {period && (
-            <div className="mb-1">
-              <Eyebrow tone="inverse">
+          <Heading
+            tone="inverse"
+            eyebrow={
+              period && (
                 <time dateTime={period.start}>
                   {t('hikeSeason', { season: t(`seasons.${period.season}`), year: period.year })}
                 </time>
-              </Eyebrow>
-            </div>
-          )}
-          <Heading tone="inverse">{hike.translation.title}</Heading>
+              )
+            }
+          >
+            {hike.translation.title}
+          </Heading>
           {hike.translation.tagline && (
             <p className="mt-5 max-w-reading text-xl leading-relaxed text-cream">
               {hike.translation.tagline}

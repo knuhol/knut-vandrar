@@ -112,6 +112,12 @@ export default async function HikePage({ params }: Props) {
       : []),
   ]
 
+  const chapterControls = (
+    <div className="mb-4 empty:hidden">
+      <ChapterControls targetId="story" />
+    </div>
+  )
+
   return (
     <div>
       <StructuredData
@@ -174,26 +180,24 @@ export default async function HikePage({ params }: Props) {
       <div className="pt-10 tablet:pt-16">
         <Container>
           <div className="grid gap-12 tablet:gap-16">
-            <HikeSection
-              id="story"
-              title={t('about')}
-              as="article"
-              heading="prominent"
-              meta={<ChapterControls targetId="story" />}
-            >
+            <HikeSection id="story" title={t('about')} as="article" heading="prominent">
               <div>
                 {locale !== 'en' && (
                   <div className="mb-6">
                     <TranslationNotice />
                   </div>
                 )}
+                {!hike.translation.description_markdown && chapterControls}
                 {hike.translation.summary_markdown && (
                   <div className="mb-8">
                     <Markdown variant="article">{hike.translation.summary_markdown}</Markdown>
                   </div>
                 )}
                 {hike.translation.description_markdown && (
-                  <Markdown variant="article">{hike.translation.description_markdown}</Markdown>
+                  <>
+                    {chapterControls}
+                    <Markdown variant="article">{hike.translation.description_markdown}</Markdown>
+                  </>
                 )}
               </div>
             </HikeSection>

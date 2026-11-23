@@ -41,16 +41,18 @@
   @apply underline decoration-dotted hover:decoration-solid focus-visible:decoration-solid active:decoration-solid;
 }
 
-/* Keep existing underlines at the same distance in every interaction state. */
-a[href]:not([data-link-kind]),
-a[data-link-kind='card'] [data-link-label] {
+/* Keep text underlines at the same distance in every interaction state. */
+a[href]:not([data-link-kind]) {
   text-underline-offset: var(--link-underline-offset);
 }
 
 /* Text links share their active appearance, with contrast supplied by the surface. */
-a[href]:not([data-link-kind]):not([aria-current]):is(:hover, :focus-visible),
-a[data-link-kind='card']:is(:hover, :focus-visible) [data-link-label] {
+a[href]:not([data-link-kind]):not([aria-current]):is(:hover, :focus-visible) {
   @apply link-interaction;
+}
+
+@utility directional-link {
+  @apply hover:text-ink focus-visible:text-ink;
 }
 
 /* A small entrance for server-rendered content, shared across page templates. */

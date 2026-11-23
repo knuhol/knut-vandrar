@@ -25,8 +25,8 @@ export function InfoCard({
 }) {
   const film = emphasis === 'film'
   const compactSurface = film
-    ? 'border-orange bg-orange text-ink [--link-interaction-color:var(--color-ink)]'
-    : 'border-forest-outline border-l-orange bg-paper text-forest [--link-interaction-color:var(--color-forest)]'
+    ? 'border-orange bg-orange text-ink'
+    : 'border-forest-outline border-l-orange bg-paper text-forest'
   const compactInteraction = film
     ? 'hover:border-orange-dark hover:bg-orange-dark hover:shadow-sm focus-visible:border-orange-dark focus-visible:bg-orange-dark focus-visible:shadow-sm'
     : 'hover:border-forest hover:border-l-orange hover:shadow-sm focus-visible:border-forest focus-visible:border-l-orange focus-visible:shadow-sm'
@@ -59,7 +59,7 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`group relative flex w-full items-center gap-3 text-left min-h-20 rounded-sm border border-l-2 px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-(--duration-fast) ${compactSurface} ${interactive ? `cursor-pointer ${compactInteraction}` : 'opacity-60'}`}
+      className={`relative flex w-full items-center gap-3 text-left min-h-20 rounded-sm border border-l-2 px-3 py-2.5 ${compactSurface} ${interactive ? `cursor-pointer ${compactInteraction}` : 'opacity-60'}`}
     >
       <span className="grid shrink-0 place-items-center [&>svg]:size-5 size-6">{icon}</span>
       <span className="min-w-0 flex-1">
@@ -68,10 +68,7 @@ export function InfoCard({
         >
           {title}
         </span>
-        <span
-          data-link-label={interactive ? true : undefined}
-          className={`mt-1 no-underline! block text-xs leading-relaxed ${film ? 'text-ink' : 'text-muted group-hover:text-forest'}`}
-        >
+        <span className={`mt-1 block text-xs leading-relaxed ${film ? 'text-ink' : 'text-muted'}`}>
           {description}
         </span>
       </span>

@@ -7,7 +7,6 @@ import Image from 'next/image'
 import { IconArrowDown } from '@tabler/icons-react'
 
 import styles from './Hero.module.css'
-import { Eyebrow } from '@/components/Eyebrow'
 
 import { ButtonLink } from '@/components/Button'
 import { Heading } from '@/components/Heading'
@@ -86,11 +85,10 @@ export function Hero() {
             <SocialLinks profiles={['instagram', 'youtube']} variant="compact" />
           </div>
           <div className="min-w-0 desktop:col-start-1 desktop:row-start-1">
-            <div className="mb-1">
-              <Eyebrow>{t('heroEyebrow')}</Eyebrow>
-            </div>
             <div className="mb-4.5 max-w-80 tablet:max-w-162.5">
-              <Heading tone="brand">{t('title')}</Heading>
+              <Heading tone="brand" eyebrow={t('heroEyebrow')}>
+                {t('title')}
+              </Heading>
             </div>
             <p className="mb-3.5 max-w-80 text-lg tablet:max-w-117.5 tablet:text-xl">
               {t('intro')}

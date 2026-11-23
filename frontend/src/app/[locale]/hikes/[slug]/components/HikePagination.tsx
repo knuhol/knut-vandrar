@@ -31,10 +31,11 @@ export function HikePagination({
           <Link
             key={direction}
             href={{ pathname: '/hikes/[slug]', params: { slug: neighbor.slug } }}
-            className={`block min-w-0 text-forest ${next ? 'text-left tablet:col-start-2 tablet:text-right' : ''}`}
+            data-link-kind="directional"
+            className={`directional-link group block min-w-0 text-forest ${next ? 'text-left tablet:col-start-2 tablet:text-right' : ''}`}
           >
             <span
-              className={`inline-flex items-center gap-2 text-sm text-muted ${next ? 'flex-row-reverse' : ''}`}
+              className={`inline-flex items-center gap-2 text-sm text-muted group-hover:text-forest group-focus-visible:text-forest ${next ? 'flex-row-reverse' : ''}`}
             >
               <Arrow className="size-5 text-forest" aria-hidden="true" />
               {t(next ? 'nextHike' : 'previousHike')}

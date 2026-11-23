@@ -27,6 +27,12 @@ export function Markdown({
         rehypePlugins={[[collapsibleSections, { chapterLevel: variant === 'article' ? 3 : 2 }]]}
         components={{
           details: ({ children: content }) => <Chapter>{content}</Chapter>,
+          summary: ({ children: content }) => (
+            <summary>
+              {content}
+              <span className={styles.chapterArrow} data-disclosure-arrow aria-hidden="true" />
+            </summary>
+          ),
           table: ({ children: content }) => (
             <div className={styles.tableScroll}>
               <table>{content}</table>

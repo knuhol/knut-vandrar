@@ -2,7 +2,6 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import { Button } from '@/components/Button'
-import { Eyebrow } from '@/components/Eyebrow'
 import { Heading } from '@/components/Heading'
 import { Logo } from '@/components/Logo'
 import { messages } from '@/i18n/messages'
@@ -42,10 +41,7 @@ export default async function PreviewPage({
         <div className="mb-8">
           <Logo size="compact" />
         </div>
-        <div className="mb-1">
-          <Eyebrow>{t.eyebrow}</Eyebrow>
-        </div>
-        <Heading className="text-3xl" id="preview-title" tone="brand">
+        <Heading className="text-3xl" id="preview-title" tone="brand" eyebrow={t.eyebrow}>
           {t.title}
         </Heading>
         <p className="mt-4 text-muted">{t.description}</p>

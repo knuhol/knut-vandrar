@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
 import { Container } from './Container'
-import { Eyebrow } from './Eyebrow'
 import { Heading } from './Heading'
 import type { UIComponentProps } from './uiComponentProps'
 
@@ -32,10 +31,9 @@ export function PageHeader({
           }
         >
           <div className="min-w-0">
-            <div className="mb-1">
-              <Eyebrow>{eyebrow}</Eyebrow>
-            </div>
-            <Heading tone="brand">{title}</Heading>
+            <Heading tone="brand" eyebrow={eyebrow}>
+              {title}
+            </Heading>
             <p
               className={
                 media ? 'mt-6 max-w-reading text-xl text-forest' : 'mt-6 text-xl text-forest'
