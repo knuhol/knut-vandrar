@@ -8,7 +8,7 @@ export function Disclosure({ children }: { children: ReactNode }) {
   const element = useDisclosure()
 
   return (
-    <details ref={element} className="overflow-clip">
+    <details ref={element} className="overflow-clip [&>summary]:focus-inset">
       {children}
     </details>
   )
