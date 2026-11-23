@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { HikeSection } from '../HikeSection/HikeSection'
 
 import styles from './HikeGallery.module.css'
@@ -49,9 +49,60 @@ function PhotoViewer({
   const touchStart = useRef<number | null>(null)
   const [index, setIndex] = useState(initialIndex)
   const photo = photos[index]
+  const viewport = useRef<HTMLDivElement>(null)
+  const imageFrame = useRef<HTMLDivElement>(null)
+  const caption = useRef<HTMLDivElement>(null)
+  const previous = useRef<HTMLDivElement>(null)
+  const next = useRef<HTMLDivElement>(null)
+  const [captionFitsBelow, setCaptionFitsBelow] = useState(false)
+  const [previousFitsOutside, setPreviousFitsOutside] = useState(false)
+  const [nextFitsOutside, setNextFitsOutside] = useState(false)
+  const showCaption = Boolean(error || photo.caption)
 
   const [loading, setLoading] = useState(false)
   const moving = useRef(false)
+
+  useEffect(() => {
+    const viewer = viewport.current
+    const frame = imageFrame.current
+    const text = caption.current
+    const previousArrow = previous.current
+    const nextArrow = next.current
+    if (
+      !viewer ||
+      !frame ||
+      !previousArrow ||
+      !nextArrow ||
+      typeof ResizeObserver === 'undefined'
+    ) {
+      return
+    }
+
+    const observer = new ResizeObserver(() => {
+      const viewerBounds = viewer.getBoundingClientRect()
+      const imageBounds = frame.getBoundingClientRect()
+      const captionHeight = text?.getBoundingClientRect().height ?? 0
+      const previousWidth = previousArrow.getBoundingClientRect().width
+      const nextWidth = nextArrow.getBoundingClientRect().width
+      setCaptionFitsBelow(
+        captionHeight > 0 && captionHeight <= viewerBounds.bottom - imageBounds.bottom,
+      )
+      setPreviousFitsOutside(
+        previousWidth > 0 && previousWidth <= imageBounds.left - viewerBounds.left,
+      )
+      setNextFitsOutside(nextWidth > 0 && nextWidth <= viewerBounds.right - imageBounds.right)
+    })
+    observer.observe(viewer)
+    observer.observe(frame)
+    observer.observe(previousArrow)
+    observer.observe(nextArrow)
+    if (text) {
+      observer.observe(text)
+    }
+    return () => {
+      observer.disconnect()
+    }
+  }, [showCaption])
 
   async function move(direction: number) {
     if (moving.current || index + direction < 0) {
@@ -85,8 +136,9 @@ function PhotoViewer({
         }
       }}
     >
-      <div className="relative grid h-full w-full place-items-center">
+      <div ref={viewport} className="relative grid h-full w-full place-items-center">
         <div
+          ref={imageFrame}
           className="relative touch-pan-y"
           style={{
             aspectRatio: `${String(photo.width)} / ${String(photo.height)}`,
@@ -117,7 +169,10 @@ function PhotoViewer({
             className="object-contain"
             unoptimized
           />
-          <div className={`${styles.previous} absolute top-1/2 -translate-y-1/2`}>
+          <div
+            ref={previous}
+            className={`${styles.previous} absolute top-1/2 flex w-max -translate-y-1/2 ${previousFitsOutside ? 'right-full' : 'left-0'}`}
+          >
             <MediaControl
               action="previous"
               label={t('previous')}
@@ -127,7 +182,10 @@ function PhotoViewer({
               }}
             />
           </div>
-          <div className={`${styles.next} absolute top-1/2 -translate-y-1/2`}>
+          <div
+            ref={next}
+            className={`${styles.next} absolute top-1/2 flex w-max -translate-y-1/2 ${nextFitsOutside ? 'left-full' : 'right-0'}`}
+          >
             <MediaControl
               action="next"
               label={t('next')}
@@ -137,8 +195,11 @@ function PhotoViewer({
               }}
             />
           </div>
-          {(error || photo.caption) && (
-            <div className={`${styles.caption} absolute inset-x-0 bottom-0 text-center`}>
+          {showCaption && (
+            <div
+              ref={caption}
+              className={`${styles.caption} absolute inset-x-0 text-center ${captionFitsBelow && !error ? 'top-full' : 'bottom-0'}`}
+            >
               <p
                 className={`${styles.overlayText} inline-block max-h-[50dvh] overflow-y-auto`}
                 role={error ? 'alert' : undefined}

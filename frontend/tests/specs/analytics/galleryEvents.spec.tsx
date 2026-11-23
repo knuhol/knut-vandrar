@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { HikeGallery } from '@/app/[locale]/hikes/[slug]/components/HikeGallery/HikeGallery'
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
@@ -18,8 +18,8 @@ jest.mock('@/components/MediaModal/MediaModal', () => ({
   ),
 }))
 
-test('records gallery openings, but not navigation between photos', () => {
-  render(
+function renderGallery() {
+  return render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
       <HikeGallery
         hikeId="123"
@@ -45,6 +45,10 @@ test('records gallery openings, but not navigation between photos', () => {
       />
     </NextIntlClientProvider>,
   )
+}
+
+test('records gallery openings, but not navigation between photos', () => {
+  renderGallery()
   expect(trackHikeInteraction).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Open photo 1: Photo 1' }))
   expect(trackHikeInteraction).toHaveBeenCalledWith({
@@ -60,4 +64,53 @@ test('records gallery openings, but not navigation between photos', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Close gallery' }))
   fireEvent.click(screen.getByRole('button', { name: 'Open photo 2: Photo 2' }))
   expect(trackHikeInteraction).toHaveBeenCalledTimes(2)
+})
+
+test('moves the photo caption and arrows outside only when there is room', () => {
+  const originalObserver = globalThis.ResizeObserver
+  let notify: () => void = jest.fn()
+  globalThis.ResizeObserver = class {
+    observe = jest.fn()
+    unobserve = jest.fn()
+    disconnect = jest.fn()
+
+    constructor(callback: ResizeObserverCallback) {
+      notify = () => {
+        callback([], this)
+      }
+    }
+  }
+
+  try {
+    renderGallery()
+    fireEvent.click(screen.getByRole('button', { name: 'Open photo 1: Photo 1' }))
+    const caption = screen.getByText('Photo 1').parentElement
+    const frame = caption?.parentElement
+    const viewer = frame?.parentElement
+    const previous = screen.getByRole('button', { name: 'Previous photo' }).parentElement
+    const next = screen.getByRole('button', { name: 'Next photo' }).parentElement
+    if (!caption || !frame || !viewer || !previous || !next) {
+      throw new Error('Missing gallery controls')
+    }
+    jest.spyOn(caption, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 70))
+    jest.spyOn(viewer, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600))
+    jest.spyOn(previous, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 60, 44))
+    jest.spyOn(next, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 60, 44))
+    const frameBounds = jest
+      .spyOn(frame, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(100, 100, 600, 400))
+
+    act(notify)
+    expect(caption).toHaveClass('top-full')
+    expect(previous).toHaveClass('right-full')
+    expect(next).toHaveClass('left-full')
+
+    frameBounds.mockReturnValue(new DOMRect(0, 10, 800, 580))
+    act(notify)
+    expect(caption).toHaveClass('bottom-0')
+    expect(previous).toHaveClass('left-0')
+    expect(next).toHaveClass('right-0')
+  } finally {
+    globalThis.ResizeObserver = originalObserver
+  }
 })
