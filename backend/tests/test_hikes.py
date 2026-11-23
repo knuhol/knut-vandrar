@@ -1,5 +1,6 @@
 """Hike and location API behavior, ordering, and validation."""
 
+import re
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from typing import cast
@@ -8,12 +9,13 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
+from sqlalchemy import event
 from sqlalchemy.orm import Session, sessionmaker
 
 from knut_vandrar_backend.api.hikes import _duration_days
 from knut_vandrar_backend.main import app
 from knut_vandrar_backend.models.enums import HikeStatus
-from knut_vandrar_backend.models.hike import Hike, HikeTranslation
+from knut_vandrar_backend.models.hike import Hike, HikeCoverAsset, HikeCoverImage, HikeTranslation
 from knut_vandrar_backend.models.reference import InfoCardType
 from tests.helpers import _db_session, _get_jobs, _planned_payload, _png_image
 
@@ -169,7 +171,7 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
     assert hike["cover_image_url"] is None
     assert hike["cards"] == [{"type": "youtube_video", "url": "https://youtu.be/dQw4w9WgXcQ"}]
 
-    image_bytes = _png_image((2400, 1200))
+    image_bytes = _png_image((4200, 2100))
     uploaded = client.put(
         f"/api/hikes/{hike['id']}/cover-image",
         content=image_bytes,
@@ -181,9 +183,20 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
     served = client.get(image_url)
     assert served.status_code == 200
     with Image.open(BytesIO(served.content)) as image:
-        assert image.size == (1920, 960)
+        assert image.size == (3840, 1920)
         assert image.format == "WEBP"
     assert served.headers["content-type"] == "image/webp"
+    for variant, size in [("mobile", (1600, 800)), ("card", (960, 480))]:
+        derivative = client.get(image_url, params={"variant": variant})
+        assert derivative.status_code == 200
+        assert derivative.headers["etag"] != served.headers["etag"]
+        with Image.open(BytesIO(derivative.content)) as image:
+            assert image.size == size
+    assert client.get(image_url, params={"variant": "original"}).status_code == 422
+    with _db_session(client) as db:
+        original = db.get(HikeCoverAsset, (UUID(hike["id"]), "original"))
+        assert original is not None
+        assert original.content == image_bytes
 
     listed = client.get("/api/hikes?locale=en")
     assert listed.json()["items"][0]["cover_image_url"] == image_url
@@ -191,6 +204,69 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
     deleted = client.delete(f"/api/hikes/{hike['id']}/cover-image")
     assert deleted.status_code == 204
     assert client.get(image_url).status_code == 404
+    with _db_session(client) as db:
+        assert db.get(HikeCoverAsset, (UUID(hike["id"]), "original")) is None
+
+
+@pytest.mark.parametrize("variant", [None, "card", "mobile"])
+def test_cover_revalidation_does_not_load_image_bytes(
+    client: TestClient, variant: str | None
+) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    url = f"/api/hikes/{hike['id']}/cover-image"
+    assert client.put(url, content=_png_image((40, 20))).status_code == 200
+    params = {"variant": variant} if variant else {}
+    served = client.get(url, params=params)
+    statements: list[str] = []
+    with _db_session(client) as db:
+        engine = db.get_bind()
+
+    def record_sql(*args: object) -> None:
+        statements.append(str(args[2]))
+
+    event.listen(engine, "before_cursor_execute", record_sql)
+    try:
+        response = client.get(url, params=params, headers={"If-None-Match": served.headers["etag"]})
+    finally:
+        event.remove(engine, "before_cursor_execute", record_sql)
+    assert response.status_code == 304
+    assert response.content == b""
+    assert statements
+    assert not any(re.search(r"\.content\b", statement) for statement in statements)
+
+
+def test_replacing_raster_cover_with_svg_removes_old_variants(client: TestClient) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    url = f"/api/hikes/{hike['id']}/cover-image"
+    assert client.put(url, content=_png_image((40, 20))).status_code == 200
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"/>'
+    assert client.put(url, content=svg).status_code == 200
+    for variant in ("card", "mobile"):
+        response = client.get(url, params={"variant": variant})
+        assert response.content == svg
+        assert response.headers["content-type"] == "image/svg+xml"
+    with _db_session(client) as db:
+        cover = db.get(HikeCoverImage, UUID(hike["id"]))
+        assert cover is not None
+        assert set(cover.assets) == {"original"}
+        assert cover.assets["original"].content == svg
+
+
+def test_legacy_cover_serves_the_stored_image_for_variant_requests(client: TestClient) -> None:
+    hike = client.post("/api/hikes", json=_planned_payload()).json()
+    with _db_session(client) as db:
+        db.add(
+            HikeCoverImage(
+                hike_id=UUID(hike["id"]),
+                content=_png_image((400, 200)),
+                content_type="image/png",
+                sha256="a" * 64,
+            )
+        )
+        db.commit()
+
+    url = f"/api/hikes/{hike['id']}/cover-image"
+    assert client.get(url, params={"variant": "card"}).content == client.get(url).content
 
 
 def test_youtube_card_rejects_non_youtube_url(client: TestClient) -> None:

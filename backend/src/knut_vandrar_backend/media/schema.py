@@ -9,9 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from knut_vandrar_backend.media.storage import PHOTO_FILES
 from knut_vandrar_backend.models.enums import TranslationReviewStatus
+from knut_vandrar_backend.models.hike import COVER_ASSET_NAMES
 from knut_vandrar_backend.tracks.sources import TRACK_SOURCE_ID_PATTERN
 
-FORMAT_VERSION: Literal[4] = 4
+FORMAT_VERSION: Literal[5] = 5
 MAX_RECORD_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 25_000_000
 DEFAULT_MAX_BYTES = 100 * 1024**3
@@ -24,7 +25,7 @@ class Record(BaseModel):
 
 class Manifest(Record):
     format: Literal["knut-vandrar-media"] = "knut-vandrar-media"
-    version: Literal[1, 2, 3, 4] = FORMAT_VERSION
+    version: Literal[1, 2, 3, 4, 5] = FORMAT_VERSION
     schema_revision: str = Field(min_length=1, max_length=100)
 
 
@@ -129,8 +130,17 @@ class Asset(Record):
                     or text.review_status != TranslationReviewStatus.SOURCE
                 ):
                     raise ValueError("English must describe the current source revision")
-        elif self.id != self.owner_id or set(self.files) != {"image"} or self.translations:
-            raise ValueError("Covers/logos require an owner ID and a single image")
+        else:
+            allowed = {"image", *COVER_ASSET_NAMES} if self.kind == "cover" else {"image"}
+            if (
+                self.id != self.owner_id
+                or "image" not in self.files
+                or not self.files.keys() <= allowed
+                or self.translations
+                or self.files.keys() & {"mobile", "card"}
+                and self.content_type != "image/webp"
+            ):
+                raise ValueError("Invalid cover or location logo asset")
         return self
 
     def file_path(self, variant: str) -> str:

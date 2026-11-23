@@ -10,7 +10,7 @@ import { HikeStatus } from './HikeStatus'
 
 import { Heading } from '@/components/Heading'
 import { ButtonLink } from '@/components/Button'
-import { imageUrl } from '@/api/images'
+import { coverImageUrl } from '@/api/images'
 import type { HikeSummary } from '@/api/hikes'
 import { hikeSeason } from '@/hiking/season'
 
@@ -23,7 +23,7 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
       <div className="relative h-60 shrink-0 bg-cream tablet:h-56.25">
         {hike.cover_image_url ? (
           <Image
-            src={imageUrl(hike.cover_image_url)}
+            src={coverImageUrl(hike.cover_image_url, 'card')}
             alt={hike.translation.title}
             fill
             className="object-cover"

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -24,7 +24,7 @@ from sqlalchemy import (
     Enum as SqlEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
 
 from knut_vandrar_backend.database.base import Base
 from knut_vandrar_backend.models.enums import (
@@ -158,6 +158,10 @@ class Hike(Base):
     )
 
 
+CoverVariant = Literal["card", "mobile"]
+COVER_ASSET_NAMES = frozenset({"original", "card", "mobile"})
+
+
 class HikeCoverImage(Base):
     __tablename__ = "hike_cover_images"
 
@@ -165,9 +169,34 @@ class HikeCoverImage(Base):
         ForeignKey("hikes.id", ondelete="CASCADE"), primary_key=True
     )
     content_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     hike: Mapped[Hike] = relationship(back_populates="cover_image")
+    assets: Mapped[dict[str, "HikeCoverAsset"]] = relationship(
+        collection_class=attribute_keyed_dict("kind"), cascade="all, delete-orphan"
+    )
+
+    def set_asset(self, kind: str, content: bytes, sha256: str) -> None:
+        asset = self.assets.get(kind)
+        if asset is None:
+            asset = HikeCoverAsset(kind=kind)
+            self.assets[kind] = asset
+        asset.content = content
+        asset.sha256 = sha256
+
+
+class HikeCoverAsset(Base):
+    __tablename__ = "hike_cover_assets"
+    __table_args__ = (
+        CheckConstraint("kind IN ('original', 'card', 'mobile')", name="ck_hike_cover_asset_kind"),
+    )
+
+    hike_id: Mapped[UUID] = mapped_column(
+        ForeignKey("hike_cover_images.hike_id", ondelete="CASCADE"), primary_key=True
+    )
+    kind: Mapped[str] = mapped_column(String(16), primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
 
 
 class HikeTranslation(Base):

@@ -19,7 +19,7 @@ from knut_vandrar_backend.api.image_uploads import (
     IMAGE_RESPONSES,
     PhotoBody,
     image_response,
-    optimize_image,
+    optimize_images,
 )
 from knut_vandrar_backend.api.locations import read_location
 from knut_vandrar_backend.api.schemas.hike import (
@@ -40,7 +40,9 @@ from knut_vandrar_backend.api.schemas.pagination import Limit, Offset, Page
 from knut_vandrar_backend.database.dependencies import get_db
 from knut_vandrar_backend.models.enums import HikeStatus, TranslationReviewStatus
 from knut_vandrar_backend.models.hike import (
+    CoverVariant,
     Hike,
+    HikeCoverAsset,
     HikeCoverImage,
     HikeInfoCard,
     HikeSlugAlias,
@@ -60,6 +62,7 @@ from knut_vandrar_backend.translations.core import (
 
 router = APIRouter(prefix="/api/hikes", tags=["hikes"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
+COVER_VARIANTS = {"image": (3840, 86), "mobile": (1600, 82), "card": (960, 82)}
 
 
 @router.get("", response_model=Page[HikeSummaryRead])
@@ -194,16 +197,18 @@ def get_hike(
     response_class=Response,
     responses=IMAGE_RESPONSES,
 )
-def get_hike_cover_image(hike_id: UUID, request: Request, db: DatabaseSession) -> Response:
-    hike = db.get(Hike, hike_id)
-    if hike is None or hike.cover_image is None:
+def get_hike_cover_image(
+    hike_id: UUID, request: Request, db: DatabaseSession, variant: CoverVariant | None = None
+) -> Response:
+    if variant is not None:
+        asset = db.get(HikeCoverAsset, (hike_id, variant))
+        if asset is not None:
+            return image_response(lambda: asset.content, "image/webp", asset.sha256, request)
+
+    cover = db.get(HikeCoverImage, hike_id)
+    if cover is None:
         raise HTTPException(status_code=404, detail="Hike cover image not found")
-    return image_response(
-        hike.cover_image.content,
-        hike.cover_image.content_type,
-        hike.cover_image.sha256,
-        request,
-    )
+    return image_response(lambda: cover.content, cover.content_type, cover.sha256, request)
 
 
 @router.get(
@@ -366,17 +371,26 @@ def delete_hike(hike_id: UUID, db: DatabaseSession) -> Response:
 def upload_hike_cover_image(
     hike_id: UUID, content: PhotoBody, request: Request, db: DatabaseSession
 ) -> HikeRead:
-    hike = db.get(Hike, hike_id)
+    hike = db.get(Hike, hike_id, with_for_update=True)
     if hike is None:
         raise HTTPException(status_code=404, detail="Hike not found")
     translation = _translation(db, hike.id, SOURCE_LOCALE)
     if translation is None:
         raise HTTPException(status_code=409, detail="English source translation is missing")
-    cover_image = hike.cover_image or HikeCoverImage(hike_id=hike.id)
-    content, content_type = optimize_image(content, max_dimension=1920)
+    variants, content_type = optimize_images(content, COVER_VARIANTS)
+    cover_image = db.get(HikeCoverImage, hike.id, with_for_update=True) or HikeCoverImage(
+        hike_id=hike.id
+    )
     cover_image.content_type = content_type
-    cover_image.content = content
-    cover_image.sha256 = hashlib.sha256(content).hexdigest()
+    cover_image.content = variants.pop("image")
+    cover_image.sha256 = hashlib.sha256(cover_image.content).hexdigest()
+    if content_type == "image/svg+xml":
+        variants.clear()
+    variants["original"] = content
+    for kind in cover_image.assets.keys() - variants.keys():
+        del cover_image.assets[kind]
+    for kind, value in variants.items():
+        cover_image.set_asset(kind, value, hashlib.sha256(value).hexdigest())
     hike.cover_image = cover_image
     db.commit()
     db.refresh(hike)
@@ -385,7 +399,7 @@ def upload_hike_cover_image(
 
 @router.delete("/{hike_id}/cover-image", status_code=status.HTTP_204_NO_CONTENT)
 def delete_hike_cover_image(hike_id: UUID, db: DatabaseSession) -> Response:
-    hike = db.get(Hike, hike_id)
+    hike = db.get(Hike, hike_id, with_for_update=True)
     if hike is None:
         raise HTTPException(status_code=404, detail="Hike not found")
     if hike.cover_image is not None:

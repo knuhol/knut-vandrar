@@ -71,9 +71,15 @@ def _validate_images(asset: Asset, staging: Path) -> None:
     for variant in asset.files:
         path = staging / asset.file_path(variant)
         if asset.kind != "photo":
-            if detect_image_type(path.read_bytes()) != asset.content_type:
+            content_type = detect_image_type(path.read_bytes())
+            is_cover_original = asset.kind == "cover" and variant == "original"
+            if content_type != asset.content_type and not (
+                is_cover_original
+                and asset.content_type == "image/webp"
+                and content_type != "image/svg+xml"
+            ):
                 raise MediaError(f"Content type mismatch: {asset.kind}/{asset.id}")
-            if asset.content_type == "image/svg+xml":
+            if content_type == "image/svg+xml":
                 continue
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -323,7 +329,20 @@ def _plan(
                     and image.content_type == asset.content_type
                     and hashlib.sha256(image.content).hexdigest() == asset.files["image"].sha256
                 )
-                action = "skip" if same else "replace"
+                missing = False
+                if same and isinstance(image, HikeCoverImage):
+                    for kind in asset.files.keys() - {"image"}:
+                        existing_asset = image.assets.get(kind)
+                        if existing_asset is None:
+                            missing = True
+                        elif (
+                            existing_asset.sha256 != asset.files[kind].sha256
+                            or hashlib.sha256(existing_asset.content).hexdigest()
+                            != existing_asset.sha256
+                        ):
+                            same = False
+                            break
+                action = ("repair" if missing else "skip") if same else "replace"
         if action == "replace" and not replace:
             report.conflict(f"{asset.kind}/{asset.id}: existing image or metadata differs")
             action = "conflict"
@@ -494,6 +513,16 @@ def import_archive(
                                 )
                                 db.add(image)
                             path = staging / asset.kind / source_id / "image"
+                            if isinstance(image, HikeCoverImage):
+                                if (
+                                    action == "replace"
+                                    and image.sha256 != asset.files["image"].sha256
+                                ):
+                                    for kind in image.assets.keys() - asset.files.keys():
+                                        del image.assets[kind]
+                                for kind in asset.files.keys() - {"image"}:
+                                    content = (path.parent / kind).read_bytes()
+                                    image.set_asset(kind, content, asset.files[kind].sha256)
                             image.content = path.read_bytes()
                             image.content_type = asset.content_type
                             image.sha256 = asset.files["image"].sha256

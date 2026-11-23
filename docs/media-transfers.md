@@ -124,7 +124,7 @@ translation profiles, or other reference data.
 
 | Content | Transfer behavior |
 | --- | --- |
-| Covers and location logos | Exact stored bytes, content type, and checksum |
+| Covers and location logos | Exact stored bytes, content type, and checksum. Covers also include the private original and responsive variants when available. |
 | Gallery photos | Exact private original, thumbnail, and fullscreen bytes; no re-encoding |
 | Photo metadata | Dimensions, English source, captions, alt text, translations, review state, and translation provenance |
 | Photo order | Existing destination order stays intact; additions are appended in source order |

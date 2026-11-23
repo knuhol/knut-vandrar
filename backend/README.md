@@ -165,6 +165,17 @@ pending jobs are preserved by the migration. No translation content is deleted.
 
 `GET /api/translations/candidates` requires the admin Bearer token even though it is a read. It accepts the same filters as `/requeue` as query parameters, plus `limit` (1–100, default 10) and `offset`. The response is a paginated list of matching entity/language pairs with the English title, review status, missing/outdated flags, and `already_queued` for an active explicitly requested job matching the current source/profile. Manual translations are excluded. Preview and enqueue share database-side selection logic. Previewing does not create jobs, update translations, or call the provider; the list can change before a later explicit request.
 
+## Hike covers
+
+New raster cover uploads keep the exact original privately in PostgreSQL and produce
+WebP files for the full-width masthead (up to 3840 px on the longest side, quality 86),
+smaller screens (1600 px, quality 82), and hike cards (960 px, quality 82). The upload
+never enlarges the input. SVG covers retain their existing scalable delivery.
+Public cover URLs serve the full cover by default and accept `variant=mobile` or
+`variant=card`. Existing covers use their stored image for all sizes until re-uploaded
+from an original. Database backups and media exports include the private originals
+for new uploads, which may contain EXIF or GPS metadata.
+
 ## Hike photo galleries
 
 Media can be transferred between environments with the backend CLI and Docker/SSH

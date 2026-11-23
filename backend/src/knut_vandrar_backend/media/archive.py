@@ -25,13 +25,14 @@ from knut_vandrar_backend.media.schema import (
     PhotoText,
 )
 from knut_vandrar_backend.media.storage import PHOTO_FILES, photo_files_directory
-from knut_vandrar_backend.models.hike import Hike, HikeCoverImage
+from knut_vandrar_backend.models.hike import COVER_ASSET_NAMES, Hike, HikeCoverAsset, HikeCoverImage
 from knut_vandrar_backend.models.location import HikingLocation, LocationLogo
 from knut_vandrar_backend.models.photo import Photo, PhotoTranslation
 
 FILE_PATH = re.compile(
     rf"(?:photo/[0-9a-f-]{{36}}/(?:{'|'.join(PHOTO_FILES)})"
-    r"|map/[0-9a-f-]{36}/[a-z][a-z0-9_-]{0,39}|(?:cover|logo)/[0-9a-f-]{36}/image|gpx/[0-9a-f-]{36}/track)\Z"
+    rf"|cover/[0-9a-f-]{{36}}/(?:image|{'|'.join(sorted(COVER_ASSET_NAMES))})"
+    r"|map/[0-9a-f-]{36}/[a-z][a-z0-9_-]{0,39}|logo/[0-9a-f-]{36}/image|gpx/[0-9a-f-]{36}/track)\Z"
 )
 
 
@@ -140,17 +141,25 @@ def export_archive(
         ):
             cover = db.get(HikeCoverImage, hike.id)
             if cover is not None:
-                digest = hashlib.sha256(cover.content).hexdigest()
-                if digest != cover.sha256:
-                    raise MediaError(f"Cover checksum mismatch: {hike.id}")
+                files = {}
+                images_by_name: dict[str, HikeCoverImage | HikeCoverAsset] = {
+                    "image": cover,
+                    **cover.assets,
+                }
+                for name, cover_file in images_by_name.items():
+                    content = cover_file.content
+                    digest = hashlib.sha256(content).hexdigest()
+                    if digest != cover_file.sha256:
+                        raise MediaError(f"Cover checksum mismatch: {hike.id}/{name}")
+                    files[name] = ImageFile(sha256=digest, size=len(content))
+                    _add_bytes(archive, f"cover/{hike.id}/{name}", content)
                 asset = Asset(
                     kind="cover",
                     id=hike.id,
                     owner_id=hike.id,
                     content_type=cover.content_type,
-                    files={"image": ImageFile(sha256=digest, size=len(cover.content))},
+                    files=files,
                 )
-                _add_bytes(archive, asset.file_path("image"), cover.content)
                 write_asset(asset)
             from knut_vandrar_backend.maps.assets import images, metadata
 

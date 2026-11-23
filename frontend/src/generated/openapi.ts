@@ -975,6 +975,26 @@ export const openapi = {
               "format": "uuid",
               "title": "Hike Id"
             }
+          },
+          {
+            "name": "variant",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "card",
+                    "mobile"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Variant"
+            }
           }
         ],
         "responses": {
