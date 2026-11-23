@@ -148,14 +148,17 @@
 }
 
 .article details {
-  max-inline-size: calc(var(--container-prose) + var(--chapter-indent));
+  max-inline-size: var(
+    --article-max-inline-size,
+    calc(var(--container-prose) + var(--chapter-indent))
+  );
 }
 
 .article p,
 .article ul,
 .article ol,
 .article blockquote {
-  max-width: var(--container-prose);
+  max-inline-size: var(--article-max-inline-size, var(--container-prose));
 }
 
 .article p {

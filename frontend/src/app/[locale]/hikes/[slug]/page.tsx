@@ -16,6 +16,7 @@ import { HikeOverview } from './components/HikeOverview/HikeOverview'
 import { HikeJourney, hasHikeJourney } from './components/HikeJourney'
 import { TrailFooter } from './components/TrailFooter/TrailFooter'
 import { TrailFacts } from './components/TrailFacts'
+import { FootstepTrail } from './components/FootstepTrail'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
 
 import { HikeFacts } from './components/HikeFacts'
@@ -117,6 +118,13 @@ export default async function HikePage({ params }: Props) {
       <ChapterControls targetId="story" />
     </div>
   )
+  const showFootsteps = Boolean(
+    hike.translation.summary_markdown || hike.translation.description_markdown,
+  )
+  const hasTrailFooter = Boolean(hike.location && locationData)
+  const storyWidth = showFootsteps
+    ? '@footstep-story/hike-story:pr-(--spacing-footstep-gutter) @max-footstep-story/hike-story:[--article-max-inline-size:none]'
+    : '[--article-max-inline-size:none]'
 
   return (
     <div>
@@ -177,43 +185,46 @@ export default async function HikePage({ params }: Props) {
         )}
       </section>
       <HikeNavigation label={t('pageContents')} items={navigationItems} />
-      <div className="pt-10 tablet:pt-16">
-        <Container>
-          <div className="grid gap-12 tablet:gap-16">
-            <HikeSection id="story" title={t('about')} as="article" heading="prominent">
-              <div>
-                {locale !== 'en' && (
-                  <div className="mb-6">
-                    <TranslationNotice />
-                  </div>
-                )}
-                {!hike.translation.description_markdown && chapterControls}
-                {hike.translation.summary_markdown && (
-                  <div className="mb-8">
-                    <Markdown variant="article">{hike.translation.summary_markdown}</Markdown>
-                  </div>
-                )}
-                {hike.translation.description_markdown && (
-                  <>
-                    {chapterControls}
-                    <Markdown variant="article">{hike.translation.description_markdown}</Markdown>
-                  </>
-                )}
-              </div>
-            </HikeSection>
-            <HikeGallery
-              key={hike.id}
-              hikeId={hike.id}
-              hikeTitle={hike.english_title}
-              locale={locale}
-              initialPage={galleryPage}
-            />
+      <Container>
+        <div className="@container/hike-story relative isolate">
+          {showFootsteps && <FootstepTrail />}
+          <div className={`pt-10 tablet:pt-16 ${hasTrailFooter ? 'pb-12 tablet:pb-16' : ''}`}>
+            <div className="grid gap-12 tablet:gap-16">
+              <HikeSection id="story" title={t('about')} as="article" heading="prominent">
+                <div className={storyWidth}>
+                  {locale !== 'en' && (
+                    <div className="mb-6">
+                      <TranslationNotice />
+                    </div>
+                  )}
+                  {!hike.translation.description_markdown && chapterControls}
+                  {hike.translation.summary_markdown && (
+                    <div className="mb-8">
+                      <Markdown variant="article">{hike.translation.summary_markdown}</Markdown>
+                    </div>
+                  )}
+                  {hike.translation.description_markdown && (
+                    <>
+                      {chapterControls}
+                      <Markdown variant="article">{hike.translation.description_markdown}</Markdown>
+                    </>
+                  )}
+                </div>
+              </HikeSection>
+              <HikeGallery
+                key={hike.id}
+                hikeId={hike.id}
+                hikeTitle={hike.english_title}
+                locale={locale}
+                initialPage={galleryPage}
+              />
+            </div>
+            <div className="mt-12 tablet:mt-16">
+              <HikePagination neighbors={neighbors} />
+            </div>
           </div>
-          <div className="mt-12 tablet:mt-16">
-            <HikePagination neighbors={neighbors} />
-          </div>
-        </Container>
-      </div>
+        </div>
+      </Container>
       {hike.location && locationData && (
         <TrailFooter>
           <Container>

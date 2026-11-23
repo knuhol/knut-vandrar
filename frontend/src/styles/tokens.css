@@ -27,6 +27,11 @@
   );
   --spacing-map-shadow: calc(var(--spacing) * 12);
   --spacing-surface-shadow: calc(var(--spacing) * 6);
+  --spacing-footstep-gutter: clamp(
+    0px,
+    calc(100% - var(--container-prose) - var(--spacing) * 24),
+    calc(var(--spacing) * 108)
+  );
   --background-surface-shadow: linear-gradient(
     to bottom,
     color-mix(in srgb, var(--color-forest) 14%, transparent),
@@ -46,6 +51,10 @@
   --container-reading: 68ch;
   --container-prose: var(--container-reading);
   --container-media-preview: 320px;
+  /* Prose width plus chapter indent, clearance, and the minimum trail width. */
+  --container-footstep-story: calc(68ch + 96px + 5rem);
+  --container-footstep-narrow: 11rem;
+  --container-footstep-full: 22rem;
   --container-popover: 30rem;
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
