@@ -995,6 +995,22 @@ export const openapi = {
               ],
               "title": "Variant"
             }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "V"
+            }
           }
         ],
         "responses": {
@@ -1007,6 +1023,9 @@ export const openapi = {
               "image/webp": {},
               "image/svg+xml": {}
             }
+          },
+          "307": {
+            "description": "Cover has a newer version"
           },
           "422": {
             "description": "Validation Error",
@@ -4338,6 +4357,29 @@ export const openapi = {
         "title": "HealthUnavailable",
         "description": "Error response when the database cannot be reached."
       },
+      "HikeCoverSources": {
+        "properties": {
+          "full": {
+            "type": "string",
+            "title": "Full"
+          },
+          "mobile": {
+            "type": "string",
+            "title": "Mobile"
+          },
+          "card": {
+            "type": "string",
+            "title": "Card"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full",
+          "mobile",
+          "card"
+        ],
+        "title": "HikeCoverSources"
+      },
       "HikeDiscoveryRead": {
         "properties": {
           "id": {
@@ -4993,6 +5035,16 @@ export const openapi = {
             ],
             "title": "Cover Image Url"
           },
+          "cover_sources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HikeCoverSources"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "translation": {
             "$ref": "#/components/schemas/HikeLocalizedRead"
           },
@@ -5248,6 +5300,16 @@ export const openapi = {
               }
             ],
             "title": "Cover Image Url"
+          },
+          "cover_sources": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HikeCoverSources"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "translation": {
             "$ref": "#/components/schemas/HikeLocalizedRead"

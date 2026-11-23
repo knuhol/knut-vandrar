@@ -12,6 +12,8 @@ import { ButtonLink } from '@/components/Button'
 import { Heading } from '@/components/Heading'
 import { SocialLinks } from '@/components/SocialLinks'
 import { Link } from '@/i18n/navigation'
+import { authorPortrait } from '@/config/authorPortrait'
+import { prefetchAuthorPortrait } from '@/navigation/prefetchAuthorPortrait'
 
 export function Hero() {
   const t = useTranslations('Site')
@@ -71,11 +73,13 @@ export function Hero() {
               href="/about"
               aria-label={t('aboutMe')}
               data-link-kind="portrait"
+              onPointerEnter={prefetchAuthorPortrait}
+              onFocus={prefetchAuthorPortrait}
               className="card-interactive block h-24 w-24 shrink-0 rounded-full desktop:h-40 desktop:w-40"
             >
               <Image
                 className="h-full w-full rounded-full border-3 border-orange object-cover shadow-sm"
-                src="/knut.webp"
+                src={authorPortrait.src}
                 alt={t('author')}
                 width={160}
                 height={160}

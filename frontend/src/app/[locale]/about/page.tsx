@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Heading } from '@/components/Heading'
 import { Markdown } from '@/components/Markdown/Markdown'
 import { siteIdentity } from '@/config/site'
+import { authorPortrait } from '@/config/authorPortrait'
 import { formatAuthorContent } from '@/content/author'
 import { PageKey } from '@/content/staticPages'
 import { resolvePage, staticPageMetadata, type PageProps } from '@/content/pages'
@@ -55,10 +56,7 @@ export default async function AboutPage({ params }: PageProps) {
         media={
           <figure className="mx-auto w-full max-w-100 desktop:max-w-none">
             <Image
-              src="/knut.webp"
-              width={1254}
-              height={1254}
-              sizes="(min-width: 1001px) 50vw, (min-width: 641px) 400px, 100vw"
+              {...authorPortrait}
               alt={content.portrait_alt}
               preload
               className="aspect-square w-full rounded-lg object-cover shadow-sm"

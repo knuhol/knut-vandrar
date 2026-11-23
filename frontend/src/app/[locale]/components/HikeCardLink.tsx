@@ -3,30 +3,28 @@
 import type { ReactNode } from 'react'
 import { preload } from 'react-dom'
 
-import { coverImageUrl, imageUrl } from '@/api/images'
+import type { CoverSources } from '@/api/images'
 import { ButtonLink } from '@/components/Button'
 import { responsiveMedia } from '@/config/breakpoints'
 
 export function HikeCardLink({
   slug,
-  coverUrl,
+  covers,
   label,
   children,
 }: {
   slug: string
-  coverUrl?: string | null
+  covers: CoverSources | null
   label: string
   children: ReactNode
 }) {
   function prefetchCover() {
-    if (!coverUrl) {
+    // On phones the page uses the same image already loaded by the card.
+    if (!covers || window.matchMedia(responsiveMedia.belowTablet).matches) {
       return
     }
 
-    const source = window.matchMedia(responsiveMedia.belowDesktop).matches
-      ? coverImageUrl(coverUrl, 'mobile')
-      : imageUrl(coverUrl)
-    preload(source, { as: 'image', fetchPriority: 'low' })
+    preload(covers.mobile, { as: 'image', fetchPriority: 'low' })
   }
 
   return (

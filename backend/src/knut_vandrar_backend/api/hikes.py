@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from pydantic import TypeAdapter
 from sqlalchemy import and_, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from knut_vandrar_backend.api.authored import read_authored
 from knut_vandrar_backend.api.hike_categories import long_distance_condition
@@ -23,6 +23,7 @@ from knut_vandrar_backend.api.image_uploads import (
 )
 from knut_vandrar_backend.api.locations import read_location
 from knut_vandrar_backend.api.schemas.hike import (
+    HikeCoverSources,
     HikeEnglishContent,
     HikeLocalizedRead,
     HikeMapRead,
@@ -87,7 +88,13 @@ def list_hikes(
         long_distance = long_distance_condition()
         query = query.where(long_distance if category == "long_distance" else ~long_distance)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    translations = db.scalars(query.order_by(*_hike_order()).limit(limit).offset(offset)).all()
+    covers = selectinload(HikeTranslation.hike).selectinload(Hike.cover_image)
+    translations = db.scalars(
+        query.options(covers.selectinload(HikeCoverImage.assets))
+        .order_by(*_hike_order())
+        .limit(limit)
+        .offset(offset)
+    ).all()
     return Page(
         items=[
             _summary(db, translation.hike, translation, request) for translation in translations
@@ -203,20 +210,35 @@ def get_hike(
     "/{hike_id}/cover-image",
     name="get_hike_cover_image",
     response_class=Response,
-    responses=IMAGE_RESPONSES,
+    responses={**IMAGE_RESPONSES, 307: {"description": "Cover has a newer version"}},
 )
 def get_hike_cover_image(
-    hike_id: UUID, request: Request, db: DatabaseSession, variant: CoverVariant | None = None
+    hike_id: UUID,
+    request: Request,
+    db: DatabaseSession,
+    variant: CoverVariant | None = None,
+    v: str | None = None,
 ) -> Response:
-    if variant is not None:
-        asset = db.get(HikeCoverAsset, (hike_id, variant))
-        if asset is not None:
-            return image_response(lambda: asset.content, "image/webp", asset.sha256, request)
+    asset: HikeCoverAsset | HikeCoverImage | None = (
+        db.get(HikeCoverAsset, (hike_id, variant)) if variant is not None else None
+    )
+    if asset is not None:
+        content_type = "image/webp"
+    else:
+        cover = db.get(HikeCoverImage, hike_id)
+        if cover is None:
+            raise HTTPException(status_code=404, detail="Hike cover image not found")
+        asset = cover
+        content_type = cover.content_type
 
-    cover = db.get(HikeCoverImage, hike_id)
-    if cover is None:
-        raise HTTPException(status_code=404, detail="Hike cover image not found")
-    return image_response(lambda: cover.content, cover.content_type, cover.sha256, request)
+    if v is not None and v != asset.sha256:
+        current = request.url.include_query_params(v=asset.sha256)
+        return RedirectResponse(
+            f"{current.path}?{current.query}", headers={"Cache-Control": "no-store"}
+        )
+    return image_response(
+        lambda: asset.content, content_type, asset.sha256, request, immutable=v is not None
+    )
 
 
 @router.get(
@@ -503,6 +525,7 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
             if hike.cover_image is not None
             else None
         ),
+        cover_sources=_cover_sources(hike, request),
         translation=_localized(db, translation),
         available_translations=[
             HikeSlugRead(locale=item.locale_code, slug=item.slug)
@@ -548,7 +571,24 @@ def _summary(
             if hike.cover_image is not None
             else None
         ),
+        cover_sources=_cover_sources(hike, request),
         translation=_localized(db, translation),
+    )
+
+
+def _cover_sources(hike: Hike, request: Request) -> HikeCoverSources | None:
+    cover = hike.cover_image
+    if cover is None:
+        return None
+    url = request.url_for("get_hike_cover_image", hike_id=str(hike.id))
+    full = str(url.include_query_params(v=cover.sha256))
+    variants = {
+        key: str(url.include_query_params(variant=key, v=asset.sha256))
+        for key, asset in cover.assets.items()
+        if key in ("mobile", "card")
+    }
+    return HikeCoverSources(
+        full=full, mobile=variants.get("mobile", full), card=variants.get("card", full)
     )
 
 

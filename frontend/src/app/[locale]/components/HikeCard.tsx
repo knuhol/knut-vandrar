@@ -10,20 +10,21 @@ import { HikeStats } from './HikeStats'
 import { HikeStatus } from './HikeStatus'
 
 import { Heading } from '@/components/Heading'
-import { coverImageUrl } from '@/api/images'
+import { hikeCoverSources } from '@/api/images'
 import type { HikeSummary } from '@/api/hikes'
 import { hikeSeason } from '@/hiking/season'
 
 export function HikeCard({ hike }: { hike: HikeSummary }) {
   const t = useTranslations('Site')
   const period = hikeSeason(hike)
+  const covers = hikeCoverSources(hike)
 
   return (
     <article className="card-interactive relative isolate flex h-full flex-col overflow-hidden rounded-lg border border-beige bg-cream">
       <div className="relative h-60 shrink-0 bg-cream tablet:h-56.25">
-        {hike.cover_image_url ? (
+        {covers ? (
           <Image
-            src={coverImageUrl(hike.cover_image_url, 'card')}
+            src={covers.card}
             alt={hike.translation.title}
             fill
             className="object-cover"
@@ -56,7 +57,7 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
         <div className="mt-4">
           <HikeCardLink
             slug={hike.translation.slug}
-            coverUrl={hike.cover_image_url}
+            covers={covers}
             label={`${t('read')}: ${hike.translation.title}`}
           >
             {t('read')} <ArrowUpRight className="size-4.5 shrink-0" aria-hidden="true" />
