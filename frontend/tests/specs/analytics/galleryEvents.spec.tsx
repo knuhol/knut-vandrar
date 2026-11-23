@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { KeyboardEventHandler, ReactNode } from 'react'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { HikeGallery } from '@/app/[locale]/hikes/[slug]/components/HikeGallery/HikeGallery'
@@ -11,11 +11,19 @@ jest.mock('@/config/breakpoints', () => ({
 }))
 jest.mock('@/analytics/hikeEvents', () => ({ trackHikeInteraction: jest.fn() }))
 jest.mock('@/components/MediaModal/MediaModal', () => ({
-  MediaModal: ({ children, onClose }: { children: ReactNode; onClose: () => void }) => (
-    <div role="dialog">
+  MediaModal: ({
+    children,
+    onClose,
+    onKeyDown,
+  }: {
+    children: ReactNode
+    onClose: () => void
+    onKeyDown: KeyboardEventHandler<HTMLDialogElement>
+  }) => (
+    <dialog open onKeyDown={onKeyDown}>
       <button onClick={onClose}>Close gallery</button>
       {children}
-    </div>
+    </dialog>
   ),
 }))
 
@@ -23,34 +31,76 @@ beforeEach(() => {
   window.matchMedia = jest.fn().mockReturnValue({ matches: false })
 })
 
-function renderGallery(ids = [1, 2]) {
+function galleryPage(ids: number[], total = ids.length, offset = 0) {
+  return {
+    items: ids.map((id) => ({
+      id: String(id),
+      hike_id: '123',
+      sort_order: id,
+      width: 100,
+      height: 100,
+      thumbnail_url: `/thumb-${String(id)}.jpg`,
+      image_url: `/photo-${String(id)}.jpg`,
+      alt: `Photo ${String(id)}`,
+      caption: null,
+      translation: {},
+    })),
+    total,
+    offset,
+    limit: 24,
+  }
+}
+
+function renderGallery(ids = [1, 2], total = ids.length) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
       <HikeGallery
         hikeId="123"
         hikeTitle="Kungsleden"
         locale="en"
-        initialPage={{
-          items: ids.map((id) => ({
-            id: String(id),
-            hike_id: '123',
-            sort_order: id,
-            width: 100,
-            height: 100,
-            thumbnail_url: `/thumb-${String(id)}.jpg`,
-            image_url: `/photo-${String(id)}.jpg`,
-            alt: `Photo ${String(id)}`,
-            caption: null,
-            translation: {},
-          })),
-          total: ids.length,
-          offset: 0,
-          limit: 24,
-        }}
+        initialPage={galleryPage(ids, total)}
       />
     </NextIntlClientProvider>,
   )
 }
+
+test('End loads later pages and jumps to the last photo, and Home returns to the first', async () => {
+  const originalFetch = globalThis.fetch
+  const fetchPage = jest.fn()
+  globalThis.fetch = fetchPage
+  fetchPage
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(galleryPage([3], 4, 2)) })
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(galleryPage([4], 4, 3)) })
+  window.matchMedia = jest.fn().mockReturnValue({ matches: true })
+
+  try {
+    renderGallery([1, 2], 4)
+    fireEvent.keyDown(window, { key: 'p' })
+    const dialog = screen.getByRole('dialog')
+    fireEvent.keyDown(dialog, { key: 'End' })
+    const viewer = within(dialog)
+    expect(await viewer.findByAltText('Photo 4')).toBeInTheDocument()
+    expect(fetchPage).toHaveBeenCalledTimes(2)
+
+    fireEvent.keyDown(dialog, { key: 'Home' })
+    expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('opens the first fullscreen photo with P and records one gallery opening', () => {
+  renderGallery()
+  fireEvent.keyDown(window, { key: 'p', metaKey: true })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+  fireEvent.keyDown(window, { key: 'p' })
+  const viewer = within(screen.getByRole('dialog'))
+  expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+
+  fireEvent.keyDown(window, { key: 'p' })
+  expect(trackHikeInteraction).toHaveBeenCalledTimes(1)
+})
 
 test('prefetches nearby fullscreen images only after opening the viewer', () => {
   const requests: HTMLImageElement[] = []

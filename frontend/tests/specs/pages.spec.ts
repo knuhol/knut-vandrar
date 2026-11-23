@@ -1,6 +1,8 @@
 /** @jest-environment node */
 import type * as WhatwgFetch from '@whatwg-node/fetch'
+import { NextRequest } from 'next/server'
 
+import { GET as switchLanguage } from '@/app/api/language/route'
 import { getPage } from '@/api/pages'
 import { resolveLanguageDestination } from '@/i18n/destinations'
 
@@ -39,6 +41,23 @@ test('available page locales preserve their explicit route when switching langua
   fetchMock.mockImplementation(() => Promise.resolve(Response.json({ content: { type: 'about' } })))
   expect(await resolveLanguageDestination('/about', 'en', 'cs', {})).toBe('/about')
   expect(await resolveLanguageDestination('/privacyPolicy', 'en', 'cs', {})).toBe('/privacyPolicy')
+})
+
+test('keyboard language switching falls back to the target home if a hike has no translation', async () => {
+  const url = new URL('https://example.test/api/language')
+  url.search = new URLSearchParams({
+    locale: 'en',
+    target: 'cs',
+    pathname: '/hikes/[slug]',
+    params: JSON.stringify({ slug: 'forest-trail' }),
+  }).toString()
+  expect((await switchLanguage(new NextRequest(url))).status).toBe(404)
+  url.searchParams.set('fallback', 'home')
+
+  const response = await switchLanguage(new NextRequest(url))
+  expect(response.status).toBe(307)
+  expect(response.headers.get('location')).toBe('/cs')
+  expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('cs')
 })
 
 test('API failures surface as errors instead of pretending content is missing', async () => {

@@ -50,7 +50,7 @@ test('opens the largest map, supports zoom, reset and keyboard controls, and clo
     </NextIntlClientProvider>,
   )
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Enlarge map' }))
+  fireEvent.keyDown(window, { key: 'm' })
   const dialog = screen.getByRole('dialog')
   expect(within(dialog).getByRole('img')).toHaveAttribute('src', '/map-large.webp')
   expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled()

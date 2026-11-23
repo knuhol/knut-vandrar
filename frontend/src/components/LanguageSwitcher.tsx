@@ -3,7 +3,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useTranslations } from 'next-intl'
 import { useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { IconChevronDown as ChevronDown, IconWorld as Globe } from '@tabler/icons-react'
 
@@ -14,12 +14,30 @@ import type { UIComponentProps } from './uiComponentProps'
 import { usePathname } from '@/i18n/navigation'
 import { routing } from '@/i18n/routing'
 import type { Locale } from '@/i18n/routing'
+import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
+import { usePageShortcut } from '@/navigation/usePageShortcut'
 
 export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }>) {
   const t = useTranslations('Site')
   const pathname = usePathname()
   const params = useParams()
+  const characterShortcutsEnabled = useCharacterShortcutsEnabled()
+  const router = useRouter()
   const trigger = useRef<HTMLButtonElement>(null)
+
+  function languageHref(target: Locale, fallbackToHome = false) {
+    const query = new URLSearchParams({ locale, target, pathname, params: JSON.stringify(params) })
+    if (fallbackToHome) {
+      query.set('fallback', 'home')
+    }
+    return `/api/language?${query.toString()}`
+  }
+
+  usePageShortcut('l', () => {
+    const nextLocale =
+      routing.locales[(routing.locales.indexOf(locale) + 1) % routing.locales.length]
+    router.push(languageHref(nextLocale, true), { scroll: false })
+  })
 
   return (
     <DropdownMenu.Root>
@@ -27,6 +45,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
         ref={trigger}
         className="ml-auto flex cursor-pointer items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm hover:bg-beige active:bg-beige data-[state=open]:bg-beige desktop:ml-0 tablet:gap-2.25 tablet:px-3"
         aria-label={t('language')}
+        aria-keyshortcuts={characterShortcutsEnabled ? 'L' : undefined}
       >
         <Globe className="size-4 shrink-0" aria-hidden="true" />
         <span className="hidden tablet:inline">{t(`languages.${locale}`)}</span>
@@ -47,12 +66,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
         {routing.locales.map((language) => (
           <MenuItem key={language} active={language === locale} asChild>
             <Link
-              href={`/api/language?${new URLSearchParams({
-                locale,
-                target: language,
-                pathname,
-                params: JSON.stringify(params),
-              }).toString()}`}
+              href={languageHref(language)}
               prefetch={false}
               scroll={false}
               hrefLang={language}
