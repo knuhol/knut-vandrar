@@ -67,7 +67,7 @@ export default async function PreviewPage({
               autoComplete="current-password"
               maxLength={256}
               required
-              className="min-h-12 w-full rounded-sm border border-beige bg-paper px-3 text-base focus-visible:ring-2 focus-visible:ring-forest"
+              className="min-h-12 w-full rounded-sm border border-beige bg-paper px-3 text-base"
               aria-describedby={error ? 'preview-error' : undefined}
             />
           </div>

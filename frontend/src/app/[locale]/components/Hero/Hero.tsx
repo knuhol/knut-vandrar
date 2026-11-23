@@ -71,7 +71,7 @@ export function Hero() {
               href="/about"
               aria-label={t('aboutMe')}
               data-link-kind="portrait"
-              className="card-interactive block h-24 w-24 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 desktop:h-40 desktop:w-40"
+              className="card-interactive block h-24 w-24 shrink-0 rounded-full desktop:h-40 desktop:w-40"
             >
               <Image
                 className="h-full w-full rounded-full border-3 border-orange object-cover shadow-sm"

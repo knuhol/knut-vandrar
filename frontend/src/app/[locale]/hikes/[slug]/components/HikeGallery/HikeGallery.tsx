@@ -286,7 +286,7 @@ export function HikeGallery({
           <button
             key={photo.id}
             type="button"
-            className="card-interactive relative aspect-[4/3] cursor-pointer overflow-hidden rounded-sm bg-beige outline-none"
+            className="card-interactive relative aspect-[4/3] cursor-pointer overflow-hidden rounded-sm bg-beige"
             aria-label={t('open', { number: index + 1, description: photo.alt })}
             aria-haspopup="dialog"
             onClick={() => {

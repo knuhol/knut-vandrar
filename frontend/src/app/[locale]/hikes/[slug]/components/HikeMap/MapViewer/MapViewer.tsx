@@ -204,7 +204,7 @@ export function MapViewer({
           onClick={() => {
             setOpen(true)
           }}
-          className="group absolute inset-0 cursor-zoom-in text-cream focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange"
+          className="group absolute inset-0 cursor-zoom-in text-cream [--focus-outline-offset:calc(-1*var(--focus-outline-width))]"
         >
           <span className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-full bg-ink/80 px-3 py-2 text-sm font-semibold group-hover:bg-forest group-focus-visible:bg-forest">
             <IconZoomIn className="size-4" aria-hidden="true" />

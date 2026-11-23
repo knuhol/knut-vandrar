@@ -104,6 +104,7 @@
 }
 
 :root {
+  --focus-outline-width: calc(var(--spacing) * 0.5);
   --icon-stroke-emphasis: 2.5;
 
   --section-scroll-offset: calc(var(--header-height) + var(--spacing) * 6);

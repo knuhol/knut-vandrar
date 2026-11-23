@@ -26,6 +26,7 @@
 
 .track {
   /* Keep the slide separate from layout changes in the adjacent controls. */
+  --focus-outline-offset: calc(-1 * var(--focus-outline-width));
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;

@@ -102,7 +102,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       </nav>
       <DropdownMenu.Root open={open} onOpenChange={setOpen}>
         <DropdownMenu.Trigger
-          className={`order-3 inline-flex cursor-pointer items-center justify-center rounded-sm border border-beige bg-transparent p-2 text-forest hover:bg-beige active:bg-beige data-[state=open]:bg-beige focus:outline-none ${styles.menuTrigger}`}
+          className={`order-3 inline-flex cursor-pointer items-center justify-center rounded-sm border border-beige bg-transparent p-2 text-forest hover:bg-beige active:bg-beige data-[state=open]:bg-beige ${styles.menuTrigger}`}
           aria-label={t('navigation')}
         >
           <IconMenu2 className="size-5.5 shrink-0" aria-hidden="true" />
