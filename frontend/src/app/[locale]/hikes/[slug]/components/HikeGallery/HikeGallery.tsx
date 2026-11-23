@@ -28,6 +28,13 @@ type GalleryPhoto = {
   caption?: string
 }
 
+function photoFrameStyle(photo: GalleryPhoto) {
+  return {
+    aspectRatio: `${String(photo.width)} / ${String(photo.height)}`,
+    width: `min(100%, calc(100dvh * ${String(photo.width / photo.height)}))`,
+  }
+}
+
 function PhotoViewer({
   photos,
   initialIndex,
@@ -49,6 +56,14 @@ function PhotoViewer({
   const touchStart = useRef<number | null>(null)
   const [index, setIndex] = useState(initialIndex)
   const photo = photos[index]
+  const [slide, setSlide] = useState<{ from: number; direction: number } | null>(null)
+  const [loadedSource, setLoadedSource] = useState<string | null>(null)
+  const sliding = slide !== null && loadedSource === photo.src
+  const displayedPhotos = slide ? [photos[slide.from], photo] : [photo]
+  const prefetched = useRef(new Set<string>())
+  const previousSource = photos[index - 1]?.src
+  const nextSource = photos[index + 1]?.src
+  const followingSource = photos[index + 2]?.src
   const viewport = useRef<HTMLDivElement>(null)
   const imageFrame = useRef<HTMLDivElement>(null)
   const caption = useRef<HTMLDivElement>(null)
@@ -61,6 +76,26 @@ function PhotoViewer({
 
   const [loading, setLoading] = useState(false)
   const moving = useRef(false)
+
+  useEffect(() => {
+    const requested = prefetched.current
+    for (const source of [nextSource, previousSource, followingSource]) {
+      if (!source || requested.has(source)) {
+        continue
+      }
+      const image = new window.Image()
+      image.fetchPriority = 'low'
+      image.addEventListener(
+        'error',
+        () => {
+          requested.delete(source)
+        },
+        { once: true },
+      )
+      requested.add(source)
+      image.src = source
+    }
+  }, [nextSource, previousSource, followingSource])
 
   useEffect(() => {
     const viewer = viewport.current
@@ -104,18 +139,26 @@ function PhotoViewer({
     }
   }, [showCaption])
 
+  function showPhoto(nextIndex: number, direction: number) {
+    const visibleIndex = slide && !sliding ? slide.from : index
+    const animate =
+      nextIndex !== visibleIndex && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setSlide(animate ? { from: visibleIndex, direction } : null)
+    setIndex(nextIndex)
+  }
+
   async function move(direction: number) {
     if (moving.current || index + direction < 0) {
       return
     }
     if (index + direction < photos.length) {
-      setIndex(index + direction)
+      showPhoto(index + direction, direction)
     } else if (hasMore) {
       moving.current = true
       setLoading(true)
       try {
         if (await loadMore()) {
-          setIndex(index + direction)
+          showPhoto(index + direction, direction)
         }
       } finally {
         moving.current = false
@@ -136,14 +179,60 @@ function PhotoViewer({
         }
       }}
     >
-      <div ref={viewport} className="relative grid h-full w-full place-items-center">
+      <div
+        ref={viewport}
+        className="relative grid h-full w-full place-items-center overflow-hidden"
+      >
+        {displayedPhotos.map((image) => {
+          const outgoing = image !== photo
+          const animation = sliding && (outgoing ? styles.slideOut : styles.slideIn)
+
+          return (
+            <div
+              key={image.id}
+              aria-hidden={outgoing || undefined}
+              className={`pointer-events-none absolute inset-0 grid place-items-center ${animation || ''} ${slide?.direction === -1 ? styles.backward : ''} ${slide && !sliding && !outgoing ? 'invisible' : ''}`}
+              onAnimationEnd={
+                outgoing
+                  ? undefined
+                  : () => {
+                      setSlide(null)
+                    }
+              }
+            >
+              <div className="relative" style={photoFrameStyle(image)}>
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  sizes="100vw"
+                  fill
+                  loading="eager"
+                  fetchPriority={outgoing ? 'auto' : 'high'}
+                  className="object-contain"
+                  unoptimized
+                  onLoad={
+                    outgoing
+                      ? undefined
+                      : () => {
+                          setLoadedSource(image.src)
+                        }
+                  }
+                  onError={
+                    outgoing
+                      ? undefined
+                      : () => {
+                          setSlide(null)
+                        }
+                  }
+                />
+              </div>
+            </div>
+          )
+        })}
         <div
           ref={imageFrame}
           className="relative touch-pan-y"
-          style={{
-            aspectRatio: `${String(photo.width)} / ${String(photo.height)}`,
-            width: `min(100%, calc(100dvh * ${String(photo.width / photo.height)}))`,
-          }}
+          style={photoFrameStyle(photo)}
           onTouchStart={(event) => {
             touchStart.current = event.changedTouches[0].clientX
           }}
@@ -160,15 +249,6 @@ function PhotoViewer({
             touchStart.current = null
           }}
         >
-          <Image
-            key={photo.id}
-            src={photo.src}
-            alt={photo.alt}
-            sizes="100vw"
-            fill
-            className="object-contain"
-            unoptimized
-          />
           <div
             ref={previous}
             className={`${styles.previous} absolute top-1/2 flex w-max -translate-y-1/2 ${previousFitsOutside ? 'right-full' : 'left-0'}`}
