@@ -2,6 +2,7 @@
 
 import warnings
 import xml.etree.ElementTree as ElementTree
+from collections.abc import Callable
 from io import BytesIO
 from typing import Annotated, Any
 
@@ -94,6 +95,19 @@ def detect_image_type(content: bytes) -> str:
 def optimize_image(
     content: bytes, *, max_dimension: int, lossless: bool = False, allow_heif: bool = False
 ) -> tuple[bytes, str]:
+    images, media_type = optimize_images(
+        content, {"image": (max_dimension, 82)}, lossless=lossless, allow_heif=allow_heif
+    )
+    return images["image"], media_type
+
+
+def optimize_images(
+    content: bytes,
+    variants: dict[str, tuple[int, int]],
+    *,
+    lossless: bool = False,
+    allow_heif: bool = False,
+) -> tuple[dict[str, bytes], str]:
     """Normalize raster uploads for delivery; retain scalable SVG documents."""
     from PIL import Image, ImageOps, UnidentifiedImageError
     from pillow_heif import is_supported, register_heif_opener
@@ -106,7 +120,7 @@ def optimize_image(
     if media_type == "image/svg+xml":
         if allow_heif:
             raise HTTPException(415, "Gallery photos must be raster images")
-        return content, media_type
+        return dict.fromkeys(variants, content), media_type
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -119,22 +133,28 @@ def optimize_image(
                 # Pillow marks MPO as animated; optimize its primary still image.
                 if getattr(source, "is_animated", False) and source.format != "MPO":
                     raise HTTPException(status_code=415, detail="Please upload a static image")
-                image = ImageOps.exif_transpose(source)
-                image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
-                image = image.convert(
-                    "RGBA" if "A" in image.getbands() or "transparency" in image.info else "RGB"
-                )
-                image.info.clear()
-                output = BytesIO()
-                image.save(output, format="WEBP", quality=82, method=6, lossless=lossless)
-                return output.getvalue(), "image/webp"
+                normalized = ImageOps.exif_transpose(source)
+                images = {}
+                for name, (max_dimension, quality) in variants.items():
+                    image = normalized.copy() if len(variants) > 1 else normalized
+                    image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+                    image = image.convert(
+                        "RGBA" if "A" in image.getbands() or "transparency" in image.info else "RGB"
+                    )
+                    image.info.clear()
+                    output = BytesIO()
+                    image.save(output, format="WEBP", quality=quality, method=6, lossless=lossless)
+                    images[name] = output.getvalue()
+                return images, "image/webp"
     except (UnidentifiedImageError, OSError, ValueError) as error:
         raise HTTPException(status_code=415, detail="Invalid or corrupt image") from error
     except (Image.DecompressionBombError, Image.DecompressionBombWarning) as error:
         raise HTTPException(status_code=413, detail="Image dimensions are too large") from error
 
 
-def image_response(content: bytes, content_type: str, sha256: str, request: Request) -> Response:
+def image_response(
+    content: bytes | Callable[[], bytes], content_type: str, sha256: str, request: Request
+) -> Response:
     """Serve an image with revalidation and protections for SVG documents."""
     etag = f'"{sha256}"'
     headers = {
@@ -148,4 +168,8 @@ def image_response(content: bytes, content_type: str, sha256: str, request: Requ
         )
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
-    return Response(content=content, media_type=content_type, headers=headers)
+    return Response(
+        content=content() if callable(content) else content,
+        media_type=content_type,
+        headers=headers,
+    )

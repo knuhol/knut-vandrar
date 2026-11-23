@@ -201,6 +201,90 @@ def test_round_trip_dry_run_ordering_and_idempotence(
     assert [path.name for path in (destination.media / ".transfers").iterdir()] == ["lock"]
 
 
+def test_cover_assets_survive_transfer_and_repair(
+    environments: tuple[Environment, Environment],
+) -> None:
+    source, destination = environments
+    with source.factory.begin() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        original = cover.content
+        derivative = _image("blue", "WEBP")
+        cover.content = derivative
+        cover.content_type = "image/webp"
+        cover.sha256 = hashlib.sha256(derivative).hexdigest()
+    _import(destination, _export(source))
+
+    with source.factory.begin() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        cover.set_asset("original", original, hashlib.sha256(original).hexdigest())
+        for kind in ("mobile", "card"):
+            cover.set_asset(kind, derivative, cover.sha256)
+
+    archive = _export(source)
+    assert _import(destination, archive).counts == {"repair": 1, "skip": 3}
+    with destination.factory() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        assert {kind: asset.content for kind, asset in cover.assets.items()} == {
+            "original": original,
+            "mobile": derivative,
+            "card": derivative,
+        }
+    assert _import(destination, archive).counts == {"skip": 4}
+
+
+@pytest.mark.parametrize("kind", ["original", "card", "mobile"])
+def test_cover_asset_conflicts_require_explicit_replacement(
+    environments: tuple[Environment, Environment], kind: str
+) -> None:
+    source, destination = environments
+    with source.factory.begin() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        cover.content = _image("green", "WEBP")
+        cover.content_type = "image/webp"
+        cover.sha256 = hashlib.sha256(cover.content).hexdigest()
+        content = _image("blue", "WEBP")
+        cover.set_asset(kind, content, hashlib.sha256(content).hexdigest())
+    archive = _export(source)
+    _import(destination, archive)
+    with destination.factory.begin() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        edited = _image("yellow", "WEBP")
+        cover.set_asset(kind, edited, hashlib.sha256(edited).hexdigest())
+    assert _import(destination, archive).counts == {"conflict": 1, "skip": 3}
+    with destination.factory() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        assert cover.assets[kind].content == edited
+    assert _import(destination, archive, replace=True).counts == {"replace": 1, "skip": 3}
+    assert _import(destination, archive).counts == {"skip": 4}
+
+
+def test_replacing_cover_from_legacy_archive_removes_stale_assets(
+    environments: tuple[Environment, Environment],
+) -> None:
+    source, destination = environments
+    _import(destination, _export(source))
+    with destination.factory.begin() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        content = _image("blue", "WEBP")
+        cover.content = content
+        cover.content_type = "image/webp"
+        cover.sha256 = hashlib.sha256(content).hexdigest()
+        for kind in ("original", "card", "mobile"):
+            cover.set_asset(kind, content, cover.sha256)
+    assert _import(destination, _export(source), replace=True).counts == {"replace": 1, "skip": 3}
+    with destination.factory() as db:
+        cover = db.get(HikeCoverImage, HIKE)
+        assert cover is not None
+        assert not cover.assets
+
+
 def test_conflicts_are_all_or_nothing_and_replace_preserves_other_locales(
     environments: tuple[Environment, Environment],
 ) -> None:

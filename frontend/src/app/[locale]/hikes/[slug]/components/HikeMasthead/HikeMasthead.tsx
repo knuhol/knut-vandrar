@@ -9,7 +9,8 @@ import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { hasCompleteHikeStats } from '@/hiking/stats'
 import { hikeSeason } from '@/hiking/season'
-import { imageUrl } from '@/api/images'
+import { coverImageUrl, imageUrl } from '@/api/images'
+import { responsiveMedia } from '@/config/breakpoints'
 import type { Hike } from '@/api/hikes'
 import { Link } from '@/i18n/navigation'
 
@@ -23,17 +24,22 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
       className={`${styles.landscape} relative isolate flex items-end overflow-hidden bg-forest text-cream`}
     >
       {hike.cover_image_url && (
-        <div className="absolute inset-0 -z-20 overflow-hidden">
+        <picture className="absolute inset-0 -z-20 overflow-hidden">
+          <source
+            media={`not all and ${responsiveMedia.desktop}`}
+            srcSet={coverImageUrl(hike.cover_image_url, 'mobile')}
+          />
           <Image
             src={imageUrl(hike.cover_image_url)}
             alt={hike.translation.title}
             fill
             className={`${styles.photo} object-cover`}
-            preload
+            loading="eager"
+            fetchPriority="high"
             unoptimized
             sizes="100vw"
           />
-        </div>
+        </picture>
       )}
       <div className={`${styles.shade} pointer-events-none absolute inset-0 -z-10`} />
       <div className="absolute inset-x-0 top-0 z-10 py-5 tablet:py-7">
