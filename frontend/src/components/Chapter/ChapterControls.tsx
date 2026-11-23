@@ -6,10 +6,18 @@ import { IconFold, IconArrowsVertical } from '@tabler/icons-react'
 
 import { setDisclosureExpanded } from '../Disclosure/disclosureState'
 
+import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
+import { useClickShortcut } from '@/navigation/usePageShortcut'
+
 export function ChapterControls({ targetId }: { targetId: string }) {
+  const characterShortcutsEnabled = useCharacterShortcutsEnabled()
   const t = useTranslations('Site')
   const [count, setCount] = useState(0)
   const [allExpanded, setAllExpanded] = useState(false)
+  const toggleButton = useClickShortcut<HTMLButtonElement>('c', {
+    enabled: count > 0,
+    sectionId: targetId,
+  })
 
   useEffect(() => {
     const container = document.getElementById(targetId)
@@ -52,8 +60,10 @@ export function ChapterControls({ targetId }: { targetId: string }) {
 
   return (
     <button
+      ref={toggleButton}
       type="button"
       aria-controls={targetId}
+      aria-keyshortcuts={characterShortcutsEnabled ? 'C' : undefined}
       aria-expanded={allExpanded}
       className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm font-semibold text-forest hover:text-ink focus-visible:text-ink"
       onClick={() => {

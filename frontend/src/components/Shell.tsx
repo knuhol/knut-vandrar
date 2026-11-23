@@ -5,6 +5,7 @@ import { Navigation } from './Navigation/Navigation'
 import { SiteHeader } from './SiteHeader/SiteHeader'
 import { Logo } from './Logo'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Container } from './Container'
 import type { UIComponentProps } from './uiComponentProps'
 
@@ -61,7 +62,7 @@ export async function Footer({ locale }: { locale?: Locale }) {
             <p>{t('footer')}</p>
             <span>{t('copyright', { year: new Date().getFullYear() })}</span>
           </div>
-          <div className="desktop:justify-self-end">
+          <div className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-2 desktop:justify-end desktop:justify-self-end">
             <Link
               href={staticPages[PageKey.PrivacyPolicy].href}
               locale={locale}
@@ -69,6 +70,7 @@ export async function Footer({ locale }: { locale?: Locale }) {
             >
               {t('privacyPolicy')}
             </Link>
+            <KeyboardShortcuts />
           </div>
         </div>
       </Container>

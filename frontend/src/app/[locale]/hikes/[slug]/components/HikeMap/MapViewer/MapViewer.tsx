@@ -11,6 +11,8 @@ import { MediaModal } from '@/components/MediaModal/MediaModal'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
 import { imageUrl } from '@/api/images'
 import type { HikeMapImage } from '@/api/hikes'
+import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
+import { useClickShortcut } from '@/navigation/usePageShortcut'
 
 const minimumZoom = 1
 const maximumZoom = 4
@@ -189,7 +191,9 @@ export function MapViewer({
   children: ReactNode
 }) {
   const t = useTranslations('Site.map')
+  const characterShortcutsEnabled = useCharacterShortcutsEnabled()
   const [open, setOpen] = useState(false)
+  const openButton = useClickShortcut<HTMLButtonElement>('m', { enabled: !open })
   const image = images.reduce((best, candidate) =>
     candidate.width * candidate.height > best.width * best.height ? candidate : best,
   )
@@ -199,8 +203,10 @@ export function MapViewer({
       <div className="relative">
         {children}
         <button
+          ref={openButton}
           type="button"
           aria-label={t('open')}
+          aria-keyshortcuts={characterShortcutsEnabled ? 'M' : undefined}
           onClick={() => {
             setOpen(true)
           }}

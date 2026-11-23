@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(null, { status: 400 })
   }
 
-  const destination = await resolveLanguageDestination(pathname, locale, target, params)
+  const destination =
+    (await resolveLanguageDestination(pathname, locale, target, params)) ??
+    (query.get('fallback') === 'home' ? '/' : undefined)
 
   if (!destination) {
     return new NextResponse(null, { status: 404 })

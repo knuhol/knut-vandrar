@@ -15,6 +15,8 @@ import { MediaModal } from '@/components/MediaModal/MediaModal'
 import type { getPhotos } from '@/api/hikes'
 import type { Locale } from '@/i18n/routing'
 import { imageUrl } from '@/api/images'
+import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
+import { useClickShortcut } from '@/navigation/usePageShortcut'
 
 type GalleryPage = Awaited<ReturnType<typeof getPhotos>>
 
@@ -49,7 +51,7 @@ function PhotoViewer({
   error: boolean
   total: number
   hasMore: boolean
-  loadMore: () => Promise<boolean>
+  loadMore: (throughEnd?: boolean) => Promise<number | null>
   onClose: () => void
 }) {
   const t = useTranslations('Site.gallery')
@@ -154,18 +156,21 @@ function PhotoViewer({
     setIndex(nextIndex)
   }
 
-  async function move(direction: number) {
-    if (moving.current || index + direction < 0) {
+  async function goTo(destination: number | 'last') {
+    const nextIndex = destination === 'last' ? total - 1 : destination
+    if (moving.current || nextIndex < 0 || nextIndex === index) {
       return
     }
-    if (index + direction < photos.length) {
-      showPhoto(index + direction, direction)
+    if (nextIndex < photos.length) {
+      showPhoto(nextIndex, nextIndex > index ? 1 : -1)
     } else if (hasMore) {
       moving.current = true
       setLoading(true)
       try {
-        if (await loadMore()) {
-          showPhoto(index + direction, direction)
+        const count = await loadMore(destination === 'last')
+        const loadedIndex = destination === 'last' ? (count ?? 0) - 1 : nextIndex
+        if (count !== null && loadedIndex > index && loadedIndex < count) {
+          showPhoto(loadedIndex, 1)
         }
       } finally {
         moving.current = false
@@ -174,12 +179,21 @@ function PhotoViewer({
     }
   }
 
+  function move(direction: number) {
+    return goTo(index + direction)
+  }
+
   return (
     <MediaModal
       title={t('title')}
       closeLabel={t('close')}
       onClose={onClose}
+      keyboardShortcuts="ArrowLeft ArrowRight Home End"
       onKeyDown={(event) => {
+        if (event.key === 'Home' || event.key === 'End') {
+          event.preventDefault()
+          void goTo(event.key === 'Home' ? 0 : 'last')
+        }
         if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
           event.preventDefault()
           void move(event.key === 'ArrowLeft' ? -1 : 1)
@@ -325,6 +339,7 @@ export function HikeGallery({
   const t = useTranslations('Site.gallery')
   const [page, setPage] = useState(initialPage)
   const [busy, setBusy] = useState(false)
+  const loadingPage = useRef(false)
   const [error, setError] = useState(false)
   const photos: GalleryPhoto[] = page.items.map((photo) => ({
     id: photo.id,
@@ -337,30 +352,48 @@ export function HikeGallery({
   }))
   const hasMore = page.items.length < page.total
 
-  async function loadMore() {
+  async function loadMore(throughEnd = false) {
+    if (loadingPage.current) {
+      return null
+    }
+    loadingPage.current = true
     setBusy(true)
     setError(false)
     try {
-      const response = await fetch(
-        imageUrl(`/api/hikes/${hikeId}/photos`) +
-          `?locale=${locale}&limit=24&offset=${String(page.items.length)}`,
-      )
-      if (!response.ok) {
-        throw new Error('Gallery request failed')
-      }
-      const next = (await response.json()) as GalleryPage
-      setPage((current) => ({ ...next, items: [...current.items, ...next.items] }))
-      return next.items.length > 0
+      const additional: GalleryPage['items'] = []
+      let latest: GalleryPage
+      let count = page.items.length
+      do {
+        const response = await fetch(
+          imageUrl(`/api/hikes/${hikeId}/photos`) +
+            `?locale=${locale}&limit=${throughEnd ? '100' : '24'}&offset=${String(count)}`,
+        )
+        if (!response.ok) {
+          throw new Error('Gallery request failed')
+        }
+        latest = (await response.json()) as GalleryPage
+        additional.push(...latest.items)
+        count += latest.items.length
+      } while (throughEnd && latest.items.length > 0 && count < latest.total)
+
+      setPage({ ...latest, items: [...page.items, ...additional] })
+      return count
     } catch {
       setError(true)
-      return false
+      return null
     } finally {
+      loadingPage.current = false
       setBusy(false)
     }
   }
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const hasPhotos = photos.length > 0
+  const characterShortcutsEnabled = useCharacterShortcutsEnabled()
+  const firstPhotoButton = useClickShortcut<HTMLButtonElement>('p', {
+    enabled: hasPhotos && selectedIndex === null,
+  })
 
-  if (photos.length === 0) {
+  if (!hasPhotos) {
     return null
   }
 
@@ -374,11 +407,13 @@ export function HikeGallery({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:gap-4 lg:grid-cols-4">
         {photos.map((photo, index) => (
           <button
+            ref={index === 0 ? firstPhotoButton : undefined}
             key={photo.id}
             type="button"
             className="card-interactive relative aspect-[4/3] cursor-pointer overflow-hidden rounded-sm bg-beige"
             aria-label={t('open', { number: index + 1, description: photo.alt })}
             aria-haspopup="dialog"
+            aria-keyshortcuts={index === 0 && characterShortcutsEnabled ? 'P' : undefined}
             onClick={() => {
               trackHikeInteraction({ name: 'gallery_open', hikeId, hikeTitle, locale })
               setSelectedIndex(index)

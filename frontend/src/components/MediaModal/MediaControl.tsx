@@ -22,14 +22,17 @@ export function MediaControl({
   action,
   label,
   disabled = false,
+  size = 'default',
   onClick,
 }: {
   action: keyof typeof icons
   label: string
   disabled?: boolean
+  size?: 'default' | 'compact'
   onClick: () => void
 }) {
   const Icon = icons[action]
+  const compact = size === 'compact'
 
   return (
     <button
@@ -37,9 +40,13 @@ export function MediaControl({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink/55 p-0 text-base font-bold text-cream hover:bg-ink/80 focus-visible:bg-ink/80 disabled:cursor-default disabled:opacity-40"
+      className={`inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink/55 p-0 text-base font-bold text-cream hover:bg-ink/80 focus-visible:bg-ink/80 disabled:cursor-default disabled:opacity-40 ${compact ? 'size-10' : 'size-11'}`}
     >
-      <Icon className="size-5" strokeWidth="var(--icon-stroke-emphasis)" aria-hidden="true" />
+      <Icon
+        className={compact ? 'size-4.5' : 'size-5'}
+        strokeWidth="var(--icon-stroke-emphasis)"
+        aria-hidden="true"
+      />
     </button>
   )
 }

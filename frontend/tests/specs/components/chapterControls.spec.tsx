@@ -35,7 +35,17 @@ test('expands and collapses all chapters, keeping individual chapter controls sy
   await screen.findByRole('button', { name: 'Expand all chapters' })
   expect(chapters[0]).not.toHaveAttribute('open')
   fireEvent.click(screen.getByRole('button', { name: 'Expand all chapters' }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Collapse all chapters' }))
+  await screen.findByRole('button', { name: 'Collapse all chapters' })
+  const story = document.getElementById('story')
+  if (!story) {
+    throw new Error('Missing story section')
+  }
+  const bounds = jest.spyOn(story, 'getBoundingClientRect')
+  bounds.mockReturnValue(new DOMRect(0, 800, 400, 200))
+  fireEvent.keyDown(window, { key: 'c' })
+  expect(chapters.every((chapter) => chapter.open)).toBe(true)
+  bounds.mockReturnValue(new DOMRect(0, -100, 400, 200))
+  fireEvent.keyDown(window, { key: 'c' })
   await waitFor(() => {
     expect(chapters.every((chapter) => !chapter.open)).toBe(true)
   })

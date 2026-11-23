@@ -25,6 +25,14 @@ function anchorSection(anchor: HTMLAnchorElement) {
   return sectionForHash(destination.hash)
 }
 
+export function navigateToSection(section: HTMLElement, hash: string) {
+  if (window.location.hash !== hash) {
+    window.history.pushState(null, '', hash)
+  }
+  section.focus({ preventScroll: true })
+  void scrollToElement(section, { anchor: true })
+}
+
 export function handleSectionPointerDown(
   event: MouseEvent | globalThis.MouseEvent,
   anchor: HTMLAnchorElement,
@@ -72,10 +80,5 @@ export function handleAnchorClick(
     return
   }
   event.preventDefault()
-  const destination = new URL(anchor.href)
-  if (window.location.hash !== destination.hash) {
-    window.history.pushState(null, '', destination.href)
-  }
-  section.focus({ preventScroll: true })
-  void scrollToElement(section, { anchor: true })
+  navigateToSection(section, new URL(anchor.href).hash)
 }

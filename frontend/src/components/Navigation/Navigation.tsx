@@ -17,6 +17,9 @@ import styles from './Navigation.module.css'
 
 import { Link } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
+import { navigateToSection, sectionForHash } from '@/navigation/sectionLink'
+import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
+import { useClickShortcut, usePageShortcut } from '@/navigation/usePageShortcut'
 
 function subscribe(onChange: () => void) {
   window.addEventListener('scroll', onChange, { passive: true })
@@ -57,6 +60,19 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
   const t = useTranslations('Site')
   const pathname = usePathname()
   const homeRouteActive = pathname === `/${locale}` || pathname === `/${locale}/`
+  const showShortcutHints = useCharacterShortcutsEnabled() && homeRouteActive
+  const authorLink = useClickShortcut<HTMLAnchorElement>('a', { enabled: homeRouteActive })
+  usePageShortcut(
+    'h',
+    () => {
+      const hikes = sectionForHash('#hikes')
+      if (!hikes) {
+        return false
+      }
+      navigateToSection(hikes, '#hikes')
+    },
+    { enabled: homeRouteActive },
+  )
   const localizedHikeRoute = routing.pathnames['/hikes/[slug]'][locale]
   const hikeActive = pathname.startsWith(`/${locale}${localizedHikeRoute.replace('[slug]', '')}`)
   const atHikesOnPage = useSyncExternalStore(subscribe, isAtHikes, () => false)
@@ -77,6 +93,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       id: 'hikes',
       href: { pathname: '/', hash: 'hikes' },
       label: t('hikes'),
+      'aria-keyshortcuts': showShortcutHints ? 'H' : undefined,
       'aria-current': hikesActive ? 'location' : undefined,
       section: true,
     },
@@ -84,6 +101,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       id: 'about',
       href: '/about',
       label: t('aboutMe'),
+      'aria-keyshortcuts': showShortcutHints ? 'A' : undefined,
       'aria-current':
         pathname === `/${locale}${routing.pathnames['/about'][locale]}` ? 'page' : undefined,
       section: false,
@@ -97,7 +115,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
         aria-label={t('navigation')}
       >
         {links.map(({ id, ...link }) => (
-          <NavigationLink key={id} {...link} />
+          <NavigationLink key={id} ref={id === 'about' ? authorLink : undefined} {...link} />
         ))}
       </nav>
       <DropdownMenu.Root open={open} onOpenChange={setOpen}>

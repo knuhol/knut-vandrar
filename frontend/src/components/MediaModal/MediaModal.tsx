@@ -12,12 +12,14 @@ export function MediaModal({
   children,
   onClose,
   onKeyDown,
+  keyboardShortcuts,
 }: {
   title: string
   closeLabel: string
   children: ReactNode
   onClose: () => void
   onKeyDown?: KeyboardEventHandler<HTMLDialogElement>
+  keyboardShortcuts?: string
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
 
@@ -46,6 +48,7 @@ export function MediaModal({
     <dialog
       ref={dialog}
       aria-label={title}
+      aria-keyshortcuts={keyboardShortcuts}
       className={`fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-ink p-0 text-cream ${styles.dialog}`}
       onClose={(event) => {
         // Ignore a queued cleanup event if Strict Mode has reopened the dialog.
