@@ -30,6 +30,7 @@ import { prepareDraft, prepareWrite } from '@/admin/fieldConditions'
 import {
   text,
   initialValue,
+  geographicLabelResource,
   record,
   resources,
   referencesFor,
@@ -55,6 +56,7 @@ function Content() {
   const dirty = editing && (!valuesEqual(value, savedValue) || galleryDirty || achievementsDirty)
   const [imageVersion, setImageVersion] = useState(0)
   const [hasImage, setHasImage] = useState(false)
+  const [hasGeographicLabel, setHasGeographicLabel] = useState(false)
   const [busy, setBusy] = useState(false)
   const { feedback, show: setMessage } = useAdminFeedback()
   const { result, query } = useList({
@@ -88,14 +90,14 @@ function Content() {
     setBusy(true)
     setMessage('')
     try {
-      const loaded = nextId
-        ? writeValue(schema, await api(`${resource.name}/${nextId}?locale=en`))
-        : initialValue(schema)
+      const saved = nextId ? await api(`${resource.name}/${nextId}?locale=en`) : null
+      const loaded = nextId ? writeValue(schema, saved) : initialValue(schema)
       setAchievementsDirty(false)
       setGalleryDirty(false)
       setValue(loaded)
       setSavedValue(loaded)
       setHasImage(Boolean(nextId && resource.image))
+      setHasGeographicLabel(record(saved).has_geographic_label === true)
       setImageVersion(Date.now())
       setId(nextId)
       setEditing(true)
@@ -115,6 +117,7 @@ function Content() {
         await api(`${resource.name}${id ? `/${id}` : ''}`, id ? 'PUT' : 'POST', submitted || {}),
       )
       setId(text(saved.id))
+      setHasGeographicLabel(saved.has_geographic_label === true)
       setValue(submitted)
       setSavedValue(submitted)
       setMessage(messages.savedNoTranslationsWereQueued, 'save', 'success')
@@ -346,6 +349,15 @@ function Content() {
                       source={record(value).english || null}
                     />
                   ))}
+                {resource.kind === 'hike' && !dirty && hasGeographicLabel && (
+                  <TranslationEditor
+                    key={`geographic-label-${id}`}
+                    resource={geographicLabelResource}
+                    id={id}
+                    source={record(value).english}
+                    title={messages.geographicLabelTranslations}
+                  />
+                )}
                 <EditorSection title={messages.editorSections.danger}>
                   <Button
                     color="error"

@@ -4,6 +4,7 @@ import argparse
 from uuid import UUID
 
 from knut_vandrar_backend.database.session import SessionLocal
+from knut_vandrar_backend.translations.content import CONTENT
 from knut_vandrar_backend.translations.queue import (
     queue_outdated_translations as queue_outdated_translations,
 )
@@ -16,7 +17,7 @@ def main() -> int:
     parser.add_argument(
         "--include-outdated", action="store_true", help="Also include missing/outdated translations"
     )
-    parser.add_argument("--entity-type", choices=("hike", "location", "region", "achievement"))
+    parser.add_argument("--entity-type", choices=("hike", *CONTENT))
     parser.add_argument("--entity-id", type=UUID)
     parser.add_argument("--locale", choices=("sv", "cs"))
     args = parser.parse_args()

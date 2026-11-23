@@ -8,7 +8,6 @@ import { Container } from '@/components/Container'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { hasCompleteHikeStats } from '@/hiking/stats'
-import { hikeSeason } from '@/hiking/season'
 import { coverImageUrl, imageUrl } from '@/api/images'
 import { responsiveMedia } from '@/config/breakpoints'
 import type { Hike } from '@/api/hikes'
@@ -16,7 +15,6 @@ import { Link } from '@/i18n/navigation'
 
 export function HikeMasthead({ hike }: { hike: Hike }) {
   const t = useTranslations('Site')
-  const period = hikeSeason(hike)
   const hasCompleteStats = hasCompleteHikeStats(hike)
 
   return (
@@ -70,16 +68,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
               <HikeStatus status={hike.status} />
             </span>
           </div>
-          <Heading
-            tone="inverse"
-            eyebrow={
-              period && (
-                <time dateTime={period.start}>
-                  {t('hikeSeason', { season: t(`seasons.${period.season}`), year: period.year })}
-                </time>
-              )
-            }
-          >
+          <Heading tone="inverse" eyebrow={hike.translation.geographic_label}>
             {hike.translation.title}
           </Heading>
           {hike.translation.tagline && (

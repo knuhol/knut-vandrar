@@ -263,6 +263,7 @@ def test_worker_sends_profile_model_and_effort_in_http_request(
         requests.append(payload)
         assert payload["model"] == "gpt-6.1-terra"
         assert payload["reasoning"] == {"effort": "medium"}
+        assert "geographic_label" not in json.loads(payload["input"][1]["content"])
         return BytesIO(
             json.dumps(
                 {
@@ -406,6 +407,84 @@ def test_region_automatic_translation_publishes_history(
         assert target.review_status == "unreviewed"
         snapshot = db.scalar(select(ContentTranslationVersion))
         assert snapshot is not None and snapshot.fields == {"name": "Lappland"}
+
+
+def test_geographic_label_is_queued_and_reviewed_independently(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knut_vandrar_backend.models.translation import ContentTranslationVersion
+    from knut_vandrar_backend.translations import content_worker, worker
+
+    kind = "hike_geographic_label"
+    factory = cast(sessionmaker[Session], app.state.testing_session_local)
+    monkeypatch.setattr(worker, "SessionLocal", factory)
+    monkeypatch.setattr(content_worker, "SessionLocal", factory)
+    payload = _planned_payload()
+    english = cast(dict[str, object], payload["english"])
+    english["geographic_label"] = "Sörmland · Southeastern Sweden"
+    hike = client.post("/api/hikes", json=payload).json()
+    hike_id = hike["id"]
+    path = f"/api/hike-geographic-labels/{hike_id}"
+    with factory.begin() as db:
+        label_profile, _ = profile_fingerprint(db, kind, "sv")
+        label_profile.model = "label-model"
+        label_profile.reasoning_effort = "low"
+
+    _request_translations(client, kind, hike_id)
+
+    def translate(**arguments: object) -> TranslationResult:
+        assert arguments["source_fields"] == {"geographic_label": "Sörmland · Southeastern Sweden"}
+        assert arguments["model"] == "label-model"
+        assert arguments["reasoning_effort"] == "low"
+        return TranslationResult(
+            fields={"geographic_label": "Sörmland · Sydöstra Sverige"},
+            model="label-model",
+            input_tokens=10,
+            output_tokens=5,
+        )
+
+    assert worker.run_once(translate)
+    response = client.get(f"{path}?locale=sv")
+    assert response.json()["geographic_label"] == "Sörmland · Sydöstra Sverige"
+    assert response.json()["translation"]["is_outdated"] is False
+    assert client.get(f"/api/hikes/{hike_id}?locale=sv").status_code == 404
+    with factory.begin() as db:
+        snapshot = db.scalar(select(ContentTranslationVersion))
+        assert snapshot is not None and snapshot.entity_type == kind
+        assert snapshot.fields == {"geographic_label": "Sörmland · Sydöstra Sverige"}
+        region, _ = profile_fingerprint(db, "region", "sv")
+        region.model = "changed-region-model"
+    assert client.get(f"{path}?locale=sv").json()["translation"]["is_outdated"] is False
+
+    assert (
+        client.put(
+            f"/api/hikes/{hike_id}/translations/sv",
+            json={"title": "Svensk artikel", "summary_markdown": "Sammanfattning"},
+        ).status_code
+        == 200
+    )
+    assert client.get(f"/api/hikes/{hike_id}?locale=sv").json()["translation"][
+        "geographic_label"
+    ] == ("Sörmland · Sydöstra Sverige")
+    english["geographic_label"] = "New label"
+    assert client.put(f"/api/hikes/{hike_id}", json=payload).status_code == 200
+    assert client.get(f"{path}?locale=sv").json()["translation"]["is_outdated"] is True
+    assert (
+        client.get(f"/api/hikes/{hike_id}?locale=sv").json()["translation"]["is_outdated"] is False
+    )
+
+    override = client.put(
+        f"{path}/translations/sv", json={"geographic_label": "Sörmland och Stockholm"}
+    )
+    assert override.status_code == 200
+    assert override.json()["translation"]["review_status"] == "manual"
+    translated = client.get(f"/api/hikes/{hike_id}?locale=sv").json()["translation"]
+    assert translated["geographic_label"] == "Sörmland och Stockholm"
+    assert translated["title"] == "Svensk artikel"
+    assert client.post(
+        "/api/translations/requeue",
+        json={"include_outdated": True, "entity_type": kind, "entity_id": hike_id, "locale": "sv"},
+    ).json() == {"queued": 0, "skipped": 0}
 
 
 def test_translation_requeue_api_is_idempotent_and_preserves_manual(client: TestClient) -> None:

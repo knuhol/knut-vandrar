@@ -122,6 +122,19 @@ class RegionTranslation(Localized, Base):
     name: Mapped[str] = mapped_column(String(200))
 
 
+class HikeGeographicLabel(Authored, Base):
+    __tablename__ = "hike_geographic_labels"
+    id: Mapped[UUID] = mapped_column(ForeignKey("hikes.id", ondelete="CASCADE"), primary_key=True)
+
+
+class HikeGeographicLabelTranslation(Localized, Base):
+    __tablename__ = "hike_geographic_label_translations"
+    label_id: Mapped[UUID] = mapped_column(
+        ForeignKey("hike_geographic_labels.id", ondelete="CASCADE"), primary_key=True
+    )
+    geographic_label: Mapped[str | None] = mapped_column(String(160))
+
+
 class HikeAchievement(Authored, Base):
     __tablename__ = "hike_achievements"
     hike_id: Mapped[UUID] = mapped_column(ForeignKey("hikes.id", ondelete="CASCADE"), index=True)

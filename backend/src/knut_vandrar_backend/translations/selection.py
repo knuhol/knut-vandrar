@@ -28,6 +28,7 @@ def translation_candidates(
     for kind in ("hike", *CONTENT):
         if entity_type is not None and kind != entity_type:
             continue
+        spec = CONTENT.get(kind)
         model: Any = Hike if kind == "hike" else CONTENT[kind].entity
         translation: Any = HikeTranslation if kind == "hike" else CONTENT[kind].translation
         owner_key = "hike_id" if kind == "hike" else CONTENT[kind].owner_key
@@ -53,14 +54,8 @@ def translation_candidates(
                     TranslationJob.status.in_(("queued", "running")),
                 )
             )
-            title = getattr(
-                source,
-                "alt"
-                if kind == "photo"
-                else "title"
-                if kind in {"hike", "achievement"}
-                else "name",
-            )
+            title_field = "title" if kind == "hike" else CONTENT[kind].fields[0]
+            title = getattr(source, title_field)
             query = (
                 select(
                     literal(kind).label("entity_type"),
@@ -87,5 +82,7 @@ def translation_candidates(
             )
             if entity_id is not None:
                 query = query.where(model.id == entity_id)
+            if spec and spec.required_source_field:
+                query = query.where(getattr(source, spec.required_source_field).is_not(None))
             queries.append(query)
     return union_all(*queries).subquery()

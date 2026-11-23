@@ -93,7 +93,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
         )
 
     with testing_session_local.begin() as db:
-        for kind in ("location", "region", "achievement"):
+        for kind in ("location", "region", "achievement", "hike_geographic_label"):
             for locale in ("sv", "cs"):
                 db.add(
                     TranslationProfile(

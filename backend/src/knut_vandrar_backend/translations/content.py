@@ -11,6 +11,8 @@ from knut_vandrar_backend.models.enums import TranslationReviewStatus
 from knut_vandrar_backend.models.location import (
     AchievementTranslation,
     HikeAchievement,
+    HikeGeographicLabel,
+    HikeGeographicLabelTranslation,
     HikingLocation,
     LocationTranslation,
     Region,
@@ -28,6 +30,7 @@ class ContentSpec:
     translation: Any
     owner_key: str
     fields: tuple[str, ...]
+    required_source_field: str | None = None
 
 
 CONTENT = {
@@ -39,6 +42,13 @@ CONTENT = {
         ("name", "season_note", "overnight_restrictions_note"),
     ),
     "region": ContentSpec(Region, RegionTranslation, "region_id", ("name",)),
+    "hike_geographic_label": ContentSpec(
+        HikeGeographicLabel,
+        HikeGeographicLabelTranslation,
+        "label_id",
+        ("geographic_label",),
+        required_source_field="geographic_label",
+    ),
     "achievement": ContentSpec(
         HikeAchievement, AchievementTranslation, "achievement_id", ("title", "description")
     ),
@@ -56,6 +66,10 @@ def enqueue_content(db: Session, kind: str, entity: Any, locale: str, reason: st
         raise ValueError("Translation jobs require an explicit request")
     db.flush()
     db.execute(select(spec.entity.id).where(spec.entity.id == entity.id).with_for_update()).all()
+    if spec.required_source_field:
+        source = translation_for(db, kind, entity.id, "en")
+        if source is None or not getattr(source, spec.required_source_field):
+            return False
     target = translation_for(db, kind, entity.id, locale)
     if target is not None and target.review_status == TranslationReviewStatus.MANUAL:
         return False
@@ -162,3 +176,19 @@ def snapshot(db: Session, kind: str, entity: Any, translation: Any) -> None:
             model=translation.model,
         )
     )
+
+
+def set_manual(db: Session, kind: str, entity: Any, locale: str, fields: dict[str, Any]) -> None:
+    spec = CONTENT[kind]
+    target = translation_for(db, kind, entity.id, locale)
+    if target is None:
+        target = spec.translation(**{spec.owner_key: entity.id}, locale_code=locale)
+        db.add(target)
+    for key, value in fields.items():
+        setattr(target, key, value)
+    target.review_status = TranslationReviewStatus.MANUAL
+    target.source_revision = entity.source_revision
+    target.profile_fingerprint = profile_fingerprint(db, kind, locale)[1]
+    target.provider = "manual"
+    target.model = None
+    snapshot(db, kind, entity, target)

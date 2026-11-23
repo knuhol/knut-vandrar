@@ -43,6 +43,15 @@ def translate_hike(
             f"Translate English content into locale {target_locale}.",
             "Translate prose naturally. Preserve Markdown structure, URLs, inline code, and proper names unless the glossary directs otherwise.",
             "Return every requested field. Preserve null fields as null; do not invent text.",
+            *(
+                (
+                    "Keep the geographic label on one line, at most 160 characters. "
+                    "Use established target-language names for countries and regions. "
+                    "Preserve the label’s separator and geographic meaning.",
+                )
+                if "geographic_label" in source_fields
+                else ()
+            ),
             f"Glossary: {json.dumps(glossary, ensure_ascii=False)}",
         )
     )
@@ -115,6 +124,15 @@ def translate_hike(
         value is not None and not isinstance(value, str) for value in translated.values()
     ):
         raise RuntimeError("OpenAI translation did not match the requested fields")
+    if "geographic_label" in source_fields:
+        label = translated["geographic_label"]
+        if source_fields["geographic_label"] is None:
+            translated["geographic_label"] = None
+        else:
+            label = " ".join((label or "").split())
+            if not label or len(label) > 160:
+                raise RuntimeError("OpenAI returned an invalid geographic label")
+            translated["geographic_label"] = label
     usage = response_data.get("usage", {})
     return TranslationResult(
         fields=translated,

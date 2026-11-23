@@ -507,3 +507,86 @@ def test_unique_card_type_migration_refuses_to_discard_existing_duplicates() -> 
             assert inspect(connection).get_unique_constraints("hike_info_cards") == []
     finally:
         engine.dispose()
+
+
+def test_geographic_label_migration_copies_region_settings_and_moves_labels() -> None:
+    import json
+    from uuid import uuid4
+
+    from sqlalchemy import text
+
+    config = Config()
+    config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
+    migration = ScriptDirectory.from_config(config).get_revision("026_hike_geo_label_entity")
+    assert migration is not None
+    engine = create_engine("sqlite://")
+    try:
+        with (
+            engine.begin() as connection,
+            Operations.context(MigrationContext.configure(connection)),
+        ):
+            driver = connection.connection.driver_connection
+            assert driver is not None
+            driver.create_function("gen_random_uuid", 0, lambda: uuid4().hex)
+            driver.create_function(
+                "jsonb_build_object", 2, lambda key, value: json.dumps({key: value})
+            )
+            statements = (
+                "CREATE TABLE hikes (id TEXT PRIMARY KEY)",
+                "CREATE TABLE languages (code TEXT PRIMARY KEY)",
+                "CREATE TABLE hike_translations (id TEXT, hike_id TEXT, locale_code TEXT, "
+                "geographic_label TEXT, review_status TEXT, provider TEXT, model TEXT, "
+                "generated_at TEXT, created_at TEXT, updated_at TEXT)",
+                "CREATE TABLE hike_translation_versions (translation_id TEXT, version INT, "
+                "geographic_label TEXT, source_revision INT, provider TEXT, model TEXT, generated_at TEXT)",
+                "CREATE TABLE content_translation_versions (id TEXT, entity_type TEXT, entity_id TEXT, "
+                "target_locale TEXT, version INT, fields TEXT, source_revision INT, review_status TEXT, "
+                "provider TEXT, model TEXT, created_at TEXT)",
+                "CREATE TABLE translation_profiles (id TEXT, content_type TEXT, target_locale TEXT, "
+                "instructions TEXT, model TEXT, reasoning_effort TEXT)",
+                "CREATE TABLE translation_glossary_entries (id TEXT, profile_id TEXT, source_term TEXT, "
+                "target_term TEXT, context TEXT, do_not_translate BOOL)",
+                "INSERT INTO translation_profiles VALUES ('region-sv', 'region', 'sv', "
+                "'Use established names', 'region-model', 'low')",
+                "INSERT INTO translation_glossary_entries VALUES "
+                "('entry', 'region-sv', 'Lapland', 'Lappland', 'Finland', 0)",
+                "INSERT INTO hike_translations VALUES ('article', 'hike', 'sv', 'Lappland', "
+                "'manual', 'manual', NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                "INSERT INTO hike_translation_versions VALUES "
+                "('article', 1, 'Lappland', 1, 'openai', 'region-model', CURRENT_TIMESTAMP)",
+            )
+            for statement in statements:
+                connection.execute(text(statement))
+            migration.module.upgrade()
+
+            profile = connection.execute(
+                text(
+                    "SELECT id, target_locale, instructions, model, reasoning_effort "
+                    "FROM translation_profiles WHERE content_type = 'hike_geographic_label'"
+                )
+            ).one()
+            assert profile.id != "region-sv"
+            assert tuple(profile[1:]) == ("sv", "Use established names", "region-model", "low")
+            glossary = connection.execute(
+                text(
+                    "SELECT source_term, target_term, context, do_not_translate "
+                    "FROM translation_glossary_entries WHERE profile_id = :profile_id"
+                ),
+                {"profile_id": profile.id},
+            ).one()
+            assert tuple(glossary) == ("Lapland", "Lappland", "Finland", 0)
+            assert connection.execute(
+                text(
+                    "SELECT geographic_label, review_status FROM hike_geographic_label_translations"
+                )
+            ).one() == ("Lappland", "manual")
+            assert json.loads(
+                connection.execute(
+                    text("SELECT fields FROM content_translation_versions")
+                ).scalar_one()
+            ) == {"geographic_label": "Lappland"}
+            assert "geographic_label" not in {
+                column["name"] for column in inspect(connection).get_columns("hike_translations")
+            }
+    finally:
+        engine.dispose()

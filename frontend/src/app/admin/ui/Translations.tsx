@@ -26,12 +26,12 @@ import { api, ApiError } from '@/admin/client'
 import {
   text,
   record,
-  resources,
+  translationResources,
   schemaFor,
   writeValue,
   valuesEqual,
   type Json,
-  type TranslatableResource,
+  type TranslationResource,
 } from '@/admin/resources'
 
 export function TranslationRequest() {
@@ -89,7 +89,7 @@ export function TranslationRequest() {
         }}
       >
         <MenuItem value="">{messages.allTypes}</MenuItem>
-        {resources.map((item) => (
+        {translationResources.map((item) => (
           <MenuItem key={item.kind} value={item.kind}>
             {item.label}
           </MenuItem>
@@ -141,10 +141,12 @@ export function TranslationEditor({
   resource,
   id,
   source,
+  title = messages.translations,
 }: {
-  resource: TranslatableResource
+  resource: TranslationResource
   id: string
   source: Json
+  title?: string
 }) {
   const [locale, setLocale] = useState('sv')
   const [statusRevision, setStatusRevision] = useState(0)
@@ -154,7 +156,18 @@ export function TranslationEditor({
   const [metadata, setMetadata] = useState<Record<string, Json>>({})
   const { feedback, show: setMessage } = useAdminFeedback()
   const [busy, setBusy] = useState(false)
-  const schema = schemaFor(resource.english)
+  const contentSchema = schemaFor(resource.english)
+  const schema = resource.excludedTranslationFields
+    ? {
+        ...contentSchema,
+        properties: Object.fromEntries(
+          Object.entries(contentSchema.properties ?? {}).filter(
+            ([key]) => !resource.excludedTranslationFields?.includes(key),
+          ),
+        ),
+      }
+    : contentSchema
+  const sourceContent = writeValue(schema, source)
   async function load() {
     if (dirty && !window.confirm(messages.discardUnsavedChanges)) {
       return
@@ -170,7 +183,7 @@ export function TranslationEditor({
       setSavedValue(record(result.translation).locale === locale ? loaded : null)
       setMessage('')
     } catch (error) {
-      setValue(error instanceof ApiError && error.status === 404 ? source : null)
+      setValue(error instanceof ApiError && error.status === 404 ? sourceContent : null)
       setSavedValue(null)
       setMetadata({ locale, review_status: 'missing' })
       setMessage(error instanceof Error ? error.message : messages.translationUnavailable, 'load')
@@ -219,7 +232,7 @@ export function TranslationEditor({
     }
   }
   return (
-    <EditorSection title={messages.translations} dirty={dirty}>
+    <EditorSection title={title} dirty={dirty}>
       <Stack spacing={3}>
         <FormControl component="fieldset" disabled={busy}>
           <FormLabel component="legend">{messages.language}</FormLabel>
@@ -279,7 +292,7 @@ export function TranslationEditor({
               <Stack sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="h6">{messages.englishSource}</Typography>
                 <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                  {JSON.stringify(source, null, 2)}
+                  {JSON.stringify(sourceContent, null, 2)}
                 </pre>
               </Stack>
               <Stack sx={{ flex: 1, minWidth: 0 }}>

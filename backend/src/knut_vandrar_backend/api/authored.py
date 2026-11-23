@@ -8,6 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from knut_vandrar_backend.api.schemas.hike import (
+    HikeGeographicLabelContent,
+    HikeGeographicLabelRead,
+)
 from knut_vandrar_backend.api.schemas.location import (
     AchievementEnglish,
     AchievementRead,
@@ -26,11 +30,10 @@ from knut_vandrar_backend.models.reference import Language
 from knut_vandrar_backend.translations.content import (
     CONTENT,
     localized,
+    set_manual,
     set_source,
-    snapshot,
     translation_for,
 )
-from knut_vandrar_backend.translations.core import profile_fingerprint
 
 DatabaseSession = Annotated[Session, Depends(get_db)]
 
@@ -166,19 +169,7 @@ def translation_router(kind: str, path: str) -> APIRouter:
         entity_id: UUID, locale: str, payload: Any, request: Request, db: DatabaseSession
     ) -> Any:
         entity = require(db, entity_id, locale)
-        fields = payload.model_dump()
-        target = translation_for(db, kind, entity_id, locale)
-        if target is None:
-            target = spec.translation(**{spec.owner_key: entity_id}, locale_code=locale)
-            db.add(target)
-        for key, value in fields.items():
-            setattr(target, key, value)
-        target.review_status = TranslationReviewStatus.MANUAL
-        target.source_revision = entity.source_revision
-        target.profile_fingerprint = profile_fingerprint(db, kind, locale)[1]
-        target.provider = "manual"
-        target.model = None
-        snapshot(db, kind, entity, target)
+        set_manual(db, kind, entity, locale, payload.model_dump())
         db.commit()
         if kind == "location":
             from knut_vandrar_backend.api.locations import read_location
@@ -204,12 +195,14 @@ def translation_router(kind: str, path: str) -> APIRouter:
         "photo": PhotoEnglish,
         "location": LocationEnglish,
         "region": RegionEnglish,
+        "hike_geographic_label": HikeGeographicLabelContent,
         "achievement": AchievementEnglish,
     }
     responses: dict[str, type[BaseModel]] = {
         "photo": PhotoRead,
         "location": LocationRead,
         "region": RegionRead,
+        "hike_geographic_label": HikeGeographicLabelRead,
         "achievement": AchievementRead,
     }
     override.__annotations__["payload"] = schemas[kind]
@@ -227,3 +220,15 @@ regions_router = authored_router("region", "/api/regions", RegionWrite, RegionRe
 achievements_router = authored_router(
     "achievement", "/api/achievements", AchievementWrite, AchievementRead
 )
+
+geographic_labels_router = APIRouter(prefix="/api/hike-geographic-labels")
+
+
+@geographic_labels_router.get("/{entity_id}", response_model=HikeGeographicLabelRead)
+def read_geographic_label(entity_id: UUID, db: DatabaseSession, locale: str = "en") -> Any:
+    kind = "hike_geographic_label"
+    entity = db.get(CONTENT[kind].entity, entity_id)
+    language = db.get(Language, locale)
+    if entity is None or language is None or not language.enabled:
+        raise HTTPException(404, "Content or language not found")
+    return read_authored(db, kind, entity, locale)

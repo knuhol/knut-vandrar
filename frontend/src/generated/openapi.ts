@@ -2368,6 +2368,56 @@ export const openapi = {
         }
       }
     },
+    "/api/hike-geographic-labels/{entity_id}": {
+      "get": {
+        "summary": "Read Geographic Label",
+        "operationId": "read_geographic_label_api_hike_geographic_labels__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HikeGeographicLabelRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/achievements": {
       "post": {
         "tags": [
@@ -3103,6 +3153,152 @@ export const openapi = {
         }
       }
     },
+    "/api/hike-geographic-labels/{entity_id}/translations/{locale}/review": {
+      "put": {
+        "tags": [
+          "hike_geographic_label translations"
+        ],
+        "summary": "Review",
+        "operationId": "review_api_hike_geographic_labels__entity_id__translations__locale__review_put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewWrite"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/hike-geographic-labels/{entity_id}/translations/{locale}": {
+      "put": {
+        "tags": [
+          "hike_geographic_label translations"
+        ],
+        "summary": "Override Hike Geographic Label Translation",
+        "operationId": "override_hike_geographic_label_translation_api_hike_geographic_labels__entity_id__translations__locale__put",
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Locale"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HikeGeographicLabelContent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HikeGeographicLabelRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        }
+      }
+    },
     "/api/achievements/{entity_id}/translations/{locale}/review": {
       "put": {
         "tags": [
@@ -3345,7 +3541,8 @@ export const openapi = {
                     "location",
                     "region",
                     "achievement",
-                    "photo"
+                    "photo",
+                    "hike_geographic_label"
                   ],
                   "type": "string"
                 },
@@ -4165,6 +4362,18 @@ export const openapi = {
       },
       "HikeEnglishContent": {
         "properties": {
+          "geographic_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geographic Label"
+          },
           "title": {
             "type": "string",
             "maxLength": 240,
@@ -4207,6 +4416,54 @@ export const openapi = {
         ],
         "title": "HikeEnglishContent"
       },
+      "HikeGeographicLabelContent": {
+        "properties": {
+          "geographic_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geographic Label"
+          }
+        },
+        "type": "object",
+        "title": "HikeGeographicLabelContent"
+      },
+      "HikeGeographicLabelRead": {
+        "properties": {
+          "geographic_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geographic Label"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "translation": {
+            "$ref": "#/components/schemas/TranslationMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "translation"
+        ],
+        "title": "HikeGeographicLabelRead"
+      },
       "HikeLocalizedRead": {
         "properties": {
           "locale": {
@@ -4242,6 +4499,17 @@ export const openapi = {
               }
             ],
             "title": "Description Markdown"
+          },
+          "geographic_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geographic Label"
           },
           "slug": {
             "type": "string",
@@ -4592,6 +4860,11 @@ export const openapi = {
               }
             ],
             "title": "English Title"
+          },
+          "has_geographic_label": {
+            "type": "boolean",
+            "title": "Has Geographic Label",
+            "default": false
           },
           "location": {
             "anyOf": [
@@ -6736,7 +7009,8 @@ export const openapi = {
                   "location",
                   "region",
                   "achievement",
-                  "photo"
+                  "photo",
+                  "hike_geographic_label"
                 ]
               },
               {
@@ -6983,7 +7257,8 @@ export const openapi = {
               "location",
               "region",
               "achievement",
-              "photo"
+              "photo",
+              "hike_geographic_label"
             ],
             "title": "Entity Type"
           },

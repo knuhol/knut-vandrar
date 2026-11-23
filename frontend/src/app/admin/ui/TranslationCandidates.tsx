@@ -7,7 +7,7 @@ import { AdminMessage } from './AdminMessage'
 
 import { api } from '@/admin/client'
 import messages from '@/admin/messages/en.json'
-import { record, resources, text, type Json } from '@/admin/resources'
+import { record, translationResources, text, type Json } from '@/admin/resources'
 
 interface Selection {
   entityType: string
@@ -94,8 +94,8 @@ function CandidatePage({
                 {text(row.title)}
               </Typography>
               <Typography variant="body2">
-                {resources.find((resource) => resource.kind === row.entity_type)?.label} ·{' '}
-                {row.locale === 'sv' ? messages.swedish : messages.czech}
+                {translationResources.find((resource) => resource.kind === row.entity_type)?.label}{' '}
+                · {row.locale === 'sv' ? messages.swedish : messages.czech}
               </Typography>
               <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
                 {row.is_missing ? (

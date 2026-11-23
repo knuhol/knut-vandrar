@@ -7,14 +7,14 @@ import { AdminMessage } from './AdminMessage'
 
 import { api, ApiError } from '@/admin/client'
 import messages from '@/admin/messages/en.json'
-import { record, type Json, type Resource } from '@/admin/resources'
+import { record, type Json, type TranslationResource } from '@/admin/resources'
 
 export function TranslationStatus({
   resource,
   id,
   locale,
 }: {
-  resource: Resource
+  resource: TranslationResource
   id: string
   locale: string
 }) {

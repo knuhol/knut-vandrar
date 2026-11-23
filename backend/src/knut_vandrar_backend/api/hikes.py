@@ -48,11 +48,18 @@ from knut_vandrar_backend.models.hike import (
     HikeSlugAlias,
     HikeTranslation,
 )
-from knut_vandrar_backend.models.location import HikeAchievement, HikeOvernight, HikingLocation
+from knut_vandrar_backend.models.location import (
+    HikeAchievement,
+    HikeGeographicLabel,
+    HikeGeographicLabelTranslation,
+    HikeOvernight,
+    HikingLocation,
+)
 from knut_vandrar_backend.models.map import HikeMapImage
 from knut_vandrar_backend.models.reference import InfoCardType
 from knut_vandrar_backend.models.translation import TranslationJob
 from knut_vandrar_backend.tracks.selection import validate_selection
+from knut_vandrar_backend.translations.content import set_manual, set_source
 from knut_vandrar_backend.translations.core import (
     SOURCE_LOCALE,
     TARGET_LOCALES,
@@ -161,6 +168,7 @@ def create_hike(payload: HikeWrite, request: Request, db: DatabaseSession) -> Hi
         review_status=TranslationReviewStatus.SOURCE,
     )
     db.add(english)
+    _set_source_label(db, hike.id, payload.english.geographic_label)
     try:
         validate_selection(db, hike.id, payload.location_id, payload.track_collection_id)
     except ValueError as error:
@@ -300,7 +308,7 @@ def get_hike_by_slug(
 def replace_hike(
     hike_id: UUID, payload: HikeWrite, request: Request, db: DatabaseSession
 ) -> HikeRead:
-    hike = db.get(Hike, hike_id)
+    hike = db.get(Hike, hike_id, with_for_update=True)
     if hike is None:
         raise HTTPException(status_code=404, detail="Hike not found")
     _validate_location(db, payload.location_id)
@@ -325,6 +333,8 @@ def replace_hike(
     hike.ascent_m = payload.ascent_m
     hike.start_point = payload.start_point
     hike.end_point = payload.end_point
+    if "geographic_label" in payload.english.model_fields_set:
+        _set_source_label(db, hike.id, payload.english.geographic_label)
     if content_changed:
         hike.source_revision += 1
         _set_translation_text(english, payload)
@@ -345,11 +355,14 @@ def replace_hike(
 
 @router.delete("/{hike_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_hike(hike_id: UUID, db: DatabaseSession) -> Response:
-    hike = db.get(Hike, hike_id)
+    hike = db.get(Hike, hike_id, with_for_update=True)
     if hike is None:
         raise HTTPException(status_code=404, detail="Hike not found")
+    # Match the workers' lock order before deleting their jobs.
+    db.get(HikeGeographicLabel, hike_id, with_for_update=True)
     db.query(TranslationJob).filter(
-        TranslationJob.entity_type == "hike", TranslationJob.entity_id == hike.id
+        TranslationJob.entity_type.in_(("hike", "hike_geographic_label")),
+        TranslationJob.entity_id == hike.id,
     ).delete(synchronize_session=False)
     db.delete(hike)
     db.commit()
@@ -468,6 +481,7 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
     return HikeRead(
         id=hike.id,
         track_collection_id=hike.track_collection_id,
+        has_geographic_label=db.get(HikeGeographicLabel, hike.id) is not None,
         english_title=next(
             (item.title for item in hike.translations if item.locale_code == SOURCE_LOCALE), None
         ),
@@ -544,10 +558,12 @@ def _localized(db: Session, translation: HikeTranslation) -> HikeLocalizedRead:
         or translation.profile_fingerprint
         != profile_fingerprint(db, "hike", translation.locale_code)[1]
     )
+    label = db.get(HikeGeographicLabelTranslation, (translation.hike_id, translation.locale_code))
     return HikeLocalizedRead(
         locale=translation.locale_code,
         title=translation.title,
         tagline=translation.tagline,
+        geographic_label=label.geographic_label if label else None,
         summary_markdown=translation.summary_markdown,
         description_markdown=translation.description_markdown,
         slug=translation.slug,
@@ -711,11 +727,37 @@ def override_hike_translation(
             slug=unique_slug(db, locale, payload.title, hike_id),
         )
         db.add(translation)
-    for key, value in payload.model_dump().items():
+    for key, value in payload.model_dump(exclude={"geographic_label"}).items():
         setattr(translation, key, value)
     _set_generated_slug(db, translation, payload.title)
     translation.review_status = TranslationReviewStatus.MANUAL
     translation.source_revision = hike.source_revision
     translation.profile_fingerprint = profile_fingerprint(db, "hike", locale)[1]
+    if "geographic_label" in payload.model_fields_set:
+        entity = _label_for_update(db, hike.id, create=payload.geographic_label is not None)
+        if entity is not None:
+            set_manual(
+                db,
+                "hike_geographic_label",
+                entity,
+                locale,
+                {"geographic_label": payload.geographic_label},
+            )
     db.commit()
     return _localized(db, translation)
+
+
+def _label_for_update(db: Session, hike_id: UUID, *, create: bool) -> HikeGeographicLabel | None:
+    entity = db.get(HikeGeographicLabel, hike_id, with_for_update=True)
+    if entity is None and create:
+        entity = HikeGeographicLabel(id=hike_id)
+        db.add(entity)
+        db.flush()
+        set_source(db, "hike_geographic_label", entity, {"geographic_label": None})
+    return entity
+
+
+def _set_source_label(db: Session, hike_id: UUID, label: str | None) -> None:
+    entity = _label_for_update(db, hike_id, create=label is not None)
+    if entity is not None:
+        set_source(db, "hike_geographic_label", entity, {"geographic_label": label})

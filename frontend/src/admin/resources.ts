@@ -3,6 +3,10 @@ import { uploadLimits } from './uploads'
 import messages from './messages/en.json'
 import { openapi } from '@/generated/openapi'
 
+export const fieldLabels: Partial<Record<string, string>> = {
+  geographic_label: messages.geographicLabel,
+}
+
 export const resources = [
   {
     name: 'hikes',
@@ -10,6 +14,7 @@ export const resources = [
     kind: 'hike',
     write: 'HikeWrite',
     english: 'HikeEnglishContent',
+    excludedTranslationFields: ['geographic_label'],
     image: 'cover-image',
     imageMaxBytes: uploadLimits.photo,
     imageLimitMessage: 'photoFileTooLarge' as const,
@@ -57,7 +62,27 @@ export const resources = [
   },
 ]
 export type Resource = (typeof resources)[number]
-export type TranslatableResource = Resource & { english: string }
+export const geographicLabelResource = {
+  name: 'hike-geographic-labels',
+  label: messages.geographicLabels,
+  kind: 'hike_geographic_label',
+  english: 'HikeGeographicLabelContent',
+} as const
+
+export const translationResources = [
+  ...resources.filter(supportsTranslations),
+  geographicLabelResource,
+]
+
+export interface TranslationResource {
+  name: string
+  label: string
+  kind: string
+  english: string
+  excludedTranslationFields?: string[]
+}
+
+export type TranslatableResource = Resource & TranslationResource
 
 export function supportsTranslations(resource: Resource): resource is TranslatableResource {
   return typeof resource.english === 'string'

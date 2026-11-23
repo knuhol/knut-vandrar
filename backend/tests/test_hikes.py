@@ -563,6 +563,45 @@ def test_localized_hike_detail_includes_the_english_source_title(
     assert response.json()["english_title"] == "Hike through the Highlands"
 
 
+def test_hike_geographic_label_is_optional_and_localized(client: TestClient) -> None:
+    payload = _planned_payload()
+    created = client.post("/api/hikes", json=payload)
+    assert created.status_code == 201
+    assert created.json()["translation"]["geographic_label"] is None
+    hike_url = f"/api/hikes/{created.json()['id']}"
+
+    source = cast(dict[str, object], payload["english"])
+    updated = client.put(
+        hike_url,
+        json={
+            **payload,
+            "english": {**source, "geographic_label": "  Sörmland · Southeastern Sweden  "},
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["translation"]["geographic_label"] == "Sörmland · Southeastern Sweden"
+    assert client.put(hike_url, json=payload).json()["translation"]["geographic_label"] == (
+        "Sörmland · Southeastern Sweden"
+    )
+
+    swedish = {
+        "title": "Vandring i Sörmland",
+        "summary_markdown": "En längre vandring.",
+        "geographic_label": "Sörmland · Sydöstra Sverige",
+    }
+    translated = client.put(f"{hike_url}/translations/sv", json=swedish)
+    assert translated.status_code == 200
+    public_url = f"/api/hikes/sv/{translated.json()['slug']}"
+    assert client.get(public_url).json()["translation"]["geographic_label"] == (
+        "Sörmland · Sydöstra Sverige"
+    )
+
+    cleared = client.put(f"{hike_url}/translations/sv", json={**swedish, "geographic_label": " "})
+    assert cleared.status_code == 200
+    assert client.get(public_url).json()["translation"]["geographic_label"] is None
+    assert _get_jobs(client) == []
+
+
 def test_hike_selects_only_its_own_or_current_trail_collection(client: TestClient) -> None:
     from knut_vandrar_backend.models.location import HikingLocation, LocationTranslation
     from knut_vandrar_backend.models.track import TrackCollection
