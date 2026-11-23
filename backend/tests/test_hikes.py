@@ -179,6 +179,7 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
     )
     assert uploaded.status_code == 200, uploaded.text
     image_url = uploaded.json()["cover_image_url"]
+    sources = uploaded.json()["cover_sources"]
     assert image_url.endswith(f"/api/hikes/{hike['id']}/cover-image")
     served = client.get(image_url)
     assert served.status_code == 200
@@ -186,10 +187,21 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
         assert image.size == (3840, 1920)
         assert image.format == "WEBP"
     assert served.headers["content-type"] == "image/webp"
+    assert served.headers["cache-control"] == "public, max-age=0, must-revalidate"
+    versioned = client.get(sources["full"])
+    assert versioned.content == served.content
+    assert versioned.headers["cache-control"] == "public, max-age=31536000, immutable"
+    stale = client.get(image_url, params={"v": "old"}, follow_redirects=False)
+    assert stale.status_code == 307
+    assert stale.headers["cache-control"] == "no-store"
+    assert client.get(stale.headers["location"]).content == served.content
     for variant, size in [("mobile", (1600, 800)), ("card", (960, 480))]:
         derivative = client.get(image_url, params={"variant": variant})
         assert derivative.status_code == 200
         assert derivative.headers["etag"] != served.headers["etag"]
+        cached = client.get(sources[variant])
+        assert cached.content == derivative.content
+        assert cached.headers["cache-control"] == "public, max-age=31536000, immutable"
         with Image.open(BytesIO(derivative.content)) as image:
             assert image.size == size
     assert client.get(image_url, params={"variant": "original"}).status_code == 422
@@ -200,6 +212,7 @@ def test_hike_endpoints_video_and_cover_image_round_trip(client: TestClient) -> 
 
     listed = client.get("/api/hikes?locale=en")
     assert listed.json()["items"][0]["cover_image_url"] == image_url
+    assert listed.json()["items"][0]["cover_sources"] == sources
 
     deleted = client.delete(f"/api/hikes/{hike['id']}/cover-image")
     assert deleted.status_code == 204

@@ -59,7 +59,7 @@ export function InfoCard({
       aria-expanded={onClick ? expanded : undefined}
       aria-haspopup={onClick ? 'dialog' : undefined}
       data-link-kind={interactive ? 'card' : undefined}
-      className={`relative flex w-full items-center gap-3 text-left min-h-20 rounded-sm border border-l-2 px-3 py-2.5 ${compactSurface} ${interactive ? `cursor-pointer ${compactInteraction}` : 'opacity-60'}`}
+      className={`relative flex w-full items-center gap-3 text-left min-h-20 rounded-sm border border-l-2 px-3 py-2.5 wide:max-w-100 ${compactSurface} ${interactive ? `cursor-pointer ${compactInteraction}` : 'opacity-60'}`}
     >
       <span className="grid shrink-0 place-items-center [&>svg]:size-5 size-6">{icon}</span>
       <span className="min-w-0 flex-1">

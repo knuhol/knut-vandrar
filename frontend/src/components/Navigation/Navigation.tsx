@@ -17,6 +17,7 @@ import styles from './Navigation.module.css'
 
 import { Link } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
+import { prefetchAuthorPortrait } from '@/navigation/prefetchAuthorPortrait'
 import { navigateToSection, sectionForHash } from '@/navigation/sectionLink'
 import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
 import { useClickShortcut, usePageShortcut } from '@/navigation/usePageShortcut'
@@ -101,6 +102,9 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
       id: 'about',
       href: '/about',
       label: t('aboutMe'),
+      onPointerEnter: prefetchAuthorPortrait,
+      onFocus: prefetchAuthorPortrait,
+      onClick: prefetchAuthorPortrait,
       'aria-keyshortcuts': showShortcutHints ? 'A' : undefined,
       'aria-current':
         pathname === `/${locale}${routing.pathnames['/about'][locale]}` ? 'page' : undefined,
@@ -140,6 +144,9 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
               <NavigationLink
                 {...link}
                 onClick={() => {
+                  if ('onClick' in link) {
+                    link.onClick()
+                  }
                   navigating.current = true
                   setOpen(false)
                 }}

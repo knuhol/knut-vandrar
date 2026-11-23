@@ -153,13 +153,22 @@ def optimize_images(
 
 
 def image_response(
-    content: bytes | Callable[[], bytes], content_type: str, sha256: str, request: Request
+    content: bytes | Callable[[], bytes],
+    content_type: str,
+    sha256: str,
+    request: Request,
+    *,
+    immutable: bool = False,
 ) -> Response:
-    """Serve an image with revalidation and protections for SVG documents."""
+    """Serve an image with cache headers and protections for SVG documents."""
     etag = f'"{sha256}"'
     headers = {
         "ETag": etag,
-        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Cache-Control": (
+            "public, max-age=31536000, immutable"
+            if immutable
+            else "public, max-age=0, must-revalidate"
+        ),
         "X-Content-Type-Options": "nosniff",
     }
     if content_type == "image/svg+xml":

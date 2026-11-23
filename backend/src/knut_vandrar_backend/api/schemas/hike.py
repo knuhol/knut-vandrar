@@ -262,6 +262,12 @@ class HikeNeighborsRead(BaseModel):
     next: HikeNeighborRead | None
 
 
+class HikeCoverSources(BaseModel):
+    full: str
+    mobile: str
+    card: str
+
+
 class HikeRead(HikeExtra):
     track_collection_id: UUID | None = None
     id: UUID
@@ -279,6 +285,7 @@ class HikeRead(HikeExtra):
     end_point: str | None
     duration_days: int | None
     cover_image_url: str | None
+    cover_sources: HikeCoverSources | None = None
     translation: HikeLocalizedRead
     available_translations: list[HikeSlugRead]
     cards: list[InfoCard]
@@ -301,6 +308,7 @@ class HikeSummaryRead(BaseModel):
     end_point: str | None
     duration_days: int | None
     cover_image_url: str | None
+    cover_sources: HikeCoverSources | None = None
     translation: HikeLocalizedRead
 
 

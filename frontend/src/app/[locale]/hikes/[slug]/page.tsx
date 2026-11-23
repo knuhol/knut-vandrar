@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { hasLocale } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { notFound, permanentRedirect } from 'next/navigation'
@@ -27,8 +28,8 @@ import { Markdown } from '@/components/Markdown/Markdown'
 import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname } from '@/i18n/navigation'
-import { routing } from '@/i18n/routing'
-import { getHike, getPhotos, getHikeMaps, getHikeNeighbors } from '@/api/hikes'
+import { routing, type Locale } from '@/i18n/routing'
+import { getHike, getPhotos, getHikeMaps, getHikeNeighbors, type Hike } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
@@ -95,8 +96,19 @@ export default async function HikePage({ params }: Props) {
     )
   }
 
-  const t = await getTranslations('Site')
-  const [galleryPage, maps, neighbors] = await Promise.all([
+  return (
+    <div>
+      <HikeMasthead hike={hike} />
+      <Suspense fallback={null}>
+        <HikePageContent hike={hike} locale={locale} />
+      </Suspense>
+    </div>
+  )
+}
+
+async function HikePageContent({ hike, locale }: { hike: Hike; locale: Locale }) {
+  const [t, galleryPage, maps, neighbors] = await Promise.all([
+    getTranslations('Site'),
     getPhotos(hike.id, locale),
     getHikeMaps(hike.id),
     getHikeNeighbors(hike.id, locale),
@@ -131,7 +143,7 @@ export default async function HikePage({ params }: Props) {
     : '[--article-max-inline-size:none]'
 
   return (
-    <div>
+    <>
       <StructuredData
         data={hikeData(
           locale,
@@ -140,7 +152,6 @@ export default async function HikePage({ params }: Props) {
           hike.cover_image_url ? imageUrl(hike.cover_image_url) : undefined,
         )}
       />
-      <HikeMasthead hike={hike} />
       <section className="relative bg-cream" aria-label={t('hikeFacts')}>
         <HikeNavigation label={t('pageContents')} items={navigationItems} />
         <HikeOverview
@@ -242,6 +253,6 @@ export default async function HikePage({ params }: Props) {
           </Container>
         </TrailFooter>
       )}
-    </div>
+    </>
   )
 }

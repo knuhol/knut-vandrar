@@ -25,7 +25,7 @@ export function FactTag({
 
   return (
     <span
-      className={`inline-flex max-w-full gap-2 border text-sm ${kind === 'fact' ? 'items-start' : 'items-center'} ${kind === 'country' ? 'rounded-full' : 'rounded-sm'} ${size === 'month' ? 'w-full justify-center px-1 py-2 text-xs' : 'px-3 py-2'} ${appearance[kind]}`}
+      className={`inline-flex max-w-full gap-2 border text-sm ${kind === 'fact' || kind === 'milestone' ? 'items-start' : 'items-center'} ${kind === 'country' ? 'rounded-full' : 'rounded-sm'} ${size === 'month' ? 'w-full justify-center px-1 py-2 text-xs' : 'px-3 py-2'} ${appearance[kind]}`}
     >
       {children}
     </span>

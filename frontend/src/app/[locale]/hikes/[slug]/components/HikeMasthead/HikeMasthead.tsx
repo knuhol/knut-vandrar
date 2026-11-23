@@ -8,7 +8,7 @@ import { Container } from '@/components/Container'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { hasCompleteHikeStats } from '@/hiking/stats'
-import { coverImageUrl, imageUrl } from '@/api/images'
+import { hikeCoverSources } from '@/api/images'
 import { responsiveMedia } from '@/config/breakpoints'
 import type { Hike } from '@/api/hikes'
 import { Link } from '@/i18n/navigation'
@@ -16,19 +16,17 @@ import { Link } from '@/i18n/navigation'
 export function HikeMasthead({ hike }: { hike: Hike }) {
   const t = useTranslations('Site')
   const hasCompleteStats = hasCompleteHikeStats(hike)
+  const covers = hikeCoverSources(hike)
 
   return (
     <header
       className={`${styles.landscape} relative isolate flex items-end overflow-hidden bg-forest text-cream`}
     >
-      {hike.cover_image_url && (
+      {covers && (
         <picture className="absolute inset-0 -z-20 overflow-hidden">
-          <source
-            media={responsiveMedia.belowDesktop}
-            srcSet={coverImageUrl(hike.cover_image_url, 'mobile')}
-          />
+          <source media={responsiveMedia.belowTablet} srcSet={covers.card} />
           <Image
-            src={imageUrl(hike.cover_image_url)}
+            src={covers.mobile}
             alt={hike.translation.title}
             fill
             className={`${styles.photo} object-cover`}

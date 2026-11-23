@@ -29,6 +29,24 @@ jest.mock('@/i18n/navigation', () => ({
   ),
 }))
 
+test('hovering About me preloads the responsive portrait', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      <Navigation locale="en" />
+    </NextIntlClientProvider>,
+  )
+
+  fireEvent.pointerEnter(screen.getByRole('link', { name: 'About me' }))
+
+  const hint = document.head.querySelector(
+    'link[rel="preload"][as="image"][imagesrcset*="knut.webp"]',
+  )
+  expect(hint).toHaveAttribute(
+    'imagesizes',
+    '(min-width: 1001px) 50vw, (min-width: 641px) 400px, 100vw',
+  )
+})
+
 test('homepage shortcuts open the author page and jump to hikes without dropping the query', () => {
   window.history.replaceState(null, '', '/en?offset=6')
   window.matchMedia = jest.fn().mockReturnValue({ matches: true })
