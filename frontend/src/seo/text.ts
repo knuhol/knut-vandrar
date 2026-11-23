@@ -31,8 +31,12 @@ export function plainText(markdown: string) {
   return nodeText(parser.parse(markdown)).replace(/\s+/g, ' ').trim()
 }
 
-export function metadataDescription(markdown: string, fallback: string) {
-  const text = plainText(markdown) || fallback
+export function metadataDescription(markdown: string, fallback: string, context?: string | null) {
+  const summary = plainText(markdown)
+  const text =
+    context && !summary.toLowerCase().includes(context.toLowerCase())
+      ? [context, summary].filter(Boolean).join('. ')
+      : summary || fallback
 
   if (text.length <= 160) {
     return text

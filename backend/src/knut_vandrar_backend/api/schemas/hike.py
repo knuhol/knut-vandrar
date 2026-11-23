@@ -6,7 +6,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
-from knut_vandrar_backend.api.schemas.location import AchievementRead, LocationRead
+from knut_vandrar_backend.api.schemas.location import (
+    AchievementRead,
+    LocationRead,
+    TranslationMetadata,
+)
 from knut_vandrar_backend.models.enums import (
     AccommodationType,
     Direction,
@@ -76,7 +80,23 @@ InfoCard = Annotated[
 ]
 
 
-class HikeEnglishContent(BaseModel):
+class HikeGeographicLabelContent(BaseModel):
+    geographic_label: str | None = Field(default=None, max_length=160)
+
+    @field_validator("geographic_label", mode="before")
+    @classmethod
+    def normalize_geographic_label(cls, value: object) -> object:
+        if isinstance(value, str):
+            return " ".join(value.split()) or None
+        return value
+
+
+class HikeGeographicLabelRead(HikeGeographicLabelContent):
+    id: UUID
+    translation: TranslationMetadata
+
+
+class HikeEnglishContent(HikeGeographicLabelContent):
     title: str = Field(min_length=1, max_length=240)
     tagline: str | None = Field(default=None, max_length=500)
     summary_markdown: str = Field(min_length=1)
@@ -215,6 +235,7 @@ class HikeLocalizedRead(BaseModel):
     tagline: str | None
     summary_markdown: str
     description_markdown: str | None
+    geographic_label: str | None = None
     slug: str
     review_status: TranslationReviewStatus
     is_outdated: bool
@@ -245,6 +266,7 @@ class HikeRead(HikeExtra):
     track_collection_id: UUID | None = None
     id: UUID
     english_title: str | None
+    has_geographic_label: bool = False
     location: LocationRead | None
     status: HikeStatus
     planned_start_at: datetime | None

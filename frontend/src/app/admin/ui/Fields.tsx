@@ -16,6 +16,7 @@ import {
   orderedFields,
   arrayItemSchema,
   fieldGroups,
+  fieldLabels,
   fieldWidgets,
   valuesEqual,
   referenceResources,
@@ -57,7 +58,7 @@ export function Fields({
   const field = nonNull(schema)
   const root = context ?? { schema: field.title || '', value }
   const [preview, setPreview] = useState(false)
-  const labelText = label.replaceAll('_', ' ')
+  const labelText = fieldLabels[label] ?? label.replaceAll('_', ' ')
   const scopedReference = references?.[label]
   const relation = reference || scopedReference?.resource || referenceResources[label]
   if (fieldWidgets[label] === 'months') {

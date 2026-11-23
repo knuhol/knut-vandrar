@@ -75,6 +75,7 @@ def process_content(job_id: UUID, translate: Any) -> None:
         if entity.source_revision != job.source_revision or fingerprint != job.profile_fingerprint:
             job.status = "superseded"
             return
+        from knut_vandrar_backend.api.schemas.hike import HikeGeographicLabelContent
         from knut_vandrar_backend.api.schemas.location import (
             AchievementEnglish,
             LocationEnglish,
@@ -86,6 +87,7 @@ def process_content(job_id: UUID, translate: Any) -> None:
             "photo": PhotoEnglish,
             "location": LocationEnglish,
             "region": RegionEnglish,
+            "hike_geographic_label": HikeGeographicLabelContent,
             "achievement": AchievementEnglish,
         }
         schema = schemas[job.entity_type]

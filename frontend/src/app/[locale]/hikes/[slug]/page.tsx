@@ -57,7 +57,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return pageMetadata({
     locale,
     title: hike.translation.title,
-    description: metadataDescription(hike.translation.summary_markdown, t('metadataDescription')),
+    description: metadataDescription(
+      hike.translation.summary_markdown,
+      t('metadataDescription'),
+      hike.translation.geographic_label,
+    ),
     path: hikePath(locale, hike.translation.slug),
     languages: hikeLanguages(hike.available_translations),
     image: hike.cover_image_url ? hikeSharingImage(locale, hike.translation.slug) : undefined,

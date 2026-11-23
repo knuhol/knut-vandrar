@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from knut_vandrar_backend.api.auth import READ_METHODS, require_write_auth
 from knut_vandrar_backend.api.authored import (
     achievements_router,
+    geographic_labels_router,
     regions_router,
     translation_router,
 )
@@ -88,11 +89,13 @@ app.include_router(health_router)
 
 
 app.include_router(regions_router)
+app.include_router(geographic_labels_router)
 app.include_router(achievements_router)
 for content_type, prefix in [
     ("photo", "/api/photos"),
     ("location", "/api/locations"),
     ("region", "/api/regions"),
+    ("hike_geographic_label", "/api/hike-geographic-labels"),
     ("achievement", "/api/achievements"),
 ]:
     app.include_router(translation_router(content_type, prefix))
