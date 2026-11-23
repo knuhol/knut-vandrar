@@ -14,23 +14,6 @@
   );
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .photo {
-    animation: cover-enter var(--duration-entrance) var(--ease-entrance) both;
-  }
-}
-
-@keyframes cover-enter {
-  from {
-    opacity: 0.85;
-    transform: scale(1.025);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .landscape svg {
   filter: drop-shadow(var(--text-shadow-on-image));
 }

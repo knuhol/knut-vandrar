@@ -219,8 +219,10 @@ def test_cover_assets_survive_transfer_and_repair(
         cover = db.get(HikeCoverImage, HIKE)
         assert cover is not None
         cover.set_asset("original", original, hashlib.sha256(original).hexdigest())
-        for kind in ("mobile", "card"):
+        for kind in ("mobile", "card", "desktop"):
             cover.set_asset(kind, derivative, cover.sha256)
+        wide = _image("blue", "AVIF")
+        cover.set_asset("wide", wide, hashlib.sha256(wide).hexdigest())
 
     archive = _export(source)
     assert _import(destination, archive).counts == {"repair": 1, "skip": 3}
@@ -231,11 +233,13 @@ def test_cover_assets_survive_transfer_and_repair(
             "original": original,
             "mobile": derivative,
             "card": derivative,
+            "desktop": derivative,
+            "wide": wide,
         }
     assert _import(destination, archive).counts == {"skip": 4}
 
 
-@pytest.mark.parametrize("kind", ["original", "card", "mobile"])
+@pytest.mark.parametrize("kind", ["original", "card", "mobile", "desktop"])
 def test_cover_asset_conflicts_require_explicit_replacement(
     environments: tuple[Environment, Environment], kind: str
 ) -> None:
@@ -276,7 +280,7 @@ def test_replacing_cover_from_legacy_archive_removes_stale_assets(
         cover.content = content
         cover.content_type = "image/webp"
         cover.sha256 = hashlib.sha256(content).hexdigest()
-        for kind in ("original", "card", "mobile"):
+        for kind in ("original", "card", "mobile", "desktop"):
             cover.set_asset(kind, content, cover.sha256)
     assert _import(destination, _export(source), replace=True).counts == {"replace": 1, "skip": 3}
     with destination.factory() as db:

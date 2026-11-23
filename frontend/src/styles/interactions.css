@@ -82,3 +82,14 @@ button.link-dotted:is(:hover, :focus-visible) {
     transform: translateY(0);
   }
 }
+
+/* Set the starting opacity before the browser can paint decoded image pixels. */
+@utility image-reveal {
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    transition: opacity var(--duration-image-reveal) var(--ease-entrance);
+
+    &:not([data-image-ready]) {
+      opacity: 0;
+    }
+  }
+}

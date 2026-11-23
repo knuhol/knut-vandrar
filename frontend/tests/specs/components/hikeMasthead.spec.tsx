@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
 import type { Hike } from '@/api/hikes'
 import { HikeMasthead } from '@/app/[locale]/hikes/[slug]/components/HikeMasthead/HikeMasthead'
@@ -7,7 +7,10 @@ jest.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 jest.mock('@/i18n/navigation', () => ({ Link: 'a' }))
 jest.mock('@/config/public', () => ({ publicConfig: { apiBaseUrl: 'https://api.example.test' } }))
 jest.mock('@/config/breakpoints', () => ({
-  responsiveMedia: { belowTablet: '(max-width: 639px)' },
+  responsiveMedia: {
+    fullHikeCover: '(min-width: 2560px)',
+    desktopHikeCover: '(min-width: 1500px)',
+  },
 }))
 
 test.each(['Sörmland · Southeastern Sweden', null])(
@@ -33,12 +36,14 @@ test.each(['Sörmland · Southeastern Sweden', null])(
   },
 )
 
-test('uses the versioned card image as the cover on phones', () => {
+test('provides responsive cover sources and reveals the image once it loads', async () => {
   const hike = {
     status: 'completed',
     translation: { title: 'Sörmlandsleden' },
     cover_sources: {
       full: 'http://backend/api/hikes/example/cover-image?v=large',
+      wide: 'http://backend/api/hikes/example/cover-image?variant=wide&v=wide',
+      desktop: 'http://backend/api/hikes/example/cover-image?variant=desktop&v=desktop',
       mobile: 'http://backend/api/hikes/example/cover-image?variant=mobile&v=medium',
       card: 'http://backend/api/hikes/example/cover-image?variant=card&v=small',
     },
@@ -48,13 +53,32 @@ test('uses the versioned card image as the cover on phones', () => {
 
   const image = screen.getByRole('img', { name: 'Sörmlandsleden' })
   const sources = image.closest('picture')?.querySelectorAll('source')
-  expect(sources?.[0]).toHaveAttribute('media', '(max-width: 639px)')
+  expect(sources?.[0]).toHaveAttribute('media', '(min-width: 2560px)')
+  expect(sources?.[0]).toHaveAttribute('type', 'image/avif')
   expect(sources?.[0]).toHaveAttribute(
     'srcset',
-    'https://api.example.test/api/hikes/example/cover-image?variant=card&v=small',
+    'https://api.example.test/api/hikes/example/cover-image?variant=wide&v=wide',
+  )
+  expect(sources?.[1]).toHaveAttribute(
+    'srcset',
+    'https://api.example.test/api/hikes/example/cover-image?v=large',
+  )
+  expect(sources?.[2]).toHaveAttribute('media', '(min-width: 1500px)')
+  expect(sources?.[2]).toHaveAttribute(
+    'srcset',
+    'https://api.example.test/api/hikes/example/cover-image?variant=desktop&v=desktop',
   )
   expect(image).toHaveAttribute(
     'src',
     'https://api.example.test/api/hikes/example/cover-image?variant=mobile&v=medium',
   )
+  expect(image).toHaveAttribute('loading', 'eager')
+  expect(image).toHaveAttribute('fetchpriority', 'high')
+  expect(image).toHaveClass('image-reveal')
+  expect(image).not.toHaveAttribute('data-image-ready')
+
+  fireEvent.load(image)
+  await waitFor(() => {
+    expect(image).toHaveAttribute('data-image-ready')
+  })
 })

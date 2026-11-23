@@ -9,9 +9,9 @@ excluded. See [track imports](track-imports.md).
 
 Use `scripts/media-export.sh` and `scripts/media-import.sh` to transfer images between
 `local`, `dev`, and `prod` without replacing unrelated application content. Both
-environments need this code and migrations through `019_hike_stopping_point` applied
-through their normal deployment/startup process. The source and destination Alembic revisions must
-match. No additional dependencies, cloud storage, or API credentials are needed.
+environments need the current migrations applied through their normal deployment or startup
+process. The archive and the destination must have the same Alembic revision.
+No additional dependencies, cloud storage, or API credentials are needed.
 
 The commands execute Python inside an **already running backend**. They do not start,
 restart, rebuild, or remove containers or volumes. Remote commands require SSH access
@@ -188,3 +188,18 @@ exported from the matching source state. The database dump already includes cove
 logos, and gallery metadata; importing the archive then repairs the gallery files.
 If content can change between the dump and media export, pause edits for that pair.
 See [database backups](database-backups.md) for the existing database workflow.
+
+## Generate desktop covers for existing hikes
+
+Uploads generate a 2560 px desktop WebP and a 3840 px AVIF automatically. After
+deploying migration `027_hike_cover_desktop`, run the following command as the deploy
+account in the destination VPS checkout:
+
+```bash
+bash scripts/media-common.sh dev backfill-desktop-covers
+```
+
+Use the `prod` checkout and environment for production. The command fills missing
+derivatives for covers already in that environment, including transferred covers.
+It preserves the stored original and existing variants. Each cover is saved
+separately, so an interrupted run can resume.

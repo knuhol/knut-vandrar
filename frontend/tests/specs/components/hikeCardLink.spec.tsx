@@ -1,15 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import * as ReactDOM from 'react-dom'
+import { prefetchHikeCover } from '@/hiking/prefetchCovers'
 
 import { HikeCardLink } from '@/app/[locale]/components/HikeCardLink'
 
-jest.mock('react-dom', () => ({
-  ...jest.requireActual<typeof ReactDOM>('react-dom'),
-  preload: jest.fn(),
-}))
-jest.mock('@/config/breakpoints', () => ({
-  responsiveMedia: { belowTablet: '(max-width: 639px)' },
-}))
+jest.mock('@/hiking/prefetchCovers', () => ({ prefetchHikeCover: jest.fn() }))
 jest.mock('@/components/Button', () => ({
   ButtonLink: ({
     'aria-label': label,
@@ -23,36 +17,23 @@ jest.mock('@/components/Button', () => ({
   ),
 }))
 
-test.each([
-  { width: 400, suffix: null, trigger: fireEvent.pointerEnter },
-  { width: 900, suffix: '?variant=mobile&v=medium', trigger: fireEvent.focus },
-  { width: 1920, suffix: '?variant=mobile&v=medium', trigger: fireEvent.pointerEnter },
-])('warms the cover on navigation intent (width: $width)', ({ width, suffix, trigger }) => {
-  window.matchMedia = jest.fn().mockImplementation((query: string) => ({
-    matches: query === '(max-width: 639px)' && width <= 639,
-  }))
-  render(
-    <HikeCardLink
-      slug="example"
-      covers={{
-        full: 'https://api.example.test/api/hikes/example/cover-image?v=large',
-        mobile: 'https://api.example.test/api/hikes/example/cover-image?variant=mobile&v=medium',
-        card: 'https://api.example.test/api/hikes/example/cover-image?variant=card&v=small',
-      }}
-      label="View example"
-    >
-      View
-    </HikeCardLink>,
-  )
-
-  expect(ReactDOM.preload).not.toHaveBeenCalled()
-  trigger(screen.getByRole('button', { name: 'View example' }))
-  if (suffix === null) {
-    expect(ReactDOM.preload).not.toHaveBeenCalled()
-  } else {
-    expect(ReactDOM.preload).toHaveBeenCalledWith(
-      `https://api.example.test/api/hikes/example/cover-image${suffix}`,
-      { as: 'image', fetchPriority: 'low' },
+test.each([fireEvent.focus, fireEvent.pointerEnter])(
+  'warms the cover on card intent',
+  (trigger) => {
+    const covers = {
+      full: 'https://api.example.test/cover?v=large',
+      desktop: 'https://api.example.test/cover?variant=desktop&v=desktop',
+      mobile: 'https://api.example.test/cover?variant=mobile&v=medium',
+      card: 'https://api.example.test/cover?variant=card&v=small',
+    }
+    render(
+      <HikeCardLink slug="example" covers={covers} label="View example">
+        View
+      </HikeCardLink>,
     )
-  }
-})
+
+    expect(prefetchHikeCover).not.toHaveBeenCalled()
+    trigger(screen.getByRole('button', { name: 'View example' }))
+    expect(prefetchHikeCover).toHaveBeenCalledWith(covers, 'high')
+  },
+)

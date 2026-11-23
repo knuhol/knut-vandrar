@@ -1,7 +1,6 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { HikeSection } from '../HikeSection/HikeSection'
 
@@ -10,6 +9,7 @@ import styles from './HikeGallery.module.css'
 import { responsiveMedia } from '@/config/breakpoints'
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
 import { Button } from '@/components/Button'
+import { RevealImage } from '@/components/RevealImage'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
 import { MediaModal } from '@/components/MediaModal/MediaModal'
 import type { getPhotos } from '@/api/hikes'
@@ -240,14 +240,14 @@ function PhotoViewer({
               }
             >
               <div className="relative" style={photoFrameStyle(image)}>
-                <Image
+                <RevealImage
                   src={image.src}
                   alt={image.alt}
                   sizes="100vw"
                   fill
                   loading="eager"
                   fetchPriority={outgoing ? 'auto' : 'high'}
-                  className="object-contain"
+                  fit="contain"
                   unoptimized
                   onLoad={
                     outgoing
@@ -419,11 +419,11 @@ export function HikeGallery({
               setSelectedIndex(index)
             }}
           >
-            <Image
+            <RevealImage
               src={photo.thumbnailSrc}
               alt={photo.alt}
               fill
-              className="object-cover"
+              fit="cover"
               sizes={`${responsiveMedia.wide} 25vw, ${responsiveMedia.tablet} 33vw, 50vw`}
               unoptimized
             />

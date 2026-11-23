@@ -24,13 +24,12 @@ export function PageHeader({
       <Container>
         <div
           className={
-            (entrance ? 'content-enter ' : '') +
-            (media
+            media
               ? 'grid items-center gap-9 py-10 tablet:gap-12 tablet:py-16 desktop:grid-cols-2 desktop:gap-20 desktop:py-20'
-              : 'py-10 tablet:py-16')
+              : 'py-10 tablet:py-16'
           }
         >
-          <div className="min-w-0">
+          <div className={entrance ? 'content-enter min-w-0' : 'min-w-0'}>
             <Heading tone="brand" eyebrow={eyebrow}>
               {title}
             </Heading>

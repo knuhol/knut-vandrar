@@ -1,11 +1,10 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { preload } from 'react-dom'
 
 import type { CoverSources } from '@/api/images'
 import { ButtonLink } from '@/components/Button'
-import { responsiveMedia } from '@/config/breakpoints'
+import { prefetchHikeCover } from '@/hiking/prefetchCovers'
 
 export function HikeCardLink({
   slug,
@@ -19,12 +18,9 @@ export function HikeCardLink({
   children: ReactNode
 }) {
   function prefetchCover() {
-    // On phones the page uses the same image already loaded by the card.
-    if (!covers || window.matchMedia(responsiveMedia.belowTablet).matches) {
-      return
+    if (covers) {
+      void prefetchHikeCover(covers, 'high')
     }
-
-    preload(covers.mobile, { as: 'image', fetchPriority: 'low' })
   }
 
   return (

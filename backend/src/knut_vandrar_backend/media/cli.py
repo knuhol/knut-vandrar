@@ -13,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from knut_vandrar_backend.media.archive import MediaError, export_archive
+from knut_vandrar_backend.media.covers import backfill_desktop_covers
 from knut_vandrar_backend.media.progress import Progress
 from knut_vandrar_backend.media.recovery import recover_transfers, transfer_lock
 from knut_vandrar_backend.media.schema import DEFAULT_MAX_BYTES
@@ -81,6 +82,7 @@ def main() -> int:
     importer.add_argument("--map-hike", type=_mapping, action="append", default=[])
     importer.add_argument("--map-location", type=_mapping, action="append", default=[])
     commands.add_parser("recover", help="Recover an interrupted import without reading an archive")
+    commands.add_parser("backfill-desktop-covers", help="Generate missing desktop and wide covers")
     args = parser.parse_args()
     if args.command == "import" and args.max_bytes <= 0:
         parser.error("--max-bytes must be positive")
@@ -104,6 +106,11 @@ def main() -> int:
                     progress=progress,
                 )
             print(f"Exported {count} assets.", file=sys.stderr)
+        elif args.command == "backfill-desktop-covers":
+            print(
+                f"Generated {backfill_desktop_covers(SessionLocal)} desktop and wide cover sets.",
+                flush=True,
+            )
         elif args.command == "recover":
             with transfer_lock(settings.media_root) as transfers:
                 count = recover_transfers(SessionLocal, settings.media_root, transfers)

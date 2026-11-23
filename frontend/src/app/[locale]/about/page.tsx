@@ -46,7 +46,7 @@ export default async function AboutPage({ params }: PageProps) {
   ] as const
 
   return (
-    <article>
+    <article className="[overflow-anchor:none]">
       <StructuredData data={profileData(locale, content.title, content.introduction)} />
       <PageHeader
         entrance
@@ -54,13 +54,15 @@ export default async function AboutPage({ params }: PageProps) {
         title={content.title}
         introduction={content.introduction}
         media={
-          <figure className="mx-auto w-full max-w-100 desktop:max-w-none">
-            <Image
-              {...authorPortrait}
-              alt={content.portrait_alt}
-              preload
-              className="aspect-square w-full rounded-lg object-cover shadow-sm"
-            />
+          <figure className="mx-auto w-full max-w-100 self-start desktop:max-w-none">
+            <div className="relative aspect-square overflow-hidden rounded-lg shadow-sm">
+              <Image
+                {...authorPortrait}
+                alt={content.portrait_alt}
+                preload
+                className="object-cover"
+              />
+            </div>
             <figcaption className="mt-4 text-sm text-muted">{content.caption}</figcaption>
           </figure>
         }

@@ -985,7 +985,9 @@ export const openapi = {
                 {
                   "enum": [
                     "card",
-                    "mobile"
+                    "mobile",
+                    "desktop",
+                    "wide"
                   ],
                   "type": "string"
                 },
@@ -1021,6 +1023,7 @@ export const openapi = {
               "image/jpeg": {},
               "image/gif": {},
               "image/webp": {},
+              "image/avif": {},
               "image/svg+xml": {}
             }
           },
@@ -1931,6 +1934,7 @@ export const openapi = {
               "image/jpeg": {},
               "image/gif": {},
               "image/webp": {},
+              "image/avif": {},
               "image/svg+xml": {}
             }
           },
@@ -4362,6 +4366,28 @@ export const openapi = {
           "full": {
             "type": "string",
             "title": "Full"
+          },
+          "desktop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desktop"
+          },
+          "wide": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wide"
           },
           "mobile": {
             "type": "string",

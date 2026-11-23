@@ -9,11 +9,13 @@ function minimumWidth(name: string) {
   return `(min-width: ${width})`
 }
 
-const tablet = minimumWidth('tablet')
+const desktop = minimumWidth('desktop')
+const wide = minimumWidth('wide')
 
 export const responsiveMedia = {
-  tablet,
-  belowTablet: `not all and ${tablet}`,
-  desktop: minimumWidth('desktop'),
-  wide: minimumWidth('wide'),
+  tablet: minimumWidth('tablet'),
+  desktop,
+  wide,
+  fullHikeCover: `${minimumWidth('ultra-wide')}, ${wide} and (min-resolution: 2dppx)`,
+  desktopHikeCover: `${wide}, ${desktop} and (min-resolution: 1.5dppx)`,
 }

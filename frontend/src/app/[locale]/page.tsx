@@ -2,10 +2,13 @@ import { hasLocale } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { notFound, permanentRedirect } from 'next/navigation'
 
+import { HomeCoverPrefetch } from '@/app/[locale]/components/HomeCoverPrefetch'
 import { Hero } from '@/app/[locale]/components/Hero/Hero'
 import { HikeCollection } from '@/app/[locale]/components/HikeCollection'
 import { routing } from '@/i18n/routing'
 import { getHikes } from '@/api/hikes'
+import { hikeCoverSources } from '@/api/images'
+import { hikeCategories } from '@/hiking/categories'
 import { StructuredData } from '@/components/StructuredData'
 import { collectionData } from '@/seo/structuredData'
 import { pageMetadata } from '@/seo/metadata'
@@ -82,6 +85,12 @@ export default async function Home({ params, searchParams }: Props) {
 
   const hikesPage = await collection(locale, await searchParams)
   const t = await getTranslations({ locale, namespace: 'Site' })
+  const covers = hikeCategories.flatMap(({ key }) => {
+    const page = hikesPage.pages[key]
+    return page.offset === 0
+      ? page.items.slice(0, collectionPageSize).flatMap((hike) => hikeCoverSources(hike) ?? [])
+      : []
+  })
 
   return (
     <>
@@ -98,6 +107,7 @@ export default async function Home({ params, searchParams }: Props) {
           homePath(locale, hikesPage.offset, hikesPage.multiDayOffset),
         )}
       />
+      <HomeCoverPrefetch covers={covers} />
       <Hero />
       <HikeCollection pages={hikesPage.pages} />
     </>

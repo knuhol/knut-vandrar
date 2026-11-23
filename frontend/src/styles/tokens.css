@@ -60,6 +60,7 @@
   --breakpoint-tablet: 641px;
   --breakpoint-desktop: 1001px;
   --breakpoint-wide: 1500px;
+  --breakpoint-ultra-wide: 2560px;
 
   --text-*: initial;
   --text-xs: 0.75rem;

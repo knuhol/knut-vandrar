@@ -139,6 +139,8 @@ class Asset(Record):
                 or self.translations
                 or self.files.keys() & {"mobile", "card"}
                 and self.content_type != "image/webp"
+                or self.files.keys() & {"desktop", "wide"}
+                and self.content_type == "image/svg+xml"
             ):
                 raise ValueError("Invalid cover or location logo asset")
         return self
