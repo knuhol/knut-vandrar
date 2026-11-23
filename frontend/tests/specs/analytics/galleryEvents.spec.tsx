@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { HikeGallery } from '@/app/[locale]/hikes/[slug]/components/HikeGallery/HikeGallery'
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
+import { imageUrl } from '@/api/images'
 import { messages } from '@/i18n/messages'
 
 jest.mock('@/config/breakpoints', () => ({
@@ -18,7 +19,11 @@ jest.mock('@/components/MediaModal/MediaModal', () => ({
   ),
 }))
 
-function renderGallery() {
+beforeEach(() => {
+  window.matchMedia = jest.fn().mockReturnValue({ matches: false })
+})
+
+function renderGallery(ids = [1, 2]) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages.en}>
       <HikeGallery
@@ -26,7 +31,7 @@ function renderGallery() {
         hikeTitle="Kungsleden"
         locale="en"
         initialPage={{
-          items: [1, 2].map((id) => ({
+          items: ids.map((id) => ({
             id: String(id),
             hike_id: '123',
             sort_order: id,
@@ -38,7 +43,7 @@ function renderGallery() {
             caption: null,
             translation: {},
           })),
-          total: 2,
+          total: ids.length,
           offset: 0,
           limit: 24,
         }}
@@ -46,6 +51,36 @@ function renderGallery() {
     </NextIntlClientProvider>,
   )
 }
+
+test('prefetches nearby fullscreen images only after opening the viewer', () => {
+  const requests: HTMLImageElement[] = []
+  const constructor = jest.spyOn(window, 'Image').mockImplementation(() => {
+    const image = document.createElement('img')
+    requests.push(image)
+    return image
+  })
+
+  try {
+    renderGallery([1, 2, 3, 4])
+    expect(requests).toHaveLength(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open photo 1: Photo 1' }))
+    expect(requests.map((image) => image.getAttribute('src'))).toEqual(
+      [2, 3].map((id) => imageUrl(`/photo-${String(id)}.jpg`)),
+    )
+    expect(requests.every((image) => image.fetchPriority === 'low')).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo' }))
+    expect(requests.map((image) => image.getAttribute('src'))).toEqual(
+      [2, 3, 1, 4].map((id) => imageUrl(`/photo-${String(id)}.jpg`)),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous photo' }))
+    expect(requests).toHaveLength(4)
+  } finally {
+    constructor.mockRestore()
+  }
+})
 
 test('records gallery openings, but not navigation between photos', () => {
   renderGallery()
@@ -113,4 +148,35 @@ test('moves the photo caption and arrows outside only when there is room', () =>
   } finally {
     globalThis.ResizeObserver = originalObserver
   }
+})
+
+test('keeps the old photo visible until the incoming photo can slide in', async () => {
+  renderGallery()
+  fireEvent.click(screen.getByRole('button', { name: 'Open photo 1: Photo 1' }))
+  const viewer = within(screen.getByRole('dialog'))
+
+  fireEvent.click(viewer.getByRole('button', { name: 'Next photo' }))
+  const incoming = viewer.getByAltText<HTMLImageElement>('Photo 2')
+  const frame = incoming.parentElement
+  const slide = frame?.parentElement
+  if (!frame || !slide) {
+    throw new Error('Missing photo slide')
+  }
+  expect(slide).toHaveClass('invisible')
+  expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+
+  frame.style.position = 'relative'
+  incoming.width = 400
+  incoming.height = 400
+  fireEvent.load(incoming)
+  await waitFor(() => {
+    expect(slide).not.toHaveClass('invisible')
+  })
+  fireEvent.animationEnd(slide)
+  expect(viewer.queryByAltText('Photo 1')).not.toBeInTheDocument()
+
+  window.matchMedia = jest.fn().mockReturnValue({ matches: true })
+  fireEvent.click(viewer.getByRole('button', { name: 'Previous photo' }))
+  expect(viewer.getByAltText('Photo 1')).toBeInTheDocument()
+  expect(viewer.queryByAltText('Photo 2')).not.toBeInTheDocument()
 })

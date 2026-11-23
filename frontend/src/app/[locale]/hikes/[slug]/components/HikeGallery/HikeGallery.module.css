@@ -1,5 +1,35 @@
 @reference '../../../../../globals.css';
 
+.slideIn {
+  animation: slide-in var(--duration-motion) var(--ease-entrance) both;
+}
+
+.slideOut {
+  animation: slide-out var(--duration-motion) var(--ease-entrance) both;
+}
+
+.backward {
+  --slide-offset: -100%;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(var(--slide-offset, 100%));
+  }
+}
+
+@keyframes slide-out {
+  to {
+    transform: translateX(calc(-1 * var(--slide-offset, 100%)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slideOut {
+    visibility: hidden;
+  }
+}
+
 .previous {
   padding-left: max(calc(var(--spacing) * 2), env(safe-area-inset-left));
   padding-right: calc(var(--spacing) * 2);
