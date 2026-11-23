@@ -128,6 +128,7 @@ export function useDisclosure({ scrollBeforeClosing = false } = {}) {
 
     function pointerDown(event: MouseEvent) {
       if (
+        !scrollBeforeClosing ||
         event.button !== 0 ||
         event.defaultPrevented ||
         (event.target instanceof Element && event.target.closest('a, button, input'))

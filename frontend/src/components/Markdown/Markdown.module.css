@@ -94,7 +94,7 @@
 }
 
 .prose summary {
-  @apply grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-baseline py-4 text-forest;
+  @apply focus-inset grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-baseline py-4 text-forest;
   gap: var(--chapter-heading-gap);
 }
 

@@ -139,12 +139,16 @@ test('rating information animates when the info icon is clicked', () => {
     </NextIntlClientProvider>,
   )
   const details = container.querySelector('details')
-  const icon = details?.querySelector('summary svg')
-  if (!details || !icon) {
+  const summary = details?.querySelector('summary')
+  const icon = summary?.querySelector('svg')
+  if (!details || !summary || !icon) {
     throw new Error('Missing rating info disclosure')
   }
 
+  const focus = jest.spyOn(summary, 'focus')
+  fireEvent.mouseDown(icon, { button: 0 })
   fireEvent.click(icon)
+  expect(focus).not.toHaveBeenCalled()
   expect(details).toHaveAttribute('open')
   expect(animate.mock.contexts).toEqual([details])
 

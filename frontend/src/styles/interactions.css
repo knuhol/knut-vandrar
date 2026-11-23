@@ -10,6 +10,10 @@
   }
 }
 
+@utility focus-inset {
+  --focus-outline-offset: calc(-1 * var(--focus-outline-width));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
