@@ -5,11 +5,11 @@ import {
   IconPhotoQuestion as PhotoQuestion,
 } from '@tabler/icons-react'
 
+import { HikeCardLink } from './HikeCardLink'
 import { HikeStats } from './HikeStats'
 import { HikeStatus } from './HikeStatus'
 
 import { Heading } from '@/components/Heading'
-import { ButtonLink } from '@/components/Button'
 import { coverImageUrl } from '@/api/images'
 import type { HikeSummary } from '@/api/hikes'
 import { hikeSeason } from '@/hiking/season'
@@ -54,17 +54,13 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
           <HikeStats hike={hike} />
         </div>
         <div className="mt-4">
-          <ButtonLink
-            size="small"
-            stretched
-            href={{
-              pathname: '/hikes/[slug]',
-              params: { slug: hike.translation.slug },
-            }}
-            aria-label={`${t('read')}: ${hike.translation.title}`}
+          <HikeCardLink
+            slug={hike.translation.slug}
+            coverUrl={hike.cover_image_url}
+            label={`${t('read')}: ${hike.translation.title}`}
           >
             {t('read')} <ArrowUpRight className="size-4.5 shrink-0" aria-hidden="true" />
-          </ButtonLink>
+          </HikeCardLink>
         </div>
       </div>
     </article>

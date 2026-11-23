@@ -24,7 +24,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
       {hike.cover_image_url && (
         <picture className="absolute inset-0 -z-20 overflow-hidden">
           <source
-            media={`not all and ${responsiveMedia.desktop}`}
+            media={responsiveMedia.belowDesktop}
             srcSet={coverImageUrl(hike.cover_image_url, 'mobile')}
           />
           <Image
