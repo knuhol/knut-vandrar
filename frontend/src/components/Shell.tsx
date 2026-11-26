@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { headers } from 'next/headers'
 
 import { Navigation } from './Navigation/Navigation'
+import { OngoingHikeLink } from './Navigation/OngoingHikeLink'
 import { SiteHeader } from './SiteHeader/SiteHeader'
 import { Logo } from './Logo'
 import { LanguageSwitcher } from './LanguageSwitcher'
@@ -15,8 +16,11 @@ import { headerLogoVariant } from '@/config/site'
 import { PageKey, staticPages } from '@/content/staticPages'
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
-  const t = await getTranslations({ locale, namespace: 'Site' })
-  const logoVariant = headerLogoVariant((await headers()).get('host'))
+  const [t, requestHeaders] = await Promise.all([
+    getTranslations({ locale, namespace: 'Site' }),
+    headers(),
+  ])
+  const logoVariant = headerLogoVariant(requestHeaders.get('host'))
 
   return (
     <>
@@ -36,6 +40,7 @@ export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
         }
         navigation={<Navigation locale={locale} />}
         languages={<LanguageSwitcher locale={locale} />}
+        hikeAction={<OngoingHikeLink locale={locale} />}
       />
     </>
   )

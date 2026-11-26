@@ -161,27 +161,6 @@ def export_archive(
                     files=files,
                 )
                 write_asset(asset)
-            from knut_vandrar_backend.maps.assets import images, metadata
-
-            map_images = images(db, hike.id)
-            if map_images:
-                files = {}
-                for variant, image in map_images.items():
-                    digest = hashlib.sha256(image.content).hexdigest()
-                    if digest != image.sha256:
-                        raise MediaError(f"Map checksum mismatch: {hike.id}/{variant}")
-                    files[variant] = ImageFile(sha256=digest, size=len(image.content))
-                asset = Asset(
-                    kind="map",
-                    id=hike.id,
-                    owner_id=hike.id,
-                    content_type="image/webp",
-                    files=files,
-                    map_data=metadata(map_images),
-                )
-                for variant, image in map_images.items():
-                    _add_bytes(archive, asset.file_path(variant), image.content)
-                write_asset(asset)
             photos = (
                 select(Photo).where(Photo.hike_id == hike.id).order_by(Photo.sort_order, Photo.id)
             )
@@ -397,6 +376,9 @@ def index_archive(
                     )
                 expected_files += 1
                 progress.report(f"Verified {expected_files} file checksums...", force=False)
+            # Old archives can contain generated maps. Verify their files, then omit them.
+            if asset.kind == "map":
+                continue
             try:
                 index.execute(
                     "INSERT INTO assets VALUES (?, ?, ?, ?, ?, NULL, NULL)",

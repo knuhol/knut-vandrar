@@ -3,10 +3,13 @@
 import {
   IconArrowLeft,
   IconArrowRight,
+  IconCurrentLocation,
+  IconRoute,
   IconX,
   IconZoomIn,
   IconZoomOut,
   IconArrowsMinimize,
+  IconMaximize,
 } from '@tabler/icons-react'
 
 const icons = {
@@ -16,6 +19,9 @@ const icons = {
   zoomIn: IconZoomIn,
   zoomOut: IconZoomOut,
   reset: IconArrowsMinimize,
+  expand: IconMaximize,
+  center: IconCurrentLocation,
+  overview: IconRoute,
 }
 
 export function MediaControl({

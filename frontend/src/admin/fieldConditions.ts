@@ -41,24 +41,6 @@ const recordedNights: Condition = {
   applies: (value) => value.overnights_recorded_at != null,
   clearWhenHidden: true,
 }
-const liveConnection: Condition = {
-  applies: (value) => value.state === 'active',
-}
-
-function invalidHttpUrl(value: Json | undefined) {
-  if (value == null) {
-    return false
-  }
-  if (typeof value !== 'string') {
-    return true
-  }
-  try {
-    return !['http:', 'https:'].includes(new URL(value).protocol)
-  } catch {
-    return true
-  }
-}
-
 // Rules describe applicability, not field layout. Unlisted fields remain available.
 const conditions: Partial<Record<string, Partial<Record<string, Condition>>>> = {
   PageWrite: { content: { applies: (value) => Boolean(value.page_key) } },
@@ -86,14 +68,6 @@ const conditions: Partial<Record<string, Partial<Record<string, Condition>>>> = 
     overnight_options: known('overnight_options_status'),
     overnight_restrictions: known('overnight_restrictions_status'),
   },
-  LivePositionCard: {
-    url: {
-      ...liveConnection,
-      clearWhenInvalid: (value, root) =>
-        (!activeHike(root) || value.state !== 'active') && invalidHttpUrl(value.url),
-    },
-    password: liveConnection,
-  },
   RatingWrite: {
     assessed_at: {
       applies: (value) =>
@@ -109,20 +83,13 @@ export function fieldApplies(schema: Schema, key: string, value: Json, context: 
   return condition?.applies(record(value), record(context.value)) ?? true
 }
 
-export function variantApplies(schema: Schema, context: FieldContext, value?: Json) {
+export function variantApplies(schema: Schema, context: FieldContext) {
   const field = resolve(schema)
   const template = pageTemplate(context)
   if (template && ['AboutPageContent', 'StandardPageContent'].includes(field.title || '')) {
     return resolve(field.properties?.type || {}).const === template
   }
-  return (
-    context.schema !== 'HikeWrite' ||
-    resolve(schema).title !== 'LivePositionCard' ||
-    activeHike(record(context.value)) ||
-    (record(value).type === 'live_position' &&
-      record(value).state !== 'active' &&
-      record(value).state !== 'inactive')
-  )
+  return true
 }
 
 function pageTemplate(context: FieldContext) {

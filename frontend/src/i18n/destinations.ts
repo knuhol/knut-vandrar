@@ -16,6 +16,17 @@ type ResolveDestination = (
   params: Record<string, string | string[]>,
 ) => Promise<Destination | undefined>
 
+function hikeDestination(pathname: '/hikes/[slug]'): ResolveDestination {
+  return async (locale, target, params) => {
+    if (typeof params.slug !== 'string' || !params.slug) {
+      return undefined
+    }
+    const hike = await getHike(locale, params.slug)
+    const alternative = hike?.available_translations.find((item) => item.locale === target)
+    return alternative ? { pathname, params: { slug: alternative.slug } } : undefined
+  }
+}
+
 // Every route must explicitly define its language-switch behavior. Content routes
 // resolve translated slugs here, keeping the shared switcher independent of content types.
 const destinations = {
@@ -28,18 +39,7 @@ const destinations = {
     (await getPage(PageKey.PrivacyPolicy, target)) ? staticPages[PageKey.PrivacyPolicy].href : '/',
   '/about': async (_locale, target) =>
     (await getPage(PageKey.About, target)) ? staticPages[PageKey.About].href : '/',
-  '/hikes/[slug]': async (locale, target, params) => {
-    if (typeof params.slug !== 'string' || !params.slug) {
-      return undefined
-    }
-
-    const hike = await getHike(locale, params.slug)
-    const alternative = hike?.available_translations.find((item) => item.locale === target)
-
-    return alternative
-      ? { pathname: '/hikes/[slug]', params: { slug: alternative.slug } }
-      : undefined
-  },
+  '/hikes/[slug]': hikeDestination('/hikes/[slug]'),
 } satisfies Record<Route, ResolveDestination>
 
 export async function resolveLanguageDestination(

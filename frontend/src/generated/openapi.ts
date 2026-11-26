@@ -602,6 +602,274 @@ export const openapi = {
         }
       }
     },
+    "/api/hikes/{hike_id}/planned-map": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Get Planned Map",
+        "operationId": "get_planned_map_api_hikes__hike_id__planned_map_get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannedMap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hikes/{hike_id}/route.gpx": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Download Route",
+        "operationId": "download_route_api_hikes__hike_id__route_gpx_get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/gpx+xml": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hikes/{hike_id}/tracking-progress": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Get Tracking Progress",
+        "operationId": "get_tracking_progress_api_hikes__hike_id__tracking_progress_get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Progress"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hikes/{hike_id}/tracking-replay": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Get Tracking Replay",
+        "operationId": "get_tracking_replay_api_hikes__hike_id__tracking_replay_get",
+        "parameters": [
+          {
+            "name": "hike_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hike Id"
+            }
+          },
+          {
+            "name": "at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "At"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Replay"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/mapshare": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Get Mapshare Settings",
+        "operationId": "get_mapshare_settings_api_settings_mapshare_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapShareSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-admin-only": true
+      },
+      "put": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Put Mapshare Settings",
+        "operationId": "put_mapshare_settings_api_settings_mapshare_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapShareSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapShareSettings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          },
+          "503": {
+            "description": "API write access is not configured"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ]
+      }
+    },
     "/api/hikes": {
       "get": {
         "tags": [
@@ -738,6 +1006,57 @@ export const openapi = {
           },
           "503": {
             "description": "API write access is not configured"
+          }
+        }
+      }
+    },
+    "/api/hikes/ongoing": {
+      "get": {
+        "tags": [
+          "hikes"
+        ],
+        "summary": "Get Ongoing Hike",
+        "operationId": "get_ongoing_hike_api_hikes_ongoing_get",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "en",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/OngoingHikeRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Ongoing Hike Api Hikes Ongoing Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1147,110 +1466,6 @@ export const openapi = {
           },
           "503": {
             "description": "API write access is not configured"
-          }
-        }
-      }
-    },
-    "/api/hikes/{hike_id}/maps": {
-      "get": {
-        "tags": [
-          "hikes"
-        ],
-        "summary": "List Hike Maps",
-        "operationId": "list_hike_maps_api_hikes__hike_id__maps_get",
-        "parameters": [
-          {
-            "name": "hike_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Hike Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/HikeMapRead"
-                  },
-                  "title": "Response List Hike Maps Api Hikes  Hike Id  Maps Get"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Hike not found"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/hikes/{hike_id}/maps/{variant}": {
-      "get": {
-        "tags": [
-          "hikes"
-        ],
-        "summary": "Get Hike Map",
-        "operationId": "get_hike_map_api_hikes__hike_id__maps__variant__get",
-        "parameters": [
-          {
-            "name": "hike_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Hike Id"
-            }
-          },
-          {
-            "name": "variant",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Variant"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Generated WebP map",
-            "content": {
-              "image/webp": {}
-            }
-          },
-          "304": {
-            "description": "Image unchanged"
-          },
-          "404": {
-            "description": "Map not found"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }
@@ -4604,51 +4819,6 @@ export const openapi = {
         ],
         "title": "HikeLocalizedRead"
       },
-      "HikeMapRead": {
-        "properties": {
-          "variant": {
-            "type": "string",
-            "title": "Variant"
-          },
-          "width": {
-            "type": "integer",
-            "title": "Width"
-          },
-          "height": {
-            "type": "integer",
-            "title": "Height"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
-          "sha256": {
-            "type": "string",
-            "title": "Sha256"
-          },
-          "generated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "variant",
-          "width",
-          "height",
-          "url",
-          "sha256"
-        ],
-        "title": "HikeMapRead"
-      },
       "HikeNeighborRead": {
         "properties": {
           "id": {
@@ -5094,9 +5264,6 @@ export const openapi = {
                   "$ref": "#/components/schemas/ProgressCard"
                 },
                 {
-                  "$ref": "#/components/schemas/LivePositionCard"
-                },
-                {
                   "$ref": "#/components/schemas/EquipmentCard"
                 },
                 {
@@ -5111,7 +5278,6 @@ export const openapi = {
                 "mapping": {
                   "equipment": "#/components/schemas/EquipmentCard",
                   "gpx_collection": "#/components/schemas/GpxCollectionCard",
-                  "live_position": "#/components/schemas/LivePositionCard",
                   "progress": "#/components/schemas/ProgressCard",
                   "route": "#/components/schemas/RouteCard",
                   "social_feed": "#/components/schemas/SocialFeedCard",
@@ -5121,6 +5287,41 @@ export const openapi = {
             },
             "type": "array",
             "title": "Cards"
+          },
+          "live_tracking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LivePositionCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mapshare_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapshare Url"
+          },
+          "mapshare_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapshare Password"
           },
           "achievements": {
             "items": {
@@ -5699,9 +5900,6 @@ export const openapi = {
                   "$ref": "#/components/schemas/ProgressCard"
                 },
                 {
-                  "$ref": "#/components/schemas/LivePositionCard"
-                },
-                {
                   "$ref": "#/components/schemas/EquipmentCard"
                 },
                 {
@@ -5716,7 +5914,6 @@ export const openapi = {
                 "mapping": {
                   "equipment": "#/components/schemas/EquipmentCard",
                   "gpx_collection": "#/components/schemas/GpxCollectionCard",
-                  "live_position": "#/components/schemas/LivePositionCard",
                   "progress": "#/components/schemas/ProgressCard",
                   "route": "#/components/schemas/RouteCard",
                   "social_feed": "#/components/schemas/SocialFeedCard",
@@ -5760,31 +5957,6 @@ export const openapi = {
               "inactive"
             ],
             "title": "State"
-          },
-          "password": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Password"
-          },
-          "url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Url"
           }
         },
         "additionalProperties": false,
@@ -6248,6 +6420,92 @@ export const openapi = {
           "country_codes"
         ],
         "title": "LocationWrite"
+      },
+      "MapOverlay": {
+        "properties": {
+          "routeColorToken": {
+            "type": "string",
+            "title": "Routecolortoken"
+          },
+          "outlineColorToken": {
+            "type": "string",
+            "title": "Outlinecolortoken"
+          },
+          "startColorToken": {
+            "type": "string",
+            "title": "Startcolortoken"
+          },
+          "routeWidth": {
+            "type": "number",
+            "title": "Routewidth"
+          },
+          "outlineWidth": {
+            "type": "number",
+            "title": "Outlinewidth"
+          },
+          "markerRadius": {
+            "type": "number",
+            "title": "Markerradius"
+          },
+          "markerStrokeWidth": {
+            "type": "number",
+            "title": "Markerstrokewidth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "routeColorToken",
+          "outlineColorToken",
+          "startColorToken",
+          "routeWidth",
+          "outlineWidth",
+          "markerRadius",
+          "markerStrokeWidth"
+        ],
+        "title": "MapOverlay"
+      },
+      "MapShareSettings": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Password"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password",
+          "active"
+        ],
+        "title": "MapShareSettings"
+      },
+      "OngoingHikeRead": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "title": "Locale"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "locale",
+          "slug",
+          "id"
+        ],
+        "title": "OngoingHikeRead"
       },
       "OvernightWrite": {
         "properties": {
@@ -6839,6 +7097,269 @@ export const openapi = {
         ],
         "title": "PhotoWrite"
       },
+      "PlannedMap": {
+        "properties": {
+          "revision": {
+            "type": "string",
+            "title": "Revision"
+          },
+          "lines": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "bounds": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Bounds"
+          },
+          "start": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Start"
+          },
+          "finish": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Finish"
+          },
+          "labels": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Labels"
+          },
+          "circular": {
+            "type": "boolean",
+            "title": "Circular"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoutePoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "style": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Style"
+          },
+          "overlay": {
+            "$ref": "#/components/schemas/MapOverlay"
+          },
+          "tokens": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "lines",
+          "bounds",
+          "start",
+          "finish",
+          "labels",
+          "circular",
+          "total",
+          "style",
+          "overlay",
+          "tokens"
+        ],
+        "title": "PlannedMap"
+      },
+      "Position": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Coordinates"
+          },
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "edge": {
+            "type": "integer",
+            "title": "Edge"
+          },
+          "distance": {
+            "type": "number",
+            "title": "Distance"
+          },
+          "offset": {
+            "type": "number",
+            "title": "Offset"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinates",
+          "line",
+          "edge",
+          "distance",
+          "offset",
+          "recorded_at"
+        ],
+        "title": "Position"
+      },
+      "Progress": {
+        "properties": {
+          "revision": {
+            "type": "string",
+            "title": "Revision"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "notStarted",
+              "active",
+              "awaiting",
+              "stopped",
+              "unavailable",
+              "conflict"
+            ],
+            "title": "Status"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "first_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Recorded At"
+          },
+          "latest_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Recorded At"
+          },
+          "latest_retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Retrieved At"
+          },
+          "average_metres_per_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Metres Per Day"
+          },
+          "walking_metres_per_hour": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Walking Metres Per Hour"
+          },
+          "completed": {
+            "type": "number",
+            "title": "Completed"
+          },
+          "remaining": {
+            "type": "number",
+            "title": "Remaining"
+          },
+          "percentage": {
+            "type": "number",
+            "title": "Percentage"
+          },
+          "backtracked": {
+            "type": "number",
+            "title": "Backtracked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "status",
+          "completed",
+          "remaining",
+          "percentage",
+          "backtracked"
+        ],
+        "title": "Progress"
+      },
       "ProgressCard": {
         "properties": {
           "type": {
@@ -7063,6 +7584,40 @@ export const openapi = {
         ],
         "title": "RegionWrite"
       },
+      "Replay": {
+        "properties": {
+          "route": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlannedMap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Progress"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "progress",
+          "start",
+          "end"
+        ],
+        "title": "Replay"
+      },
       "RequeueRead": {
         "properties": {
           "queued": {
@@ -7184,6 +7739,32 @@ export const openapi = {
           "url"
         ],
         "title": "RouteCard"
+      },
+      "RoutePoint": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Coordinates"
+          },
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "edge": {
+            "type": "integer",
+            "title": "Edge"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinates",
+          "line",
+          "edge"
+        ],
+        "title": "RoutePoint"
       },
       "RouteScope": {
         "type": "string",

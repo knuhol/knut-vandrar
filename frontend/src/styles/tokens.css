@@ -2,6 +2,12 @@
   /* Primary palette from the style guide; paper is the only additional tint. */
   --color-*: initial;
   --color-orange: #f39200;
+  --color-live-position: #c94f3d;
+  --color-live-position-soft: color-mix(
+    in srgb,
+    var(--color-live-position) 18%,
+    var(--color-paper)
+  );
   --color-orange-dark: #d97a00;
   --color-cream: #faf4e5;
   --color-beige: #e8dec4;
@@ -10,6 +16,7 @@
   --color-forest-soft: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper));
   --color-forest-outline: color-mix(in srgb, var(--color-forest) 28%, var(--color-forest-soft));
   --color-orange-soft: color-mix(in srgb, var(--color-orange) 10%, transparent);
+  --color-warning-surface: color-mix(in srgb, var(--color-orange) 12%, var(--color-paper));
   --color-orange-outline: color-mix(in srgb, var(--color-orange) 30%, transparent);
   --color-sage: #6b8f71;
   --color-ink: #222222;
@@ -89,6 +96,7 @@
   --shadow-*: initial;
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
+  --duration-live-pulse: 1.8s;
   --duration-motion: var(--duration-fast);
   --duration-entrance: 700ms;
   --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);

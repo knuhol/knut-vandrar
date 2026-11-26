@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 
+import { MapShareSettings } from './MapShareSettings'
 import { GalleryEditor } from './GalleryEditor'
 import { AchievementsEditor } from './AchievementsEditor'
 import { useAdminFeedback } from './useAdminFeedback'
@@ -201,6 +202,7 @@ function Content() {
           </Button>
         </Stack>
         {feedbackAt('logout')}
+        <MapShareSettings />
         <Stack
           component="nav"
           aria-label={messages.adminSections}

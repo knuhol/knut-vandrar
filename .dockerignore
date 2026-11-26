@@ -8,4 +8,6 @@
 **/.env
 **/.env.*
 **/*.dump
+**/*.kml
+!backend/dev-data/*.kml
 backups/

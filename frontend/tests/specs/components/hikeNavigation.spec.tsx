@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 
 import { HikeOverview } from '@/app/[locale]/hikes/[slug]/components/HikeOverview/HikeOverview'
 import { HikeNavigation } from '@/app/[locale]/hikes/[slug]/components/HikeNavigation'
+import { ActivityContext } from '@/components/HikeActivity'
 import { ReadingNavigationProvider } from '@/components/ReadingNavigation'
 import { PageMotion } from '@/components/PageMotion'
 import { SiteHeader } from '@/components/SiteHeader/SiteHeader'
@@ -53,20 +54,23 @@ test('supports keyboard section selection and closes the picker after choosing a
 
 test('moves reading controls into the existing header and preserves chapter and site navigation access', async () => {
   const { container } = render(
-    <ReadingNavigationProvider>
-      <SiteHeader
-        brand={<span>Brand</span>}
-        navigation={<a href="#home">Site navigation</a>}
-        languages={<span>EN</span>}
-      />
-      <HikeNavigation label="Sections" items={items} />
-      <article id="story">
-        <details id="preparation" data-chapter open>
-          <summary>Preparation</summary>
-          <p>Chapter content</p>
-        </details>
-      </article>
-    </ReadingNavigationProvider>,
+    <ActivityContext.Provider value={{ slug: 'test', sending: true }}>
+      <ReadingNavigationProvider>
+        <SiteHeader
+          brand={<span>Brand</span>}
+          navigation={<a href="#home">Site navigation</a>}
+          languages={<span>EN</span>}
+          hikeAction={<a href="#map">Hiking now</a>}
+        />
+        <HikeNavigation label="Sections" items={items} />
+        <article id="story">
+          <details id="preparation" data-chapter open>
+            <summary>Preparation</summary>
+            <p>Chapter content</p>
+          </details>
+        </article>
+      </ReadingNavigationProvider>
+    </ActivityContext.Provider>,
   )
   const sentinel = container.querySelector<HTMLElement>('[data-hike-navigation]')
   const chapter = container.querySelector<HTMLDetailsElement>('#preparation')
@@ -82,11 +86,14 @@ test('moves reading controls into the existing header and preserves chapter and 
   const header = screen.getByRole('banner')
   expect(sentinel).toBeEmptyDOMElement()
   await within(header).findByRole('button', { name: 'The story / Preparation' })
+  const hikeAction = within(header).getByRole('link', { name: 'Hiking now' })
+  expect(hikeAction.closest('[inert]')).toBeNull()
   expect(container.querySelectorAll('[data-site-header]')).toHaveLength(1)
   expect(within(header).queryByRole('button', { name: 'collapseChapter' })).not.toBeInTheDocument()
   const menu = within(header).getByRole('button', { name: 'showMainMenu' })
   expect(menu.querySelector('svg')).toHaveClass('tabler-icon-arrow-right')
   fireEvent.click(menu)
+  expect(within(header).getByRole('link', { name: 'Hiking now' })).toBe(hikeAction)
   expect(menu.querySelector('svg')).toHaveClass('tabler-icon-arrow-left')
   expect(within(header).getByRole('link', { name: 'Site navigation' })).toBeInTheDocument()
   expect(within(header).queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()

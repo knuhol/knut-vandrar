@@ -77,19 +77,44 @@
   .brand {
     width: var(--spacing-header-brand);
   }
-  .contextAvailable .brand {
+  .reading .brand,
+  .hasHikeAction .brand {
     width: var(--spacing-brand-icon);
     flex-shrink: 0;
   }
   .brandFull {
     width: var(--spacing-header-brand);
   }
-  .contextAvailable .brandFull {
+  .reading .brandFull,
+  .hasHikeAction .brandFull {
     opacity: 0;
     visibility: hidden;
   }
-  .contextAvailable .brandIcon {
+  .reading .brandIcon,
+  .hasHikeAction .brandIcon {
     opacity: 1;
     visibility: visible;
+  }
+}
+
+.hasHikeAction .brand {
+  @variant desktop {
+    width: clamp(
+      var(--spacing-header-brand),
+      calc(100vw - var(--spacing) * 200),
+      calc(var(--spacing) * 80)
+    );
+  }
+
+  @variant tablet {
+    @variant max-desktop {
+      width: calc(var(--spacing) * 48);
+    }
+  }
+}
+
+@variant max-tablet {
+  .hasHikeAction .readingPane {
+    padding-inline-start: 0;
   }
 }

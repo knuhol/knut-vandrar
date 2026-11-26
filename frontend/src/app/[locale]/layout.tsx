@@ -3,6 +3,8 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Analytics } from './components/Analytics/Analytics'
+import { HikeActivityProvider } from '@/components/HikeActivityProvider'
+import { getOngoingHike } from '@/api/hikes'
 import { ReadingNavigationProvider } from '@/components/ReadingNavigation'
 import { FocusIndicator } from '@/components/FocusIndicator'
 
@@ -64,6 +66,8 @@ export default async function LocaleLayout({
     notFound()
   }
 
+  const ongoingHike = await getOngoingHike(locale)
+
   return (
     <html lang={locale}>
       <body
@@ -74,10 +78,12 @@ export default async function LocaleLayout({
           <PageMotion />
           <FocusIndicator />
           <ReadingNavigationProvider>
-            <Header locale={locale} />
-            <main id="content" className="flex min-w-0 flex-1 flex-col">
-              {children}
-            </main>
+            <HikeActivityProvider locale={locale} initialHike={ongoingHike}>
+              <Header locale={locale} />
+              <main id="content" className="flex min-w-0 flex-1 flex-col">
+                {children}
+              </main>
+            </HikeActivityProvider>
             <Footer locale={locale} />
           </ReadingNavigationProvider>
           <Analytics config={serverConfig.analytics} />

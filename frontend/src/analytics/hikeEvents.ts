@@ -1,11 +1,12 @@
 import { analyticsUrl, sendAnalyticsEvent } from './umami'
 import type { Hike } from '@/api/hikes'
+import type { VisibleHikeCard } from '@/hiking/presentation'
 import type { Locale } from '@/i18n/routing'
 
 type HikeInteraction = { hikeId: string; hikeTitle: Hike['english_title']; locale: Locale } & (
   | {
       name: 'hike_resource_click'
-      resourceType: Exclude<Hike['cards'][number]['type'], 'youtube_video'>
+      resourceType: Exclude<VisibleHikeCard['type'], 'youtube_video'>
     }
   | { name: 'video_open' | 'gallery_open' }
 )

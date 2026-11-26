@@ -31,6 +31,15 @@ export const getHike = cache(async (locale: Locale, slug: string) => {
   return response.json()
 })
 
+export async function getOngoingHike(locale: Locale) {
+  try {
+    const response = await client['/api/hikes/ongoing'].get({ query: { locale } })
+    return response.ok ? await response.json() : null
+  } catch {
+    return null
+  }
+}
+
 export async function getHikeDiscovery(offset = 0, limit = 100) {
   const response = await client['/api/discovery/hikes'].get({ query: { offset, limit } })
   if (!response.ok) {
@@ -53,19 +62,6 @@ export async function getPhotos(hikeId: string, locale: Locale, offset = 0) {
   }
   return response.json()
 }
-
-export const getHikeMaps = cache(async (hikeId: string) => {
-  const response = await client['/api/hikes/{hike_id}/maps'].get({ params: { hike_id: hikeId } })
-  if (response.status === 404) {
-    return []
-  }
-  if (!response.ok) {
-    throw new Error('Could not load hike maps')
-  }
-  return response.json()
-})
-
-export type HikeMapImage = Awaited<ReturnType<typeof getHikeMaps>>[number]
 
 export const getHikeNeighbors = cache(async (hikeId: string, locale: Locale) => {
   const response = await client['/api/hikes/{hike_id}/neighbors/{locale}'].get({

@@ -139,8 +139,13 @@ export function locationPresentation(location: Location): {
   }
 }
 
-export function visibleHikeCards(hike: Pick<Hike, 'status' | 'cards'>): Hike['cards'] {
-  const supportsLiveTracking = hike.status === 'planned' || hike.status === 'ongoing'
+export type VisibleHikeCard = Hike['cards'][number] | NonNullable<Hike['live_tracking']>
 
-  return hike.cards.filter((card) => card.type !== 'live_position' || supportsLiveTracking)
+export function visibleHikeCards(
+  hike: Pick<Hike, 'status' | 'cards' | 'live_tracking'>,
+): VisibleHikeCard[] {
+  if (hike.live_tracking && (hike.status === 'planned' || hike.status === 'ongoing')) {
+    return [hike.live_tracking, ...hike.cards]
+  }
+  return hike.cards
 }

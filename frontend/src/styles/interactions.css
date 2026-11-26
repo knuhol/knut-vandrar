@@ -10,7 +10,9 @@
   }
 
   /* Safari can carry focus-visible through a focus change triggered by a tap. */
-  :root[data-touch-input] :focus-visible {
+  :root[data-touch-input] :focus-visible,
+  :root[data-pointer-input] [data-keyboard-focus-only] :focus-visible,
+  :root[data-pointer-input] [data-keyboard-focus-only]:focus-visible {
     outline: none;
   }
 }
@@ -92,4 +94,33 @@ button.link-dotted:is(:hover, :focus-visible) {
       opacity: 0;
     }
   }
+}
+
+@utility live-position-pulse {
+  @media (prefers-reduced-motion: no-preference) {
+    &::before {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: inherit;
+      content: '';
+      animation: live-position-pulse var(--duration-live-pulse) ease-out infinite;
+    }
+  }
+}
+
+@keyframes live-position-pulse {
+  from {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@utility header-control {
+  @apply flex items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm font-normal text-ink hover:bg-beige active:bg-beige data-[state=open]:bg-beige tablet:gap-2.25 tablet:px-3;
 }

@@ -1,7 +1,9 @@
 """FastAPI application configuration."""
 
+import asyncio
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 from fastapi import Depends, FastAPI, Request, Response
@@ -21,17 +23,38 @@ from knut_vandrar_backend.api.locations import router as locations_router
 from knut_vandrar_backend.api.pages import admin_router as page_admin_router
 from knut_vandrar_backend.api.pages import router as pages_router
 from knut_vandrar_backend.api.photos import router as photos_router
+from knut_vandrar_backend.api.tracking import router as tracking_router
+from knut_vandrar_backend.api.tracking import settings_router as tracking_settings_router
 from knut_vandrar_backend.api.tracks import router as tracks_router
 from knut_vandrar_backend.api.translations import router as translations_router
 from knut_vandrar_backend.database.session import engine
 from knut_vandrar_backend.settings import settings
+from knut_vandrar_backend.tracking.worker import poll
+
+
+async def poll_garmin(stop: asyncio.Event) -> None:
+    while not stop.is_set():
+        with suppress(TimeoutError):
+            await asyncio.wait_for(stop.wait(), timeout=15)
+        if stop.is_set():
+            break
+        try:
+            await asyncio.to_thread(poll)
+        except Exception:
+            logging.getLogger(__name__).error("Garmin synchronization failed")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Release SQLAlchemy pooled connections when the application stops."""
-    yield
-    engine.dispose()
+    stop = asyncio.Event()
+    worker = asyncio.create_task(poll_garmin(stop))
+    try:
+        yield
+    finally:
+        stop.set()
+        await worker
+        engine.dispose()
 
 
 class BackendAPI(FastAPI):
@@ -82,6 +105,8 @@ async def indexing_headers(
 
 app.include_router(photos_router)
 app.include_router(discovery_router)
+app.include_router(tracking_router)
+app.include_router(tracking_settings_router)
 app.include_router(hikes_router)
 app.include_router(tracks_router)
 app.include_router(locations_router)

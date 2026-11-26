@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import type { ComponentProps } from 'react'
 
+import { HikeLiveBadge } from '@/app/[locale]/components/HikeLiveBadge'
+import { ActivityContext } from '@/components/HikeActivity'
 import { Navigation } from '@/components/Navigation/Navigation'
+import { OngoingHikeLink } from '@/components/Navigation/OngoingHikeLink'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
 import { messages } from '@/i18n/messages'
@@ -16,14 +19,26 @@ jest.mock('next/navigation', () => ({
 }))
 jest.mock('@/i18n/navigation', () => ({
   usePathname: () => '/hikes/[slug]',
+  getPathname: ({ href }: { href: { params: { slug: string } } }) =>
+    `/en/hikes/${href.params.slug}`,
   Link: ({
     href,
     children,
     ...props
   }: Omit<ComponentProps<'a'>, 'href'> & {
-    href: string | { pathname: string; hash: string }
+    href:
+      string | { pathname: string; hash: string } | { pathname: string; params: { slug: string } }
   }) => (
-    <a {...props} href={typeof href === 'string' ? href : `/en#${href.hash}`}>
+    <a
+      {...props}
+      href={
+        typeof href === 'string'
+          ? href
+          : 'params' in href
+            ? `/en/hikes/${href.params.slug}`
+            : `/en#${href.hash}`
+      }
+    >
       {children}
     </a>
   ),
@@ -80,6 +95,7 @@ test('shortcut help opens with ? and turning off character keys removes shortcut
   if (!dialog) {
     throw new Error('Missing shortcut help dialog')
   }
+  expect(screen.getByText('Show the whole trail')).toBeInTheDocument()
   dialog.showModal = jest.fn(() => {
     dialog.open = true
   })
@@ -148,3 +164,46 @@ test('selecting the current page section closes the main menu and releases its s
   })
   expect(window.location.hash).toBe('#hikes')
 })
+
+test('links to the ongoing hike from its header button', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      <OngoingHikeLink locale="en" slug="forest-trail" />
+    </NextIntlClientProvider>,
+  )
+
+  const link = screen.getByRole('link', { name: 'I’m hiking!' })
+  expect(link).toHaveAttribute('href', '/en/hikes/forest-trail')
+  expect(link.querySelector('.bg-orange')).toBeInTheDocument()
+})
+
+test('the compact ongoing hike link keeps the full accessible label', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages.en}>
+      <OngoingHikeLink locale="en" slug="forest-trail" sending />
+    </NextIntlClientProvider>,
+  )
+
+  const link = screen.getByRole('link', { name: 'I’m hiking!' })
+  expect(link).toHaveTextContent('Hiking')
+  expect(link.querySelector('.live-position-pulse')).toBeInTheDocument()
+})
+
+test.each([true, false])(
+  'the card only shows Live for its own fresh tracking status (%s)',
+  (sending) => {
+    render(
+      <NextIntlClientProvider locale="en" messages={messages.en}>
+        <ActivityContext.Provider value={{ slug: 'forest-trail', sending }}>
+          <HikeLiveBadge slug="forest-trail" />
+          <HikeLiveBadge slug="another-hike" />
+        </ActivityContext.Provider>
+      </NextIntlClientProvider>,
+    )
+
+    expect(screen.queryAllByText('Live')).toHaveLength(sending ? 1 : 0)
+    if (sending) {
+      expect(screen.getByText('Live').querySelector('.live-position-pulse')).toBeInTheDocument()
+    }
+  },
+)

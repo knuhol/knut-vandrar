@@ -4,6 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from uuid import UUID
 
 from dotenv import load_dotenv
 from pydantic import SecretStr
@@ -73,6 +74,9 @@ def _database_url() -> URL:
     )
 
 
+GARMIN_MAPSHARE_ORIGIN = "https://share.garmin.com"
+
+
 @dataclass(frozen=True)
 class Settings:
     media_root: Path = field(
@@ -85,6 +89,23 @@ class Settings:
     openai_api_key: str | None
     openai_request_timeout_seconds: int
     api_write_token: SecretStr | None = field(repr=False)
+    deployment_environment: str = "prod"
+    garmin_mapshare_username: str | None = None
+    garmin_poll_seconds: int = 120
+    garmin_replay_file: Path | None = None
+    garmin_replay_hike_id: UUID | None = None
+
+    @property
+    def garmin_mapshare_url(self) -> str | None:
+        if self.garmin_mapshare_username:
+            return f"{GARMIN_MAPSHARE_ORIGIN}/{self.garmin_mapshare_username}"
+        return None
+
+    @property
+    def garmin_feed_url(self) -> str | None:
+        if self.garmin_mapshare_username:
+            return f"{GARMIN_MAPSHARE_ORIGIN}/feed/share/{self.garmin_mapshare_username}"
+        return None
 
 
 def load_settings() -> Settings:
@@ -93,6 +114,30 @@ def load_settings() -> Settings:
     )
     if not origins:
         raise RuntimeError("CORS_ORIGINS must contain at least one allowed origin")
+    garmin_username = os.getenv("GARMIN_MAPSHARE_USERNAME", "").strip()
+    if garmin_username and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", garmin_username):
+        raise RuntimeError("GARMIN_MAPSHARE_USERNAME must be a MapShare username, not a URL")
+    garmin_poll_seconds = int(os.getenv("GARMIN_POLL_SECONDS") or "120")
+    if garmin_poll_seconds < 60:
+        raise RuntimeError("GARMIN_POLL_SECONDS must be at least 60")
+    environment = os.getenv("DEPLOYMENT_ENVIRONMENT", "prod")
+    replay_file = os.getenv("GARMIN_REPLAY_FILE") if environment == "local" else None
+    replay_hike_id = os.getenv("GARMIN_REPLAY_HIKE_ID") if environment == "local" else None
+    replay_path = None
+    if replay_file:
+        backend_root = Path(__file__).resolve().parents[2]
+        relative = Path(replay_file)
+        replay_path = (
+            (backend_root / relative.relative_to("backend")).resolve()
+            if relative.parts[:1] == ("backend",)
+            else None
+        )
+        if replay_path is None or not replay_path.is_relative_to(backend_root / "dev-data"):
+            replay_path = None
+    if bool(replay_file) != bool(replay_hike_id):
+        raise RuntimeError(
+            "GARMIN_REPLAY_FILE and GARMIN_REPLAY_HIKE_ID must be configured together"
+        )
     return Settings(
         database_url=_database_url(),
         cors_origins=origins,
@@ -101,6 +146,11 @@ def load_settings() -> Settings:
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip() or None,
         openai_request_timeout_seconds=_openai_timeout(),
         api_write_token=_write_token(),
+        deployment_environment=environment,
+        garmin_mapshare_username=garmin_username or None,
+        garmin_poll_seconds=garmin_poll_seconds,
+        garmin_replay_file=replay_path,
+        garmin_replay_hike_id=UUID(replay_hike_id) if replay_hike_id else None,
     )
 
 

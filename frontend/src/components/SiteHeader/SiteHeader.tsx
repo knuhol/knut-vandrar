@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react'
 
+import { useHikeActivity } from '../HikeActivity'
 import { useReadingNavigation } from '../ReadingNavigation'
 import styles from './SiteHeader.module.css'
 
@@ -12,16 +13,19 @@ export function SiteHeader({
   brandIcon,
   navigation,
   languages,
+  hikeAction,
 }: {
   brand: ReactNode
   brandIcon?: ReactNode
   navigation: ReactNode
   languages: ReactNode
+  hikeAction?: ReactNode
 }) {
   const header = useRef<HTMLElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
   const { active, siteMenuOpen, setSiteMenuOpen, setSlot } = useReadingNavigation()
   const t = useTranslations('Site')
+  const showHikeAction = Boolean(useHikeActivity()) && Boolean(hikeAction)
   const reading = active && !siteMenuOpen
 
   useEffect(() => {
@@ -63,7 +67,7 @@ export function SiteHeader({
     <header
       ref={header}
       data-site-header
-      className={`${active ? styles.contextAvailable : ''} sticky top-0 z-40 border-b border-beige bg-cream shadow-sm`}
+      className={`${reading ? styles.reading : ''} ${showHikeAction ? styles.hasHikeAction : ''} sticky top-0 z-40 border-b border-beige bg-cream shadow-sm`}
     >
       <div
         className={`${styles.frame} mx-auto flex max-w-page items-center px-4 py-3 tablet:px-8 tablet:py-5.5`}
@@ -72,6 +76,7 @@ export function SiteHeader({
           <div className={styles.brandFull}>{brand}</div>
           <div className={styles.brandIcon}>{brandIcon ?? brand}</div>
         </div>
+        {showHikeAction && <div className="shrink-0">{hikeAction}</div>}
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className={`${styles.track} ${reading ? styles.trackReading : ''}`}>
             <div

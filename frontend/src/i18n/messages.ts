@@ -1,6 +1,9 @@
 export const messages = {
   sv: {
     Site: {
+      ongoingHikeLink: 'Jag vandrar!',
+      hikeLiveBadge: 'Live',
+      ongoingHikeCompact: 'På tur',
       hikeOverview: 'Översikt',
       expandAllChapters: 'Visa alla kapitel',
       collapseAllChapters: 'Dölj alla kapitel',
@@ -17,17 +20,41 @@ export const messages = {
       moreAboutArea: 'Mer om vandringsområdet',
       scrollForMore: 'Scrolla för att läsa mer',
       map: {
+        attribution: 'Kartkällor',
+        terrainSources: 'Höjddata',
+        mapLoadFailed: 'Kartan gick inte att ladda',
+        downloadRoute: 'Ladda ner rutten som GPX',
+        mapLoadRefresh:
+          'Prova att ladda om sidan för att få fram kartan. Om det inte hjälper kan du försöka igen senare.',
+        mapLoadGarmin:
+          'Du kan också följa mig på Garmin MapShare. Kopiera lösenordet ovanför kortet ”Min senaste position” och öppna sedan kortet.',
+        lastPositionUpdate: 'Senaste uppdatering: {time}',
+        trackingStats: 'Vandringsstatistik',
+        completion: 'Avklarat: {percent}',
+        distanceProgress: '{current}/{total} km',
+        elapsedHikeTime:
+          'Tid sedan start: {days} dygn {hours, plural, one {# timme} other {# timmar}}',
+        averageHikeProgress: 'I snitt: {kilometers} km/dygn',
+        estimatedHikeHours:
+          'Ungefär {hours, plural, one {# timmes} other {# timmars}} vandring kvar',
+        estimatedHikeDays: 'Ungefär {days} dygn kvar till mål',
+        status: {
+          notStarted: 'Spårningen har inte startat',
+          active: 'Spårning aktiv',
+          awaiting: 'Väntar på en ny position',
+          stopped: 'Spårningen har stoppats',
+          unavailable: 'Spårningsdata är inte tillgängliga',
+          conflict: 'Livespårning är avstängd eftersom flera vandringar pågår samtidigt.',
+        },
         title: 'Vandringskarta',
-        alt: 'Karta över hela rutten för {title}',
         open: 'Förstora kartan',
-        viewerTitle: 'Vandringskarta: {title}',
         close: 'Stäng kartan',
-        zoomControls: 'Kartans zoomkontroller',
+        showWholeTrail: 'Visa hela leden',
+        centerOnPosition: 'Centrera kartan på aktuell position',
+        scrollZoom: 'Håll ned {key} och rulla för att zooma på kartan.',
+        twoFingerPan: 'Använd två fingrar för att flytta kartan.',
         zoomIn: 'Zooma in',
         zoomOut: 'Zooma ut',
-        reset: 'Visa hela rutten',
-        instructions:
-          'Zooma med knapparna eller +/−. Flytta kartan genom att dra, svepa eller använda piltangenterna.',
       },
       previewAccess: {
         title: 'En förhandstitt på nästa steg.',
@@ -265,6 +292,9 @@ export const messages = {
 
   en: {
     Site: {
+      ongoingHikeLink: 'I’m hiking!',
+      hikeLiveBadge: 'Live',
+      ongoingHikeCompact: 'Hiking',
       hikeOverview: 'Hike overview',
       expandAllChapters: 'Expand all chapters',
       collapseAllChapters: 'Collapse all chapters',
@@ -281,16 +311,41 @@ export const messages = {
       moreAboutArea: 'More about the hiking area',
       scrollForMore: 'Scroll for more',
       map: {
+        attribution: 'Map attribution',
+        terrainSources: 'Terrain sources',
+        mapLoadFailed: 'The map couldn’t load',
+        downloadRoute: 'Download the route as GPX',
+        mapLoadRefresh:
+          'Try refreshing the page to load the map. If it still doesn’t load, check back later.',
+        mapLoadGarmin:
+          'You can also follow me on Garmin MapShare. Copy the password above the “My live position” card, then open the card.',
+        lastPositionUpdate: 'Last update: {time}',
+        trackingStats: 'Hike statistics',
+        completion: 'Completion: {percent}',
+        distanceProgress: '{current}/{total} km',
+        elapsedHikeTime:
+          'Elapsed: {days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}',
+        averageHikeProgress: 'Average progress: {kilometers} km/day',
+        estimatedHikeHours:
+          'Estimated walking time left: {hours, plural, one {# hour} other {# hours}}',
+        estimatedHikeDays: 'Estimated time left: {days, plural, one {# day} other {# days}}',
+        status: {
+          notStarted: 'Tracking has not started',
+          active: 'Tracking active',
+          awaiting: 'Waiting for a new location update',
+          stopped: 'Tracking stopped',
+          unavailable: 'Tracking data unavailable',
+          conflict: 'Live tracking is disabled because multiple hikes are ongoing.',
+        },
         title: 'Hike map',
-        alt: 'Map showing the complete route for {title}',
         open: 'Enlarge map',
-        viewerTitle: 'Hike map: {title}',
         close: 'Close map',
-        zoomControls: 'Map zoom controls',
+        showWholeTrail: 'Show the whole trail',
+        centerOnPosition: 'Center map on current position',
+        scrollZoom: 'Hold {key} and scroll to zoom the map.',
+        twoFingerPan: 'Use two fingers to move the map.',
         zoomIn: 'Zoom in',
         zoomOut: 'Zoom out',
-        reset: 'Fit map to screen',
-        instructions: 'Use the buttons or +/− to zoom. Drag, swipe or use arrow keys to move.',
       },
       previewAccess: {
         title: 'A glimpse of the next step.',
@@ -527,6 +582,9 @@ export const messages = {
 
   cs: {
     Site: {
+      ongoingHikeLink: 'Právě hikuju!',
+      hikeLiveBadge: 'Živě',
+      ongoingHikeCompact: 'Hikuju',
       hikeOverview: 'Přehled hiku',
       expandAllChapters: 'Rozbalit všechny kapitoly',
       collapseAllChapters: 'Sbalit všechny kapitoly',
@@ -543,17 +601,41 @@ export const messages = {
       moreAboutArea: 'Více o turistické oblasti',
       scrollForMore: 'Posuň níž pro další obsah',
       map: {
+        attribution: 'Zdroje mapy',
+        terrainSources: 'Zdroje výškových dat',
+        mapLoadFailed: 'Mapu se nepodařilo načíst',
+        downloadRoute: 'Stáhnout trasu jako GPX',
+        mapLoadRefresh: 'Zkus obnovit stránku. Pokud se mapa ani pak nenačte, zkus to později.',
+        mapLoadGarmin:
+          'Sledovat mě můžeš i na Garmin MapShare. Zkopíruj si heslo nad kartou „Moje poslední poloha“ a pak ji otevři.',
+        lastPositionUpdate: 'Poslední aktualizace: {time}',
+        trackingStats: 'Statistiky hiku',
+        completion: 'Dokončeno: {percent}',
+        distanceProgress: '{current}/{total} km',
+        elapsedHikeTime:
+          'Uplynulo: {days, plural, one {# den} few {# dny} other {# dní}} {hours, plural, one {# hodina} few {# hodiny} other {# hodin}}',
+        averageHikeProgress: 'V průměru: {kilometers} km za den',
+        estimatedHikeHours:
+          'Zbývá asi {hours, plural, one {# hodina} few {# hodiny} other {# hodin}} chůze',
+        estimatedHikeDays:
+          'Do cíle zbývá asi {days, plural, one {# den} few {# dny} other {# dní}}',
+        status: {
+          notStarted: 'Sledování ještě nezačalo',
+          active: 'Sledování je aktivní',
+          awaiting: 'Čeká se na novou polohu',
+          stopped: 'Sledování bylo zastaveno',
+          unavailable: 'Údaje o sledování nejsou dostupné',
+          conflict: 'Živé sledování je teď vypnuté, protože běží víc hiků najednou.',
+        },
         title: 'Mapa hiku',
-        alt: 'Mapa celé trasy: {title}',
         open: 'Zvětšit mapu',
-        viewerTitle: 'Mapa hiku: {title}',
         close: 'Zavřít mapu',
-        zoomControls: 'Přiblížení mapy',
+        showWholeTrail: 'Zobrazit celou trasu',
+        centerOnPosition: 'Přejít na aktuální polohu',
+        scrollZoom: 'Podrž {key} a scrolluj pro přiblížení nebo oddálení mapy.',
+        twoFingerPan: 'Mapu posuneš dvěma prsty.',
         zoomIn: 'Přiblížit',
         zoomOut: 'Oddálit',
-        reset: 'Zobrazit celou trasu',
-        instructions:
-          'Mapu přibližuj tlačítky nebo klávesami +/−. Posouvej ji tažením, přejetím prstem nebo šipkami.',
       },
       previewAccess: {
         title: 'Malá ukázka toho, co chystám.',

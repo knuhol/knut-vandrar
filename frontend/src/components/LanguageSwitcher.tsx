@@ -43,7 +43,8 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         ref={trigger}
-        className="ml-auto flex cursor-pointer items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm hover:bg-beige active:bg-beige data-[state=open]:bg-beige desktop:ml-0 tablet:gap-2.25 tablet:px-3"
+        data-keyboard-focus-only=""
+        className="header-control ml-auto cursor-pointer desktop:ml-0"
         aria-label={t('language')}
         aria-keyshortcuts={characterShortcutsEnabled ? 'L' : undefined}
       >
@@ -55,6 +56,7 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
         <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
       </DropdownMenu.Trigger>
       <DropdownSurface
+        data-keyboard-focus-only=""
         align="end"
         sideOffset={8}
         onCloseAutoFocus={(event) => {

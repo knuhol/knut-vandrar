@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
+import { ActivityContext } from '@/components/HikeActivity'
+
 import type { Hike } from '@/api/hikes'
 import { HikeMasthead } from '@/app/[locale]/hikes/[slug]/components/HikeMasthead/HikeMasthead'
 
@@ -82,3 +84,26 @@ test('provides responsive cover sources and reveals the image once it loads', as
     expect(image).toHaveAttribute('data-image-ready')
   })
 })
+
+test.each([true, false])(
+  'the ongoing cover shows the Live badge only while sending (%s)',
+  (sending) => {
+    const hike = {
+      status: 'ongoing',
+      translation: { title: 'Sörmlandsleden', slug: 'sormlandsleden' },
+    } as Hike
+    render(
+      <ActivityContext.Provider value={{ slug: 'sormlandsleden', sending }}>
+        <HikeMasthead hike={hike} />
+      </ActivityContext.Provider>,
+    )
+
+    const cover = within(screen.getByRole('banner'))
+    const ongoing = cover.getByText('ongoing')
+    if (sending) {
+      expect(ongoing.nextElementSibling).toBe(cover.getByText('hikeLiveBadge'))
+    } else {
+      expect(cover.queryByText('hikeLiveBadge')).not.toBeInTheDocument()
+    }
+  },
+)

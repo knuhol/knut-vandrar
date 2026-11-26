@@ -64,7 +64,7 @@ Migrations are applied automatically at container startup. Revision 004 migrates
 
 Translation requests use `OPENAI_REQUEST_TIMEOUT_SECONDS` from the root `.env` (default: 600 seconds). This is a network inactivity timeout, not a strict total generation deadline. Increase it for slower high-effort translations. Recreate the translation-worker service after changing its environment settings.
 
-## Hiking content and upcoming administration
+## Hiking content API
 
 `/api/locations` replaces `/api/trails`; hikes now reference `location_id` and return
 `location`. Locations have kind `trail` or `area`, multiple enum terrain values,
@@ -117,8 +117,7 @@ Use `Authorization: Bearer <token>` over HTTPS in production. Rotate by updating
 private environment value and recreating the backend service to load it; the old token
 then ceases to work. Compose forwards this secret only to the backend, including VPS
 configuration. Each environment should have a different token. This is a single shared
-administrator credential, with no browser login, sessions, user roles or ACLs yet.
-The future admin server can hold it privately while authenticating browsers separately.
+credential for backend write access.
 
 `POST /api/translations/requeue` requires the same Bearer token. With no body (or `{}`),
 it selects only `needs_retranslation` entries across hikes, locations, regions and

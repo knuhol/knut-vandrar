@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
-from pydantic import TypeAdapter
+from pydantic import HttpUrl, TypeAdapter
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -26,7 +26,6 @@ from knut_vandrar_backend.api.schemas.hike import (
     HikeCoverSources,
     HikeEnglishContent,
     HikeLocalizedRead,
-    HikeMapRead,
     HikeNeighborRead,
     HikeNeighborsRead,
     HikeRead,
@@ -34,6 +33,8 @@ from knut_vandrar_backend.api.schemas.hike import (
     HikeSummaryRead,
     HikeWrite,
     InfoCard,
+    LivePositionCard,
+    OngoingHikeRead,
     TranslationReviewWrite,
 )
 from knut_vandrar_backend.api.schemas.location import AchievementRead
@@ -61,9 +62,11 @@ from knut_vandrar_backend.models.location import (
     HikeOvernight,
     HikingLocation,
 )
-from knut_vandrar_backend.models.map import HikeMapImage
 from knut_vandrar_backend.models.reference import InfoCardType
+from knut_vandrar_backend.models.tracking import GarminSettings
 from knut_vandrar_backend.models.translation import TranslationJob
+from knut_vandrar_backend.settings import settings
+from knut_vandrar_backend.tracking.worker import ongoing_hikes
 from knut_vandrar_backend.tracks.selection import validate_selection
 from knut_vandrar_backend.translations.content import set_manual, set_source
 from knut_vandrar_backend.translations.core import (
@@ -106,6 +109,20 @@ def list_hikes(
         total=total,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/ongoing", response_model=OngoingHikeRead | None)
+def get_ongoing_hike(db: DatabaseSession, locale: str = SOURCE_LOCALE) -> OngoingHikeRead | None:
+    _require_locale(db, locale)
+    active = ongoing_hikes(db)
+    if len(active) != 1:
+        return None
+    translation = _translation(db, active[0].id, locale)
+    return (
+        OngoingHikeRead(id=active[0].id, locale=locale, slug=translation.slug)
+        if translation
+        else None
     )
 
 
@@ -243,56 +260,6 @@ def get_hike_cover_image(
     return image_response(
         lambda: asset.content, content_type, asset.sha256, request, immutable=v is not None
     )
-
-
-@router.get(
-    "/{hike_id}/maps",
-    response_model=list[HikeMapRead],
-    responses={404: {"description": "Hike not found"}},
-)
-def list_hike_maps(hike_id: UUID, request: Request, db: DatabaseSession) -> list[HikeMapRead]:
-    if db.get(Hike, hike_id) is None:
-        raise HTTPException(404, "Hike not found")
-    # Keep binary content out of metadata queries.
-    rows = db.execute(
-        select(
-            HikeMapImage.variant,
-            HikeMapImage.width,
-            HikeMapImage.height,
-            HikeMapImage.sha256,
-            HikeMapImage.provenance,
-        )
-        .where(HikeMapImage.hike_id == hike_id)
-        .order_by(HikeMapImage.variant)
-    )
-    return [
-        HikeMapRead(
-            variant=row.variant,
-            width=row.width,
-            height=row.height,
-            sha256=row.sha256,
-            generated_at=row.provenance.get("generated_at"),
-            url=str(request.url_for("get_hike_map", hike_id=str(hike_id), variant=row.variant)),
-        )
-        for row in rows
-    ]
-
-
-@router.get(
-    "/{hike_id}/maps/{variant}",
-    name="get_hike_map",
-    response_class=Response,
-    responses={
-        200: {"content": {"image/webp": {}}, "description": "Generated WebP map"},
-        304: {"description": "Image unchanged"},
-        404: {"description": "Map not found"},
-    },
-)
-def get_hike_map(hike_id: UUID, variant: str, request: Request, db: DatabaseSession) -> Response:
-    image = db.get(HikeMapImage, (hike_id, variant))
-    if image is None:
-        raise HTTPException(404, "Hike map not found")
-    return image_response(image.content, "image/webp", image.sha256, request)
 
 
 @router.get(
@@ -502,10 +469,22 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
     ordered_cards = db.scalars(
         select(HikeInfoCard)
         .join(InfoCardType, HikeInfoCard.type == InfoCardType.type)
-        .where(HikeInfoCard.hike_id == hike.id)
+        .where(HikeInfoCard.hike_id == hike.id, HikeInfoCard.type != "live_position")
         .order_by(card_order, HikeInfoCard.sort_order, HikeInfoCard.id)
     )
     cards = [card_adapter.validate_python(item.data) for item in ordered_cards]
+    live_tracking = None
+    mapshare_url = None
+    mapshare_password = None
+    if hike.status in {HikeStatus.PLANNED, HikeStatus.ONGOING}:
+        mapshare = db.get(GarminSettings, 1)
+        url = settings.garmin_mapshare_url
+        if mapshare and mapshare.active and mapshare.password and url:
+            mapshare_url = HttpUrl(url)
+            mapshare_password = mapshare.password
+        live_tracking = LivePositionCard(
+            type="live_position", state="active" if mapshare_url else "inactive"
+        )
     return HikeRead(
         id=hike.id,
         track_collection_id=hike.track_collection_id,
@@ -538,6 +517,9 @@ def _detail(db: Session, hike: Hike, translation: HikeTranslation, request: Requ
             for item in sorted(hike.translations, key=lambda item: item.locale_code)
         ],
         cards=cards,
+        live_tracking=live_tracking,
+        mapshare_url=mapshare_url,
+        mapshare_password=mapshare_password,
         achievements=[
             AchievementRead.model_validate(
                 read_authored(db, "achievement", item, translation.locale_code)

@@ -45,26 +45,29 @@ test('adds only unused card types, prevents duplicate type changes, and restores
   expect(screen.getByRole('option', { name: 'gpx collection' })).toBeInTheDocument()
   fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' })
 
-  for (let index = 0; index < 5; index++) {
+  for (let index = 0; index < 4; index++) {
     fireEvent.click(add)
   }
-  expect(types()).toHaveLength(7)
-  expect(new Set(types()).size).toBe(7)
+  expect(types()).toHaveLength(6)
+  expect(new Set(types()).size).toBe(6)
   expect(add).toBeDisabled()
   fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0])
   expect(add).toBeEnabled()
   fireEvent.click(add)
   expect(types().at(-1)).toBe('route')
-  expect(new Set(types()).size).toBe(7)
+  expect(new Set(types()).size).toBe(6)
 })
 
-test('does not offer live tracking after all applicable finished-hike card types are used', () => {
-  render(<CardsEditor status="completed" />)
-  const add = screen.getByRole('button', { name: /Add.*cards/i })
-  for (let index = 0; index < 6; index++) {
-    fireEvent.click(add)
-  }
-  expect(types()).toHaveLength(6)
-  expect(types()).not.toContain('live_position')
-  expect(add).toBeDisabled()
-})
+test.each(['planned', 'completed'] as const)(
+  'keeps live tracking out of the %s hike editor',
+  (status) => {
+    render(<CardsEditor status={status} />)
+    const add = screen.getByRole('button', { name: /Add.*cards/i })
+    for (let index = 0; index < 6; index++) {
+      fireEvent.click(add)
+    }
+    expect(types()).toHaveLength(6)
+    expect(types()).not.toContain('live_position')
+    expect(add).toBeDisabled()
+  },
+)

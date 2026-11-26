@@ -59,7 +59,7 @@ export function KeyboardShortcuts() {
         ['↑ ↓ ← →', t('keyboardShortcuts.panMap')],
         ['+', t('map.zoomIn')],
         ['−', t('map.zoomOut')],
-        ['0', t('map.reset')],
+        ['0', t('map.showWholeTrail')],
         ['Esc', t('map.close')],
       ],
     },

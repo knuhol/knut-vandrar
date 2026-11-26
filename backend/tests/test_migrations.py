@@ -225,14 +225,15 @@ def test_hike_direction_migration_preserves_trail_direction_and_hike_selection()
     engine.dispose()
 
 
-def test_map_migration_preserves_hikes_and_has_unique_variants() -> None:
+def test_static_map_retirement_preserves_hikes_and_can_restore_schema() -> None:
     import sqlalchemy as sa
 
     config = Config()
     config.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "alembic"))
     scripts = ScriptDirectory.from_config(config)
     migration = scripts.get_revision("018_hike_map_images")
-    assert migration is not None
+    retirement = scripts.get_revision("031_retire_static_maps")
+    assert migration is not None and retirement is not None
     engine = create_engine("sqlite://")
     with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
         connection.execute(sa.text("CREATE TABLE hikes (id CHAR(32) PRIMARY KEY)"))
@@ -243,8 +244,13 @@ def test_map_migration_preserves_hikes_and_has_unique_variants() -> None:
         assert set(
             inspect(connection).get_pk_constraint("hike_map_images")["constrained_columns"]
         ) == {"hike_id", "variant"}
-        migration.module.downgrade()
+        retirement.module.upgrade()
+        assert not inspect(connection).has_table("hike_map_images")
         assert connection.execute(sa.text("SELECT COUNT(*) FROM hikes")).scalar() == 1
+        retirement.module.downgrade()
+        assert {
+            column["name"] for column in inspect(connection).get_columns("hike_map_images")
+        } == (columns)
     engine.dispose()
 
 
