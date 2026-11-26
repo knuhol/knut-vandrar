@@ -1,6 +1,7 @@
 """Hike and location API behavior, ordering, and validation."""
 
 import re
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from typing import cast
@@ -571,45 +572,6 @@ def test_card_order_uses_hike_status_for_every_detail_response(
     assert client.get(f"/api/hikes/{hike['id']}").json()["cards"] == next_expected
 
 
-@pytest.mark.parametrize("password", [None, "1234xss"], ids=["without-password", "with-password"])
-def test_live_tracking_public_password(client: TestClient, password: str | None) -> None:
-    card = {"type": "live_position", "state": "active", "url": "https://share.garmin.com/hike"}
-    if password is not None:
-        card["password"] = password
-    response = client.post("/api/hikes", json=_planned_payload(cards=[card]))
-    assert response.status_code == 201, response.text
-    hike = response.json()
-    fetched = client.get(f"/api/hikes/{hike['id']}")
-    assert fetched.status_code == 200
-    assert fetched.json()["cards"][0]["password"] == password
-
-
-@pytest.mark.parametrize("locale", ["sv", "cs"])
-def test_localized_hike_detail_includes_the_english_source_title(
-    client: TestClient, locale: str
-) -> None:
-    created = client.post("/api/hikes", json=_planned_payload()).json()
-    hike_id = UUID(created["id"])
-    assert created["english_title"] == "Hike through the Highlands"
-    with app.state.testing_session_local.begin() as db:
-        db.add(
-            HikeTranslation(
-                hike_id=hike_id,
-                locale_code=locale,
-                title="Localized hike title",
-                summary_markdown="Localized summary",
-                slug="localized-hike",
-                source_revision=1,
-                profile_fingerprint="test",
-                review_status="unreviewed",
-            )
-        )
-    response = client.get(f"/api/hikes/{locale}/localized-hike")
-    assert response.status_code == 200
-    assert response.json()["translation"]["title"] == "Localized hike title"
-    assert response.json()["english_title"] == "Hike through the Highlands"
-
-
 def test_hike_geographic_label_is_optional_and_localized(client: TestClient) -> None:
     payload = _planned_payload()
     created = client.post("/api/hikes", json=payload)
@@ -795,53 +757,6 @@ def test_stopping_point_round_trip_clear_and_validation(client: TestClient) -> N
     assert all(
         cleared.json()[key] is None for key in ("stop_latitude", "stop_longitude", "stop_stage")
     )
-
-
-def test_public_map_metadata_images_etag_and_missing_variants(client: TestClient) -> None:
-    import hashlib
-
-    from knut_vandrar_backend.models.map import HikeMapImage
-
-    hike_id = client.post("/api/hikes", json=_planned_payload()).json()["id"]
-    assert client.get(f"/api/hikes/{hike_id}/maps").json() == []
-    output = BytesIO()
-    Image.new("RGB", (32, 24)).save(output, "WEBP")
-    content = output.getvalue()
-    digest = hashlib.sha256(content).hexdigest()
-    with app.state.testing_session_local.begin() as db:
-        db.add(
-            HikeMapImage(
-                hike_id=UUID(hike_id),
-                variant="mobile",
-                width=32,
-                height=24,
-                content=content,
-                sha256=digest,
-                fingerprint="a" * 64,
-                provenance={"generated_at": "2026-11-20T12:00:00+00:00"},
-            )
-        )
-    # Map reads are public, while normal hike edits retain their existing auth.
-    client.headers.pop("Authorization")
-    listing = client.get(f"/api/hikes/{hike_id}/maps")
-    assert listing.status_code == 200, listing.text
-    image = listing.json()[0]
-    assert (image["variant"], image["width"], image["height"], image["sha256"]) == (
-        "mobile",
-        32,
-        24,
-        digest,
-    )
-    served = client.get(image["url"])
-    assert served.status_code == 200
-    assert served.content == content
-    assert served.headers["content-type"] == "image/webp"
-    assert served.headers["etag"] == f'"{digest}"'
-    assert served.headers["x-content-type-options"] == "nosniff"
-    cached = client.get(image["url"], headers={"If-None-Match": served.headers["etag"]})
-    assert cached.status_code == 304 and not cached.content
-    assert client.get(f"/api/hikes/{hike_id}/maps/wide").status_code == 404
-    assert client.get("/api/hikes/00000000-0000-0000-0000-000000000000/maps").status_code == 404
 
 
 @pytest.mark.parametrize("field", ["boat_connection_required", "is_national_park"])
@@ -1122,7 +1037,7 @@ def test_hike_neighbors_follow_localized_listing_order_without_wrapping(
         assert client.get(f"/api/hikes/{UUID(int=3)}/neighbors/sv").status_code == 404
 
 
-@pytest.mark.parametrize("card_type", ["route", "youtube_video", "gpx_collection", "live_position"])
+@pytest.mark.parametrize("card_type", ["route", "youtube_video", "gpx_collection"])
 def test_duplicate_card_types_are_rejected_without_changing_saved_cards(
     client: TestClient, card_type: str
 ) -> None:
@@ -1130,11 +1045,8 @@ def test_duplicate_card_types_are_rejected_without_changing_saved_cards(
         "route": "https://example.com/route",
         "youtube_video": "https://youtu.be/abcdefghijk",
         "gpx_collection": "https://www.plotaroute.com/routecollection/18991",
-        "live_position": "https://share.garmin.com/hike",
     }
     card: dict[str, str] = {"type": card_type, "url": urls[card_type]}
-    if card_type == "live_position":
-        card["state"] = "active"
     duplicate = {**card, "url": urls[card_type] + "?second=true"}
     invalid = _planned_payload(cards=[card, duplicate])
     created = client.post("/api/hikes", json=invalid)
@@ -1171,3 +1083,53 @@ def test_database_rejects_duplicate_types_only_within_the_same_hike(client: Test
             )
         )
         db.flush()
+
+
+@pytest.mark.parametrize("state", ["active", "inactive"])
+def test_visible_tracking_card_uses_site_password_without_map_progress(
+    client: TestClient,
+    state: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from knut_vandrar_backend.api import hikes
+    from knut_vandrar_backend.settings import settings
+
+    monkeypatch.setattr(
+        hikes, "settings", replace(settings, garmin_mapshare_username="trail-owner")
+    )
+    assert (
+        client.put(
+            "/api/settings/mapshare", json={"password": "trail", "active": state == "active"}
+        ).status_code
+        == 200
+    )
+    created = client.post("/api/hikes", json=_planned_payload())
+    assert created.status_code == 201, created.text
+    hike = client.get(f"/api/hikes/{created.json()['id']}").json()
+    assert hike["live_tracking"] == {"type": "live_position", "state": state}
+    assert all(card["type"] != "live_position" for card in hike["cards"])
+    assert hike["mapshare_url"] == (
+        "https://share.garmin.com/trail-owner" if state == "active" else None
+    )
+    assert hike["mapshare_password"] == ("trail" if state == "active" else None)
+
+
+def test_ongoing_hike_link_requires_exactly_one_ongoing_hike(client: TestClient) -> None:
+    path = "/api/hikes/ongoing?locale=en"
+    assert client.get(path).json() is None
+    first = client.post(
+        "/api/hikes",
+        json=_planned_payload(status="ongoing", actual_start_at="2026-09-17T08:00:00Z"),
+    )
+    assert first.status_code == 201, first.text
+    assert client.get(path).json() == {
+        "id": first.json()["id"],
+        "locale": "en",
+        "slug": first.json()["translation"]["slug"],
+    }
+    second = client.post(
+        "/api/hikes",
+        json=_planned_payload(status="ongoing", actual_start_at="2026-09-18T08:00:00Z"),
+    )
+    assert second.status_code == 201, second.text
+    assert client.get(path).json() is None

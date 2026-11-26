@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react'
 
 import { HikeCardLink } from './HikeCardLink'
+import { HikeLiveBadge } from './HikeLiveBadge'
 import { HikeStats } from './HikeStats'
 import { HikeStatus } from './HikeStatus'
 
@@ -36,8 +37,9 @@ export function HikeCard({ hike }: { hike: HikeSummary }) {
             <PhotoQuestion className="size-12 shrink-0" aria-hidden="true" />
           </div>
         )}
-        <div className="absolute top-3.75 left-3.75">
+        <div className="absolute top-3.75 left-3.75 flex flex-wrap items-center gap-2">
           <HikeStatus status={hike.status} />
+          {hike.status === 'ongoing' && <HikeLiveBadge slug={hike.translation.slug} />}
         </div>
       </div>
       <div className="flex flex-1 flex-col p-5.25">

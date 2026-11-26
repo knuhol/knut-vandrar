@@ -6,7 +6,8 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import { IconArrowDown } from '@tabler/icons-react'
 
 import { HikePagination } from './components/HikePagination'
-import { HikeMap } from './components/HikeMap/HikeMap'
+import { DynamicHikeMap } from './components/DynamicHikeMap/DynamicHikeMap'
+import { MapUnavailable } from './components/DynamicHikeMap/MapUnavailable'
 
 import { HikeGallery } from './components/HikeGallery/HikeGallery'
 
@@ -21,15 +22,17 @@ import { FootstepTrail } from './components/FootstepTrail'
 import { TranslationNotice } from './components/TranslationNotice/TranslationNotice'
 
 import { HikeFacts } from './components/HikeFacts'
+import { serverConfig } from '@/config/server'
 import { ButtonLink } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { ChapterControls } from '@/components/Chapter/ChapterControls'
 import { Markdown } from '@/components/Markdown/Markdown'
+import { client } from '@/api/client'
 import { imageUrl } from '@/api/images'
 import { InfoCards } from '@/app/[locale]/hikes/[slug]/components/InfoCards'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
-import { getHike, getPhotos, getHikeMaps, getHikeNeighbors, type Hike } from '@/api/hikes'
+import { getHike, getPhotos, getHikeNeighbors, type Hike } from '@/api/hikes'
 
 import { hikePresentation, locationPresentation, visibleHikeCards } from '@/hiking/presentation'
 import { pageMetadata } from '@/seo/metadata'
@@ -106,13 +109,29 @@ export default async function HikePage({ params }: Props) {
   )
 }
 
+async function getTrackingMap(hike: Hike) {
+  const params = { hike_id: hike.id }
+  if (serverConfig.deploymentEnvironment === 'local') {
+    const response = await client['/api/hikes/{hike_id}/tracking-replay'].get({ params })
+    if (response.ok) {
+      const replay = await response.json()
+      if (replay.route) {
+        return { route: replay.route, replay }
+      }
+    }
+  }
+  const response = await client['/api/hikes/{hike_id}/planned-map'].get({ params })
+  return response.ok ? { route: await response.json() } : undefined
+}
+
 async function HikePageContent({ hike, locale }: { hike: Hike; locale: Locale }) {
-  const [t, galleryPage, maps, neighbors] = await Promise.all([
+  const [t, galleryPage, neighbors, trackingMap] = await Promise.all([
     getTranslations('Site'),
     getPhotos(hike.id, locale),
-    getHikeMaps(hike.id),
     getHikeNeighbors(hike.id, locale),
+    getTrackingMap(hike).catch(() => undefined),
   ])
+  const plannedMap = trackingMap?.route
   const presentation = hikePresentation(hike)
   const locationData = hike.location && locationPresentation(hike.location)
   const cards = visibleHikeCards(hike)
@@ -156,9 +175,24 @@ async function HikePageContent({ hike, locale }: { hike: Hike; locale: Locale })
         <HikeNavigation label={t('pageContents')} items={navigationItems} />
         <HikeOverview
           map={
-            maps.length > 0 ? (
-              <HikeMap images={maps} hikeTitle={hike.translation.title} />
-            ) : undefined
+            plannedMap ? (
+              <DynamicHikeMap
+                key={hike.id}
+                hikeId={hike.id}
+                hikeSlug={hike.translation.slug}
+                route={plannedMap}
+                ongoing={hike.status === 'ongoing'}
+                replay={trackingMap.replay}
+                completed={hike.status === 'completed'}
+                aborted={hike.status === 'aborted'}
+                areaName={hike.location?.kind === 'area' ? hike.location.name : undefined}
+                hasMapShareCard={Boolean(hike.mapshare_url)}
+              />
+            ) : (
+              <section id="map" aria-label={t('map.title')}>
+                <MapUnavailable hasMapShareCard={Boolean(hike.mapshare_url)} />
+              </section>
+            )
           }
         >
           <HikeFacts hike={hike} endpoints={presentation.endpoints} />
@@ -166,6 +200,8 @@ async function HikePageContent({ hike, locale }: { hike: Hike; locale: Locale })
             <section aria-label={t('hikeResources')}>
               <InfoCards
                 cards={cards}
+                mapSharePassword={hike.mapshare_password ?? undefined}
+                mapShareUrl={hike.mapshare_url ?? undefined}
                 hikeId={hike.id}
                 hikeTitle={hike.english_title}
                 locale={locale}

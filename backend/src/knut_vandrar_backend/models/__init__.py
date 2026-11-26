@@ -3,13 +3,23 @@
 from knut_vandrar_backend.models import (
     hike,
     location,
-    map,
     media,
     page,
     photo,
     reference,
     track,
+    tracking,
     translation,
 )
 
-__all__ = ["hike", "reference", "location", "translation", "photo", "media", "page", "track", "map"]
+__all__ = [
+    "hike",
+    "reference",
+    "location",
+    "translation",
+    "photo",
+    "media",
+    "page",
+    "track",
+    "tracking",
+]

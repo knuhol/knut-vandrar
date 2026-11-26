@@ -1,6 +1,6 @@
 @reference '../../app/globals.css';
 
-.links a[aria-current] {
+.links a[aria-current]:not([data-link-kind]) {
   @apply underline decoration-orange decoration-3;
 }
 

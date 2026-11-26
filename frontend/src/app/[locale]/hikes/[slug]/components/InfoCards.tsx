@@ -19,7 +19,7 @@ import { TrackingPassword } from './TrackingPassword'
 
 import { trackHikeInteraction } from '@/analytics/hikeEvents'
 import type { Locale } from '@/i18n/routing'
-import type { Hike } from '@/api/hikes'
+import type { VisibleHikeCard } from '@/hiking/presentation'
 
 const icons = {
   route: Map,
@@ -61,18 +61,21 @@ function youtubeId(url: string) {
 
 export function InfoCards({
   cards,
+  mapSharePassword,
+  mapShareUrl,
   hikeId,
   hikeTitle,
   locale,
 }: {
-  cards: Hike['cards']
+  cards: VisibleHikeCard[]
+  mapSharePassword?: string
+  mapShareUrl?: string
   hikeId: string
   hikeTitle: string | null
   locale: Locale
 }) {
   const t = useTranslations('Site')
   const [playing, setPlaying] = useState<string>()
-  const tracking = cards.find((card) => card.type === 'live_position')
 
   if (cards.length === 0) {
     return null
@@ -81,11 +84,6 @@ export function InfoCards({
   return (
     <>
       <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 desktop:grid-cols-1">
-        {tracking?.state === 'active' && tracking.url && tracking.password && (
-          <div className="col-span-full grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-1">
-            <TrackingPassword key={tracking.password} password={tracking.password} />
-          </div>
-        )}
         {cards.map((card) => {
           const Icon = icons[card.type]
 
@@ -118,9 +116,10 @@ export function InfoCards({
             )
           }
 
-          const inactive = card.type === 'live_position' && (card.state === 'inactive' || !card.url)
+          const href = card.type === 'live_position' ? mapShareUrl : card.url
+          const inactive = card.type === 'live_position' && (card.state === 'inactive' || !href)
 
-          return (
+          const resource = (
             <InfoCard
               key={card.type}
               icon={<Icon aria-hidden="true" />}
@@ -135,9 +134,17 @@ export function InfoCards({
                   resourceType: card.type,
                 })
               }}
-              href={card.url ?? undefined}
+              href={href ?? undefined}
               description={inactive ? t('inactive') : t(`resourceDescriptions.${card.type}`)}
             />
+          )
+          return card.type === 'live_position' && !inactive && mapSharePassword ? (
+            <div key={card.type} className="grid gap-3">
+              <TrackingPassword key={mapSharePassword} password={mapSharePassword} />
+              {resource}
+            </div>
+          ) : (
+            resource
           )
         })}
       </div>

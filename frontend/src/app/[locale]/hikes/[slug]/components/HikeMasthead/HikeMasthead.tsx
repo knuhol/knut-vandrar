@@ -5,6 +5,7 @@ import { HikeCoverPicture } from './HikeCoverPicture'
 
 import { Heading } from '@/components/Heading'
 import { Container } from '@/components/Container'
+import { HikeLiveBadge } from '@/app/[locale]/components/HikeLiveBadge'
 import { HikeStatus } from '@/app/[locale]/components/HikeStatus'
 import { HikeStats } from '@/app/[locale]/components/HikeStats'
 import { hasCompleteHikeStats } from '@/hiking/stats'
@@ -49,8 +50,9 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
       <Container>
         <div className="content-enter pt-32 pb-12 tablet:pt-40 tablet:pb-16">
           <div className="mb-5 flex flex-wrap items-center gap-3">
-            <span className={styles.status}>
+            <span className={`${styles.status} flex-wrap items-center gap-2`}>
               <HikeStatus status={hike.status} />
+              {hike.status === 'ongoing' && <HikeLiveBadge slug={hike.translation.slug} />}
             </span>
           </div>
           <Heading tone="inverse" eyebrow={hike.translation.geographic_label}>

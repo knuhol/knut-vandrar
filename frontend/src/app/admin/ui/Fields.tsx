@@ -81,7 +81,7 @@ export function Fields({
   }
   if (field.oneOf) {
     const options = field.oneOf
-      .filter((option) => variantApplies(option, root, value))
+      .filter((option) => variantApplies(option, root))
       .map((option) => {
         const resolved = resolve(option)
         return {
@@ -254,9 +254,7 @@ export function Fields({
       return field['x-unique-by'] && schema.oneOf
         ? {
             ...schema,
-            oneOf: schema.oneOf.filter((option) =>
-              variantApplies(option, root, index === undefined ? undefined : current[index]),
-            ),
+            oneOf: schema.oneOf.filter((option) => variantApplies(option, root)),
           }
         : schema
     }
@@ -285,7 +283,7 @@ export function Fields({
             (option) =>
               resolve(resolve(option).properties?.type || {}).const === record(entry).type,
           )
-          if (selected && !variantApplies(selected, root, entry)) {
+          if (selected && !variantApplies(selected, root)) {
             return null
           }
           return (

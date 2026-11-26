@@ -1,4 +1,11 @@
 {
+  "cancel": "Cancel",
+  "mapshareSettings": "Garmin MapShare settings",
+  "mapshareActive": "Enable live tracking",
+  "mapsharePassword": "Garmin MapShare password",
+  "mapsharePasswordHelp": "Visitors can copy this password above the tracking card when live tracking is active.",
+  "mapsharePasswordSaved": "MapShare settings saved",
+  "mapsharePasswordError": "Could not load or save the MapShare settings",
   "discardUnsavedChanges": "Discard unsaved changes?",
   "loadFailed": "Load failed",
   "savedNoTranslationsWereQueued": "Saved. No translations were queued.",

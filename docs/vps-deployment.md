@@ -255,6 +255,4 @@ Unprefixed requests use the saved locale cookie, then browser language preferenc
 then Swedish. Explicit locale URLs take priority. No location permission or IP geolocation
 service is used. Missing hike translations are omitted; outdated translations stay visible.
 
-Only the public hiking interface is implemented. The shared Radix dropdown, Tailwind tokens,
-fonts and component styles can be reused for the future admin panel; no admin CRUD UI or
-authentication has been introduced in this redesign.
+For admin routing, authentication, and environment settings, see the [Admin UI setup](../README.md#admin-ui).

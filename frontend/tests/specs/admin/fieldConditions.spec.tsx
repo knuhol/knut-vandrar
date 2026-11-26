@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 
 import { Fields } from '@/app/admin/ui/Fields'
 import { EditorSections } from '@/app/admin/ui/EditorSections'
-import { fieldApplies, prepareDraft, prepareWrite, variantApplies } from '@/admin/fieldConditions'
+import { fieldApplies, prepareDraft, prepareWrite } from '@/admin/fieldConditions'
 import { initialValue, record, schemaFor, type Json } from '@/admin/resources'
 
 jest.mock('@/admin/client', () => ({ api: jest.fn() }))
@@ -141,23 +141,6 @@ test('clearing stopping coordinates or overnight recording time clears dependent
   expect(value.stop_stage).toBe('11')
 })
 
-test('live tracking variants and credentials follow hike and connection status', () => {
-  const schema = schemaFor('LivePositionCard')
-  const context = { schema: 'HikeWrite', value: { status: 'completed' } }
-  expect(variantApplies(schema, context)).toBe(false)
-  context.value.status = 'planned'
-  expect(variantApplies(schema, context)).toBe(true)
-  expect(fieldApplies(schema, 'password', { state: 'inactive' }, context)).toBe(false)
-  expect(fieldApplies(schema, 'url', { state: 'active' }, context)).toBe(true)
-  const draft = {
-    status: 'completed',
-    cards: [
-      { type: 'live_position', state: 'active', url: 'https://example.com', password: 'saved' },
-    ],
-  }
-  expect(prepareWrite(schemaFor('HikeWrite'), draft)).toEqual(draft)
-})
-
 test('page templates follow the selected page and hide irrelevant template fields', () => {
   const schema = schemaFor('PageWrite')
   const value = prepareDraft(schema, {
@@ -183,44 +166,4 @@ test('historic hike dates and stopping data survive a status change', () => {
     stop_stage: '11',
   }
   expect(prepareWrite(schemaFor('HikeWrite'), value)).toEqual(value)
-})
-
-test('inactive tracking fields are removed from the DOM and return with their draft values', () => {
-  const initial = {
-    ...record(initialValue(schemaFor('HikeWrite'))),
-    status: 'planned',
-    cards: [
-      {
-        type: 'live_position',
-        state: 'active',
-        url: 'https://example.com/track',
-        password: 'trail',
-      },
-    ],
-  }
-  render(<Editor schemaName="HikeWrite" initial={initial} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Information cards' }))
-  expect(screen.getByRole('textbox', { name: 'password' })).toHaveValue('trail')
-  select('state', 'inactive')
-  expect(screen.queryByRole('textbox', { name: 'url' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('textbox', { name: 'password' })).not.toBeInTheDocument()
-  select('state', 'active')
-  expect(screen.getByRole('textbox', { name: 'password' })).toHaveValue('trail')
-})
-
-test('incomplete tracking cards remain editable and invalid hidden URLs do not block saving', () => {
-  const context = { schema: 'HikeWrite', value: { status: 'completed' } }
-  expect(
-    variantApplies(schemaFor('LivePositionCard'), context, {
-      type: 'live_position',
-      state: null,
-    }),
-  ).toBe(true)
-  const card = { type: 'live_position', state: 'active', url: 'not a URL', password: 'saved' }
-  expect(
-    prepareWrite(schemaFor('HikeWrite'), { status: 'completed', cards: [card] }),
-  ).toMatchObject({
-    cards: [{ ...card, url: null }],
-  })
-  expect(card.url).toBe('not a URL')
 })

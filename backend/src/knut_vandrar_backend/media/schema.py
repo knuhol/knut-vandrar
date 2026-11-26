@@ -64,15 +64,13 @@ class Asset(Record):
     @model_validator(mode="after")
     def validate_asset(self) -> Self:
         if self.kind == "map":
-            from knut_vandrar_backend.maps.assets import MapData
-
-            data = MapData.model_validate(self.map_data)
+            # Retired map records are read only when importing older media archives.
             if (
                 self.id != self.owner_id
                 or self.content_type != "image/webp"
                 or self.translations
                 or self.track_data
-                or set(self.files) != set(data.variants)
+                or not self.files
                 or any(not re.fullmatch(r"[a-z][a-z0-9_-]{0,39}", key) for key in self.files)
             ):
                 raise ValueError("Invalid generated map asset")

@@ -8,10 +8,12 @@ export function FocusIndicator() {
 
     function trackPointer(event: PointerEvent) {
       root.toggleAttribute('data-touch-input', event.pointerType === 'touch')
+      root.dataset.pointerInput = ''
     }
 
     function trackKeyboard() {
       delete root.dataset.touchInput
+      delete root.dataset.pointerInput
     }
 
     document.addEventListener('pointerdown', trackPointer, { capture: true, passive: true })
@@ -21,6 +23,7 @@ export function FocusIndicator() {
       document.removeEventListener('pointerdown', trackPointer, true)
       document.removeEventListener('keydown', trackKeyboard, true)
       delete root.dataset.touchInput
+      delete root.dataset.pointerInput
     }
   }, [])
 

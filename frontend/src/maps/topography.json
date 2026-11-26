@@ -6,6 +6,7 @@
     "encoding": "terrarium",
     "tileSize": 512,
     "maxZoom": 12,
+    "attributionUrl": "https://mapterhorn.com/attribution/",
     "attribution": "Terrain \u00a9 Mapterhorn \u00b7 mapterhorn.com/attribution",
     "finlandAttribution": "© National Land Survey of Finland 2025 (CC BY 4.0)",
     "norwayAttribution": "\u00a9 Kartverket (CC BY 4.0)"
@@ -39,8 +40,8 @@
     "labelAlignment": "viewport"
   },
   "peakLabels": {
-    "padding": 24,
-    "fontSize": 10,
+    "padding": 18,
+    "fontSize": 11,
     "minimumElevation": 1000
   },
   "cacheSize": 128

@@ -2,7 +2,7 @@
 
 Published GPX collections, route metadata, track files, and hike collection selections
 transfer in the same archive as pictures. Collections can belong to a trail or a hike;
-`--map-location` and `--map-hike` remap their respective owners. Generated static hike maps and their rendering provenance also transfer with media.
+`--map-location` and `--map-hike` remap their respective owners. Older archives can contain generated map images. Import verifies their checksums and skips them.
 New archives use format 4;
 formats 1, 2 and 3 remain readable when database revisions match. Draft reviews are
 excluded. See [track imports](track-imports.md).
@@ -97,7 +97,7 @@ Export all images by omitting filters, or repeat `--hike` and/or `--location`:
 The `--hike` filter accepts a UUID or a case-insensitive partial title in any supported
 language. Ambiguous titles fail with a list of candidates and their UUIDs.
 
-A hike selection includes its cover, gallery, generated maps, associated location logo,
+A hike selection includes its cover, gallery, associated location logo,
 and associated GPX collections with their route files and metadata. A location
 selection includes its logo and all its hikes' images. Multiple filters form a union.
 Unknown filter IDs fail the export. Omitting the output path creates a timestamped

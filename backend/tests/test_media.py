@@ -1076,54 +1076,32 @@ def test_import_target_lookup_matches_partial_names_and_titles_in_all_languages(
         assert find_targets(db, trail=None, hike="_") == []
 
 
-def test_generated_maps_round_trip_remap_and_conflict(
-    environments: tuple[Environment, Environment],
+def test_old_generated_map_records_are_verified_and_skipped(
+    environments: tuple[Environment, Environment], tmp_path: Path
 ) -> None:
-    from knut_vandrar_backend.maps.assets import Dimensions, MapData, images, persist
+    from knut_vandrar_backend.media.archive import index_archive, unpack_archive
 
-    source, destination = environments
-    data = MapData(
-        fingerprint="a" * 64,
-        variants={
-            "mobile": Dimensions(width=20, height=10),
-            "wide": Dimensions(width=20, height=10),
-        },
-        provenance={"provider": "OpenFreeMap"},
-    )
-    content = {key: _image("green", "WEBP") for key in data.variants}
-    with source.factory.begin() as db:
-        db.execute(delete(Photo))
-        persist(db, HIKE, data, content)
-    archive = BytesIO()
-    with source.factory() as db:
-        export_archive(db, source.media, archive)
-    archive.seek(0)
-    report = transfer.import_archive(destination.factory, destination.media, archive)
-    assert not report.conflicts
-    with destination.factory() as db:
-        rows = images(db, HIKE)
-        assert {name: row.content for name, row in rows.items()} == content
-        assert all(row.fingerprint == "a" * 64 for row in rows.values())
-    archive.seek(0)
-    report = transfer.import_archive(destination.factory, destination.media, archive)
-    assert report.counts["add"] == report.counts["replace"] == 0
-    with destination.factory.begin() as db:
-        persist(db, HIKE, data.model_copy(update={"fingerprint": "b" * 64}), content)
-    archive.seek(0)
-    report = transfer.import_archive(destination.factory, destination.media, archive)
-    assert report.conflicts
-    archive.seek(0)
-    report = transfer.import_archive(destination.factory, destination.media, archive, replace=True)
-    assert not report.conflicts
-    remapped = uuid4()
-    with destination.factory.begin() as db:
-        db.add(Hike(id=remapped))
-    archive.seek(0)
-    transfer.import_archive(
-        destination.factory, destination.media, archive, hike_map={HIKE: remapped}, replace=True
-    )
-    with destination.factory() as db:
-        assert len(images(db, remapped)) == 2
+    source, _ = environments
+    staging = tmp_path / "legacy"
+    staging.mkdir()
+    unpack_archive(BytesIO(_export(source)), staging, 100_000_000)
+    image = _image("green", "WEBP")
+    path = staging / "map" / str(HIKE) / "mobile"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(image)
+    metadata = {
+        "kind": "map",
+        "id": str(HIKE),
+        "owner_id": str(HIKE),
+        "content_type": "image/webp",
+        "files": {"mobile": {"sha256": hashlib.sha256(image).hexdigest(), "size": len(image)}},
+    }
+    with (staging / "assets.jsonl").open("a") as records:
+        records.write(json.dumps(metadata) + "\n")
+    with sqlite3.connect(":memory:") as index:
+        index_archive(staging, index)
+        assert index.execute("SELECT COUNT(*) FROM assets").fetchone() == (4,)
+        assert index.execute("SELECT COUNT(*) FROM assets WHERE kind = 'map'").fetchone() == (0,)
 
 
 def test_single_gpx_import_resume_replacement_and_media_round_trip(

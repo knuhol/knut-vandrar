@@ -1,1 +1,1 @@
-"""Shared geographic processing and manually generated static map assets."""
+"""Shared GPX geometry and presentation for interactive hike maps."""

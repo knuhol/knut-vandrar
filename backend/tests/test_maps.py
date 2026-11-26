@@ -1,22 +1,15 @@
-"""Geographic correctness and atomic map generation without provider requests."""
+"""GPX route geometry and geographic correctness."""
 
-import hashlib
-import json
-import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from knut_vandrar_backend.database.base import Base
-from knut_vandrar_backend.maps import cli
-from knut_vandrar_backend.maps.assets import images
-from knut_vandrar_backend.maps.config import fingerprint, load_config
 from knut_vandrar_backend.maps.geometry import route_data, segments
 from knut_vandrar_backend.models.enums import RouteScope
 from knut_vandrar_backend.models.hike import Hike
@@ -155,71 +148,6 @@ def test_antimeridian_bounds_are_narrow(route_environment: Any) -> None:
         assert data["bounds"][1][0] - data["bounds"][0][0] == 2
 
 
-def test_generation_is_atomic_idempotent_and_detects_changes(
-    route_environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    factory, root, hike_id = route_environment
-    calls = []
-
-    def render(command: list[str], **kwargs: Any) -> None:
-        calls.append(command)
-        job = json.loads(kwargs["input"])
-        for name, size in job["config"]["variants"].items():
-            Image.new("RGB", (size["width"], size["height"]), "white").save(
-                Path(job["output"]) / f"{name}.png"
-            )
-
-    monkeypatch.setattr(subprocess, "run", render)
-    monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
-    assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
-    assert not calls
-    assert cli.generate(factory, root, hike_id) == "generated"
-    assert cli.generate(factory, root, hike_id) == "up to date"
-    assert len(calls) == 1
-    assert cli.generate(factory, root, hike_id, check=True, labels="2") == "needs generation"
-    assert cli.generate(factory, root, hike_id, check=True, terrain="none") == "needs generation"
-    cli.export_images(factory, hike_id, root / "review")
-    assert len(list((root / "review" / str(hike_id)).glob("*.webp"))) == 4
-    with factory() as db:
-        old = {name: row.sha256 for name, row in images(db, hike_id).items()}
-        assert set(old) == {"mobile", "tablet", "desktop", "wide"}
-    assert cli.generate(factory, root, hike_id, force=True) == "generated"
-    with factory.begin() as db:
-        route = db.query(TrackRoute).one()
-        route.digest = store(root, GPX.replace(b'lat="62"', b'lat="63"'))
-    assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
-
-    def fail(*args: Any, **kwargs: Any) -> None:
-        raise subprocess.CalledProcessError(1, "node")
-
-    monkeypatch.setattr(subprocess, "run", fail)
-    with pytest.raises(subprocess.CalledProcessError):
-        cli.generate(factory, root, hike_id)
-    with factory() as db:
-        assert {name: row.sha256 for name, row in images(db, hike_id).items()} == old
-
-
-def test_provider_permission_gate_does_not_render(
-    route_environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    factory, root, hike_id = route_environment
-    monkeypatch.delenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", raising=False)
-    with pytest.raises(ValueError, match="permission"):
-        cli.generate(factory, root, hike_id)
-    with factory() as db:
-        assert images(db, hike_id) == {}
-
-
-def test_render_configuration_and_fingerprints() -> None:
-    config, style, tokens = load_config()
-    assert config["variants"]["wide"] == {"width": 2880, "height": 1620}
-    assert tokens["orange"] == "#f39200" and "paper" in tokens
-    assert style["version"] == 8
-    assert fingerprint({"a": 1, "b": 2}) == fingerprint({"b": 2, "a": 1})
-    assert fingerprint({"a": 1}) != fingerprint({"a": 2})
-    assert hashlib.sha256(b"test").hexdigest() != fingerprint({"a": 1})
-
-
 def test_trail_itinerary_may_skip_official_stage_numbers(route_environment: Any) -> None:
     from knut_vandrar_backend.models.location import HikingLocation
 
@@ -330,72 +258,6 @@ def test_reversed_boundary_stages_use_outer_endpoints_and_names(route_environmen
         assert route["geojson"]["features"][0]["geometry"]["coordinates"][0][0] == [15, 59]
 
 
-def test_preview_preserves_database_and_tracks_presentation(
-    route_environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    factory, root, hike_id = route_environment
-
-    def render(command: list[str], **kwargs: Any) -> None:
-        job = json.loads(kwargs["input"])
-        assert job["illustration"]["profile"] == "2"
-        assert job["topography"]["mode"] == "hillshade"
-        assert "country" not in job  # Renderer derives the locator from route geometry.
-        for name, size in job["config"]["variants"].items():
-            Image.new("RGB", (size["width"], size["height"])).save(
-                Path(job["output"]) / f"{name}.png"
-            )
-
-    monkeypatch.setattr(subprocess, "run", render)
-    monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
-    assert "preview generated" in cli.generate(
-        factory,
-        root,
-        hike_id,
-        labels="2",
-        terrain="hillshade",
-        preview_output=root / "preview",
-    )
-    with factory() as db:
-        assert images(db, hike_id) == {}
-    assert len(list((root / "preview" / str(hike_id)).glob("*.webp"))) == 4
-    data = json.loads((root / "preview" / str(hike_id) / "provenance.json").read_text())
-    assert data["inputs"]["presentation"]["terrain"] == "hillshade"
-
-
-def test_terrain_classification_is_in_render_inputs_and_freshness(
-    route_environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from knut_vandrar_backend.models.enums import TrailType
-    from knut_vandrar_backend.models.location import HikingLocation, LocationTerrain
-
-    factory, root, hike_id = route_environment
-    with factory.begin() as db:
-        location = HikingLocation()
-        db.add(location)
-        db.flush()
-        location_id = location.id
-        db.get(Hike, hike_id).location_id = location_id
-        db.add(LocationTerrain(location_id=location_id, terrain=TrailType.MOUNTAINS))
-
-    def render(command: list[str], **kwargs: Any) -> None:
-        job = json.loads(kwargs["input"])
-        assert job["illustration"]["profile"] == "auto"
-        assert job["illustration"]["terrainTypes"] == ["mountains"]
-        for name, size in job["config"]["variants"].items():
-            Image.new("RGB", (size["width"], size["height"])).save(
-                Path(job["output"]) / f"{name}.png"
-            )
-
-    monkeypatch.setattr(subprocess, "run", render)
-    monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
-    assert cli.generate(factory, root, hike_id) == "generated"
-    assert cli.generate(factory, root, hike_id, check=True) == "up to date"
-    with factory.begin() as db:
-        db.delete(db.get(LocationTerrain, (location_id, TrailType.MOUNTAINS)))
-        db.add(LocationTerrain(location_id=location_id, terrain=TrailType.LOWLANDS))
-    assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
-
-
 def test_endpoints_follow_hike_stage_direction_without_reordering_gpx(
     route_environment: Any,
 ) -> None:
@@ -448,67 +310,3 @@ def test_endpoints_follow_hike_stage_direction_without_reordering_gpx(
         assert forward["start"] == reverse["finish"]
         assert forward["finish"] == reverse["start"]
         assert forward["geojson"] == reverse["geojson"]
-
-
-def test_database_stop_controls_generation_and_freshness(
-    route_environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from decimal import Decimal
-
-    from knut_vandrar_backend.models.enums import HikeStatus
-
-    factory, root, hike_id = route_environment
-    with factory.begin() as db:
-        hike = db.get(Hike, hike_id)
-        hike.status = HikeStatus.ABORTED
-        hike.stop_latitude, hike.stop_longitude = Decimal("59.5"), Decimal("15.5")
-        hike.stop_stage = "1"
-
-    def render(command: list[str], **kwargs: Any) -> None:
-        job = json.loads(kwargs["input"])
-        assert job["route"]["stop"]["recorded"] == [15.5, 59.5]
-        assert job["route"]["completed"] is False
-        assert {f["properties"]["progress"] for f in job["route"]["geojson"]["features"]} == {
-            "walked",
-            "remaining",
-        }
-        for name, size in job["config"]["variants"].items():
-            Image.new("RGB", (size["width"], size["height"])).save(
-                Path(job["output"]) / f"{name}.png"
-            )
-
-    monkeypatch.setattr(subprocess, "run", render)
-    monkeypatch.setenv("MAPS_OPENFREEMAP_PERMISSION_CONFIRMED", "true")
-    assert cli.generate(factory, root, hike_id) == "generated"
-    assert cli.generate(factory, root, hike_id, check=True) == "up to date"
-    with factory.begin() as db:
-        hike = db.get(Hike, hike_id)
-        hike.stop_latitude, hike.stop_longitude = Decimal("59.6"), Decimal("15.6")
-    assert cli.generate(factory, root, hike_id, check=True) == "needs generation"
-
-
-@pytest.mark.parametrize(
-    "level",
-    ["auto", "1", "2", "3", "4", "5"],
-    ids=["automatic", "density-1", "density-2", "density-3", "density-4", "density-5"],
-)
-def test_label_density_cli_choices(level: str, monkeypatch: pytest.MonkeyPatch) -> None:
-    import sys
-
-    monkeypatch.setattr(sys, "argv", ["maps-generate", "--all", "--check", "--labels", level])
-    assert cli.parse_args().labels == level
-
-
-@pytest.mark.parametrize(
-    "level",
-    ["0", "6", "detail", "overview"],
-    ids=["below-minimum", "above-maximum", "obsolete-detail-option", "obsolete-overview-option"],
-)
-def test_label_density_rejects_old_or_invalid_options(
-    level: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import sys
-
-    monkeypatch.setattr(sys, "argv", ["maps-generate", "--all", "--check", "--labels", level])
-    with pytest.raises(SystemExit):
-        cli.parse_args()

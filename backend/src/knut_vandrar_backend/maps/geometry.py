@@ -17,14 +17,20 @@ from knut_vandrar_backend.tracks.gpx import MAX_GPX_BYTES, NS, normalize, track_
 from knut_vandrar_backend.tracks.selection import validate_selection
 
 
-def segments(data: bytes) -> list[list[list[float]]]:
+def segments(data: bytes, *, include_elevation: bool = False) -> list[list[list[float]]]:
     normalize(data, "Validation")
     root = ET.fromstring(data)
     result = []
     for segment in root.findall(f".//{NS}trkseg"):
-        points = [
-            [float(p.attrib["lon"]), float(p.attrib["lat"])] for p in segment.findall(NS + "trkpt")
-        ]
+        points = []
+        for point in segment.findall(NS + "trkpt"):
+            coordinates = [float(point.attrib["lon"]), float(point.attrib["lat"])]
+            elevation = point.findtext(NS + "ele")
+            if include_elevation and elevation is not None:
+                height = float(elevation)
+                if math.isfinite(height):
+                    coordinates.append(height)
+            points.append(coordinates)
         if len(points) < 2:
             raise ValueError("GPX contains an empty or single-point segment")
         if any(abs(point[1]) > 85.05112878 for point in points):
@@ -49,6 +55,7 @@ def route_data(
     circular_threshold: float,
     *,
     include_remaining: bool = False,
+    include_elevation: bool = False,
 ) -> dict[str, Any]:
     if hike.track_collection_id is None:
         raise ValueError("No GPX collection selected")
@@ -100,7 +107,6 @@ def route_data(
         end_index = len(routes) if include_remaining else max(boundary_indices) + 1
         routes = routes[min(boundary_indices) : end_index]
     features: list[dict[str, Any]] = []
-    inputs = []
     for route in routes:
         path = track_path(media_root, route.digest)
         if not path.is_file() or path.stat().st_size > MAX_GPX_BYTES:
@@ -108,7 +114,7 @@ def route_data(
         raw = path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != route.digest:
             raise ValueError(f"GPX checksum mismatch for route {route.source_id}")
-        lines = segments(raw)
+        lines = segments(raw, include_elevation=include_elevation)
         features.append(
             {
                 "type": "Feature",
@@ -117,14 +123,6 @@ def route_data(
                     "stage": {**route.details, **route.overrides}.get("stage"),
                 },
                 "geometry": {"type": "MultiLineString", "coordinates": lines},
-            }
-        )
-        inputs.append(
-            {
-                "source_id": route.source_id,
-                "digest": route.digest,
-                "order": route.details["source_order"],
-                "stage": features[-1]["properties"]["stage"],
             }
         )
     points = [p for f in features for line in f["geometry"]["coordinates"] for p in line]
@@ -184,15 +182,4 @@ def route_data(
         "start": start,
         "finish": finish,
         "circular": distance(start, finish) <= circular_threshold,
-        "inputs": {
-            "status": hike.status.value,
-            "direction": hike.direction.value if hike.direction else None,
-            "collection_id": str(collection.id),
-            "stage_range": [hike.start_stage, hike.end_stage]
-            if collection.hike_id is None
-            else None,
-            "routes": inputs,
-            "include_remaining": include_remaining,
-            "endpoints": {"start": start, "finish": finish, "labels": labels},
-        },
     }

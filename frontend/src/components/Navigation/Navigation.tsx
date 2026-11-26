@@ -51,7 +51,10 @@ function NavigationLink({
   section,
   label,
   ...props
-}: UIComponentProps<ComponentProps<typeof Link>> & { section: boolean; label: string }) {
+}: UIComponentProps<ComponentProps<typeof Link>> & {
+  section: boolean
+  label: string
+}) {
   const Component = section ? SectionLink : Link
 
   return <Component {...props}>{label}</Component>
@@ -115,7 +118,7 @@ export function Navigation({ locale }: UIComponentProps<{ locale: Locale }>) {
   return (
     <>
       <nav
-        className={`ml-auto hidden gap-7 font-semibold ${styles.links}`}
+        className={`ml-auto hidden items-center gap-7 font-semibold ${styles.links}`}
         aria-label={t('navigation')}
       >
         {links.map(({ id, ...link }) => (

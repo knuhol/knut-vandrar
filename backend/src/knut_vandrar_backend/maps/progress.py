@@ -1,6 +1,5 @@
 """Project a stopping fix onto an ordered route without connecting track segments."""
 
-import copy
 import math
 import re
 from typing import Any
@@ -8,20 +7,11 @@ from typing import Any
 from knut_vandrar_backend.maps.geometry import distance
 
 
-def split_at_stop(
-    route: dict[str, Any], latitude: float, longitude: float, stage: str | None = None
-) -> dict[str, Any]:
-    if (
-        not math.isfinite(latitude)
-        or not math.isfinite(longitude)
-        or not -90 <= latitude <= 90
-        or not -180 <= longitude <= 180
-    ):
-        raise ValueError("Invalid stopping coordinates")
-    result = copy.deepcopy(route)
-    ordered = result["geojson"]["features"]
-    if result.get("start") is not None:
-        start = result["start"]
+def orient_features(route: dict[str, Any]) -> list[dict[str, Any]]:
+    """Orient a mutable route in hike order without joining GPX tracks."""
+    ordered: list[dict[str, Any]] = route["geojson"]["features"]
+    if route.get("start") is not None:
+        start = route["start"]
         first = ordered[0]["geometry"]["coordinates"]
         last = ordered[-1]["geometry"]["coordinates"]
         if min(distance(start, p) for p in (last[0][0], last[-1][-1])) < min(
@@ -34,10 +24,23 @@ def split_at_stop(
             if distance(previous, lines[-1][-1]) < distance(previous, lines[0][0]):
                 lines[:] = [list(reversed(line)) for line in reversed(lines)]
             previous = lines[-1][-1]
+    return ordered
+
+
+def project_stop(
+    ordered: list[dict[str, Any]], latitude: float, longitude: float, stage: str | None = None
+) -> dict[str, Any]:
+    if (
+        not math.isfinite(latitude)
+        or not math.isfinite(longitude)
+        or not -90 <= latitude <= 90
+        or not -180 <= longitude <= 180
+    ):
+        raise ValueError("Invalid stopping coordinates")
     candidates = []
     fix = [longitude, latitude]
     scale = math.cos(math.radians(latitude))
-    for fi, feature in enumerate(result["geojson"]["features"]):
+    for fi, feature in enumerate(ordered):
         label = str(feature["properties"].get("stage", ""))
         if (
             stage is not None
@@ -62,33 +65,9 @@ def split_at_stop(
     offset, stop_feature, stop_segment, stop_edge, projected = min(candidates)
     if offset > 1000:
         raise ValueError("Stopping coordinate is more than 1 km from its stage")
-    matched_stage = result["geojson"]["features"][stop_feature]["properties"].get("stage")
-    features = []
-    for fi, feature in enumerate(result["geojson"]["features"]):
-        for si, segment in enumerate(feature["geometry"]["coordinates"]):
-            pieces = []
-            if (fi, si) < (stop_feature, stop_segment):
-                pieces = [("walked", segment)]
-            elif (fi, si) > (stop_feature, stop_segment):
-                pieces = [("remaining", segment)]
-            else:
-                pieces = [
-                    ("walked", segment[: stop_edge + 1] + [projected]),
-                    ("remaining", [projected] + segment[stop_edge + 1 :]),
-                ]
-            for status, coordinates in pieces:
-                features.append(
-                    {
-                        "type": "Feature",
-                        "properties": {**feature["properties"], "progress": status},
-                        "geometry": {"type": "MultiLineString", "coordinates": [coordinates]},
-                    }
-                )
-    result["geojson"]["features"] = features
-    result["stop"] = {
+    return {
         "coordinates": projected,
-        "recorded": fix,
-        "stage": stage or str(matched_stage or ""),
-        "offsetMetres": round(offset, 2),
+        "line": sum(len(feature["geometry"]["coordinates"]) for feature in ordered[:stop_feature])
+        + stop_segment,
+        "edge": stop_edge,
     }
-    return result

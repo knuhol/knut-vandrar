@@ -42,8 +42,6 @@ class ProgressCard(StrictCardModel):
 class LivePositionCard(StrictCardModel):
     type: Literal["live_position"]
     state: Literal["active", "inactive"]
-    password: str | None = None
-    url: HttpUrl | None = None
 
 
 class EquipmentCard(StrictCardModel):
@@ -72,7 +70,6 @@ InfoCard = Annotated[
     RouteCard
     | GpxCollectionCard
     | ProgressCard
-    | LivePositionCard
     | EquipmentCard
     | SocialFeedCard
     | YouTubeVideoCard,
@@ -106,15 +103,6 @@ class HikeEnglishContent(HikeGeographicLabelContent):
 class OvernightWrite(BaseModel):
     accommodation_type: AccommodationType
     night_count: int = Field(gt=0)
-
-
-class HikeMapRead(BaseModel):
-    variant: str
-    width: int
-    height: int
-    url: str
-    sha256: str
-    generated_at: datetime | None = None
 
 
 class HikeExtra(BaseModel):
@@ -246,6 +234,10 @@ class HikeSlugRead(BaseModel):
     slug: str
 
 
+class OngoingHikeRead(HikeSlugRead):
+    id: UUID
+
+
 class HikeDiscoveryRead(BaseModel):
     id: UUID
     translations: list[HikeSlugRead]
@@ -291,6 +283,9 @@ class HikeRead(HikeExtra):
     translation: HikeLocalizedRead
     available_translations: list[HikeSlugRead]
     cards: list[InfoCard]
+    live_tracking: LivePositionCard | None = None
+    mapshare_url: HttpUrl | None = None
+    mapshare_password: str | None = None
     achievements: list[AchievementRead]
     created_at: datetime
     updated_at: datetime
