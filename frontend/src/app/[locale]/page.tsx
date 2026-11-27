@@ -4,7 +4,9 @@ import { notFound, permanentRedirect } from 'next/navigation'
 
 import { HomeCoverPrefetch } from '@/app/[locale]/components/HomeCoverPrefetch'
 import { Hero } from '@/app/[locale]/components/Hero/Hero'
+import { LanguageNotice } from '@/app/[locale]/components/LanguageNotice'
 import { HikeCollection } from '@/app/[locale]/components/HikeCollection'
+import { languageNoticeParameter, missingHikeTranslation } from '@/i18n/languageNotice'
 import { routing } from '@/i18n/routing'
 import { getHikes } from '@/api/hikes'
 import { hikeCoverSources } from '@/api/images'
@@ -16,7 +18,11 @@ import { homeLanguages, homePath, absoluteUrl } from '@/seo/urls'
 import { collectionOffset, collectionPageSize } from '@/hiking/pagination'
 import type { Locale } from '@/i18n/routing'
 
-type Query = { offset?: string | string[]; multiDayOffset?: string | string[] }
+type Query = {
+  offset?: string | string[]
+  multiDayOffset?: string | string[]
+  [languageNoticeParameter]?: string | string[]
+}
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<Query> }
 
 async function collection(locale: Locale, query: Query) {
@@ -83,7 +89,8 @@ export default async function Home({ params, searchParams }: Props) {
     notFound()
   }
 
-  const hikesPage = await collection(locale, await searchParams)
+  const query = await searchParams
+  const hikesPage = await collection(locale, query)
   const t = await getTranslations({ locale, namespace: 'Site' })
   const covers = hikeCategories.flatMap(({ key }) => {
     const page = hikesPage.pages[key]
@@ -108,6 +115,7 @@ export default async function Home({ params, searchParams }: Props) {
         )}
       />
       <HomeCoverPrefetch covers={covers} />
+      {query[languageNoticeParameter] === missingHikeTranslation && <LanguageNotice />}
       <Hero />
       <HikeCollection pages={hikesPage.pages} />
     </>
