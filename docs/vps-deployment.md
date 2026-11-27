@@ -3,7 +3,7 @@
 See [search and sharing](search-and-sharing.md) for `SITE_URL`, production indexing,
 the Google/Bing launch checklist, and sitemap and sharing-image configuration.
 
-The CI workflow deploys successful `dev` commits to `dev.vandrar.se` and successful `main` commits to `knut.vandrar.se`. The production workflow is ready before DNS is moved; the domain will begin resolving to the VPS only after its DNS record is changed.
+The CI workflow deploys successful `dev` commits to `dev.vandrar.se` and successful `main` commits to `knut.vandrar.se`.
 
 ## VPS preparation
 
@@ -15,7 +15,7 @@ Run these steps as the account that owns Docker deployments. Replace `<repositor
    docker network ls
    ```
 
-   The deployment Compose files use the dedicated `vandrar_web-net` network. Traefik must be attached to it; your inspection confirmed that it is already connected. The network name, domains, Traefik entrypoint, and certificate resolver are fixed in the Compose routing overlays, not configured in the environment files.
+   The deployment Compose files use the dedicated `vandrar_web-net` network. Traefik must be attached to it. The network name, domains, Traefik entrypoint, and certificate resolver are fixed in the Compose routing overlays, not configured in the environment files.
 
 2. Create independent checkouts:
 
@@ -33,9 +33,9 @@ Run these steps as the account that owns Docker deployments. Replace `<repositor
    - `.env.vps.development.example` → `/etc/knut-vandrar/development.env`
    - `.env.vps.production.example` → `/etc/knut-vandrar/production.env`
 
-   Protect them with `chmod 600`. Set `OPENAI_API_KEY` in each environment file to enable automatic translation there; if it is blank, translations remain queued until a key is configured. The Compose projects publish PostgreSQL on TCP `5433` (development) and `5432` (production), respectively. Configure the VPS firewall to allow those ports only from the addresses that need database access. Do not reuse passwords across environments. Keep each template's runtime image settings aligned with the checked-in `.nvmrc` and `.python-version`; the deploy script reads those files and supplies their versions as build arguments.
+   Protect them with `chmod 600`. Set `OPENAI_API_KEY` in each environment file to enable automatic translation there; if it is blank, translations remain queued until a key is configured. The VPS Compose configuration binds PostgreSQL to loopback on port `5433` for development and `5432` for production. See the [database backup guide](database-backups.md) for SSH access. Do not reuse passwords across environments. The deploy script reads `.nvmrc` and `.python-version` and supplies their versions as build arguments.
 
-4. Ensure Traefik and these Compose projects share the `vandrar_web-net` external Docker network. The web containers have no host-published ports; Traefik routes HTTPS requests for each domain to the frontend and `/api` paths to FastAPI. PostgreSQL remains directly reachable on its published host port.
+4. Ensure Traefik and these Compose projects share the `vandrar_web-net` external Docker network. The web containers have no host-published ports; Traefik routes HTTPS requests for each domain to the frontend and `/api` paths to FastAPI. PostgreSQL is reachable by application containers on the private Compose network and by authorized external operators through an SSH tunnel to its loopback-only host binding.
 
 5. Confirm the DNS A/AAAA record for `dev.vandrar.se` points to the VPS. Production DNS for `knut.vandrar.se` can remain unchanged until ready.
 
@@ -253,6 +253,6 @@ a restart alone does not apply those changes.
 Pages have explicit `/sv`, `/en` and `/cs` prefixes and localized hike paths/slugs.
 Unprefixed requests use the saved locale cookie, then browser language preferences,
 then Swedish. Explicit locale URLs take priority. No location permission or IP geolocation
-service is used. Missing hike translations are omitted; outdated translations stay visible.
+service is used. Missing hike translations are omitted from localized listings. Switching to a language without a translation opens that language’s homepage with a notice. Outdated translations stay visible.
 
 For admin routing, authentication, and environment settings, see the [Admin UI setup](../README.md#admin-ui).

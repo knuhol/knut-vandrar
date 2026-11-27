@@ -51,7 +51,7 @@ The Compose commands in this table use `scripts/compose.sh`, which supplies the 
 
 ## VPS deployment
 
-See [the VPS deployment guide](docs/vps-deployment.md) for production and development deployment, Traefik routing, public database ports, GitHub setup, and VPS preparation.
+See [the VPS deployment guide](docs/vps-deployment.md) for production and development deployment, Traefik routing, private PostgreSQL access, GitHub setup, and VPS preparation.
 
 ## Database backups and restores
 

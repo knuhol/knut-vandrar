@@ -1,6 +1,6 @@
 # Database backups and restores
 
-The scripts create and restore PostgreSQL custom-format dumps for one selected application database. They require PostgreSQL 18 client tools (`pg_dump`, `pg_restore`, `dropdb`, `createdb`, and `psql`). A dump contains that database's schema, data, and large objects; it does not include cluster-wide roles or other databases.
+The scripts create and restore PostgreSQL custom-format dumps for one selected application database. They require PostgreSQL 18 client tools (`pg_dump`, `pg_restore`, `dropdb`, `createdb`, and `psql`). Remote `dev` and `prod` runs also require an OpenSSH client that supports forwarding from a local Unix socket. A dump contains that database's schema, data, and large objects; it does not include cluster-wide roles or other databases.
 
 ## Gallery images and VPS backups
 
@@ -29,23 +29,23 @@ By default, dumps are written to the ignored `backups/` directory with a UTC tim
 ./scripts/db-backup.sh prod /safe/location/knut-vandrar-prod.dump
 ```
 
-`local` reads `.env`. For `dev` and `prod`, the scripts read `.env.vps.development` / `.env.vps.production` if present, otherwise `/etc/knut-vandrar/development.env` / `/etc/knut-vandrar/production.env`. On a workstation, create the ignored local files from their checked-in examples and set their credentials to match the VPS files:
+`local` reads `.env`. For `dev` and `prod`, the scripts read `.env.vps.development` / `.env.vps.production` if present, otherwise `/etc/knut-vandrar/development.env` / `/etc/knut-vandrar/production.env`. On a workstation, create any missing ignored files from their checked-in examples and set their database credentials to match the VPS files:
 
 ```sh
-cp .env.vps.development.example .env.vps.development
-cp .env.vps.production.example .env.vps.production
+cp -n .env.vps.development.example .env.vps.development
+cp -n .env.vps.production.example .env.vps.production
 ```
 
-`local` always connects to `127.0.0.1`. Set `DB_BACKUP_HOST` to the VPS hostname or address when connecting to `dev` or `prod` remotely; it defaults to `127.0.0.1` when running on the VPS itself.
+`local` connects directly to `127.0.0.1`. For `dev` and `prod`, set `MEDIA_SSH_HOST` in the matching ignored workstation environment file to the VPS SSH host or an alias from `~/.ssh/config`. The database scripts reuse the existing SSH key/configuration, open a tunnel on a private local Unix socket to the VPS's configured `POSTGRES_PORT`, wait for PostgreSQL to respond, and close the tunnel on success, failure, or interruption. Workstation config files fail fast if `MEDIA_SSH_HOST` is empty. When using the VPS configuration under `/etc/knut-vandrar/`, the scripts connect directly to VPS loopback.
 
-For example, from a workstation:
+For example, set `MEDIA_SSH_HOST=knut-vps` in `.env.vps.development` and `.env.vps.production` on your workstation, where `knut-vps` is configured in `~/.ssh/config`. Then run:
 
 ```sh
-DB_BACKUP_HOST=your-vps-host ./scripts/db-backup.sh dev
-DB_BACKUP_HOST=your-vps-host ./scripts/db-backup.sh prod
+./scripts/db-backup.sh dev
+./scripts/db-backup.sh prod
 ```
 
-Keep backups somewhere safe and outside the repository. The dev and production templates use public database ports `5433` and `5432`, respectively; the corresponding firewall rules must allow your workstation to connect.
+SSH runs in batch mode, so unattended backups work with a configured SSH key or agent and a previously verified host key. No SSH password prompt or database port open to the workstation is required. Keep backups somewhere safe and outside the repository.
 
 ## Restore
 
@@ -53,8 +53,8 @@ Restore takes an environment and a custom-format dump. It validates the archive 
 
 ```sh
 ./scripts/db-restore.sh local backups/knut-vandrar-local-20261105T220000Z.dump
-DB_BACKUP_HOST=your-vps-host ./scripts/db-restore.sh dev backups/knut-vandrar-dev.dump
-DB_BACKUP_HOST=your-vps-host ./scripts/db-restore.sh prod backups/knut-vandrar-prod.dump
+./scripts/db-restore.sh dev backups/knut-vandrar-dev.dump
+./scripts/db-restore.sh prod backups/knut-vandrar-prod.dump
 ```
 
 Restore forcibly disconnects clients, drops and recreates only the selected database, then loads the dump. The selected `POSTGRES_USER` must have permission to drop and recreate that database (the project's PostgreSQL container user does). The source dump is left unchanged. `--yes` skips the confirmation prompt and should only be used intentionally:
