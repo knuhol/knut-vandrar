@@ -1,4 +1,5 @@
-.landscape {
+@utility forest-landscape {
+  background-color: var(--color-forest);
   background-image:
     linear-gradient(
       to right,

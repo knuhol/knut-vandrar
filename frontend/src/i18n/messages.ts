@@ -73,6 +73,10 @@ export const messages = {
         unavailable: 'Förhandsvisningen är inte tillgänglig just nu.',
       },
       privacyPolicy: 'Integritetspolicy',
+      sourceCode: 'Källkod',
+      softwareLicense: 'Programvarulicens (AGPL-3.0-only)',
+      softwareLicenseNotice:
+        'Programvaran tillhandahålls utan garanti enligt AGPL-3.0-only. Du får sprida den enligt licensen.',
       gallery: {
         defaultAlt: 'Bild från vandringen',
         loadError: 'Det gick inte att ladda bilderna. Försök igen.',
@@ -373,6 +377,10 @@ export const messages = {
         unavailable: 'The preview is currently unavailable.',
       },
       privacyPolicy: 'Privacy policy',
+      sourceCode: 'Source code',
+      softwareLicense: 'Software license (AGPL-3.0-only)',
+      softwareLicenseNotice:
+        'The software is provided without warranty under AGPL-3.0-only. You may convey it under this license.',
       gallery: {
         defaultAlt: 'Photo from the hike',
         loadError: 'Could not load photos. Please try again.',
@@ -672,6 +680,10 @@ export const messages = {
         unavailable: 'Náhled je momentálně nedostupný.',
       },
       privacyPolicy: 'Zásady ochrany soukromí',
+      sourceCode: 'Zdrojový kód',
+      softwareLicense: 'Licence softwaru (AGPL-3.0-only)',
+      softwareLicenseNotice:
+        'Software je poskytován bez záruky pod licencí AGPL-3.0-only. Můžete jej šířit podle této licence.',
       gallery: {
         defaultAlt: 'Fotka z hiku',
         loadError: 'Fotky se nepodařilo načíst. Zkus to znovu.',
