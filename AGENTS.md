@@ -47,3 +47,28 @@
 - Send the hike masthead before awaiting gallery, map, and adjacent-hike requests. Keep the displayed and prefetched responsive URLs identical. Prefer the stored mobile, desktop WebP, or wide AVIF variant for the viewport. Use content-versioned URLs for immutable browser caching. Keep background prefetch concurrency bounded and prioritize an explicitly selected hike.
 - Verify image changes with a cold direct browser visit, a deliberately delayed image, and reduced motion. Check the sequence of opacity and scroll positions instead of relying on a screenshot of the final state. Measure representative encoded files before changing quality or dimensions.
 - Apply the cover asset migration before generating new variants on an existing deployment. Backfill missing derivatives from stored originals with the media CLI and keep archives and destinations on matching Alembic revisions.
+
+## Linear development workflow
+
+When instructed to implement a Linear issue:
+
+1. Retrieve the issue and its requirements from Linear.
+2. Verify that the issue is in Todo.
+3. Check that the working tree is clean. If not, stop and ask for instructions.
+4. Fetch the latest changes from origin.
+5. Create and check out a new branch from `origin/dev`, using the exact branch name provided by Linear.
+6. Move the issue to In Progress.
+7. Implement the requirements.
+8. Run relevant tests and validation.
+
+If the issue branch already exists, ask before reusing it.
+
+Do not automatically:
+
+- Commit or push changes.
+- Create pull requests.
+- Merge or deploy changes.
+- Post comments or implementation summaries to Linear.
+- Change the issue status beyond In Progress.
+
+Subsequent issue status transitions are handled by the Linear–GitHub integration.
