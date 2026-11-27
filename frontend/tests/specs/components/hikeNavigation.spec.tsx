@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 
 import { HikeOverview } from '@/app/[locale]/hikes/[slug]/components/HikeOverview/HikeOverview'
 import { HikeNavigation } from '@/app/[locale]/hikes/[slug]/components/HikeNavigation'
+import { FocusIndicator } from '@/components/FocusIndicator'
 import { ActivityContext } from '@/components/HikeActivity'
 import { ReadingNavigationProvider } from '@/components/ReadingNavigation'
 import { PageMotion } from '@/components/PageMotion'
@@ -183,6 +184,7 @@ test('keeps contextual navigation available when jumping back to the map overvie
 test('closing the section picker restores focus without scrolling the sticky header into view', async () => {
   render(
     <ReadingNavigationProvider>
+      <FocusIndicator />
       <SiteHeader
         brand={<span>Brand</span>}
         navigation={<a href="#home">Home</a>}
@@ -192,9 +194,12 @@ test('closing the section picker restores focus without scrolling the sticky hea
     </ReadingNavigationProvider>,
   )
   const trigger = await screen.findByRole('button', { name: 'The story' })
+  expect(trigger).toHaveAttribute('data-keyboard-focus-only')
   const focus = jest.spyOn(trigger, 'focus')
   fireEvent(trigger, new MouseEvent('pointerdown', { button: 0, bubbles: true, cancelable: true }))
-  await screen.findByRole('menu')
+  const menu = await screen.findByRole('menu')
+  expect(menu).toHaveAttribute('data-keyboard-focus-only')
+  expect(document.documentElement).toHaveAttribute('data-pointer-input')
   const closePointer = new MouseEvent('pointerdown', {
     button: 0,
     bubbles: true,
@@ -208,4 +213,60 @@ test('closing the section picker restores focus without scrolling the sticky hea
     expect(document.body).not.toHaveAttribute('data-scroll-locked')
   })
   expect(focus.mock.calls.every(([options]) => options?.preventScroll === true)).toBe(true)
+  expect(document.documentElement).toHaveAttribute('data-pointer-input')
+  fireEvent.keyDown(trigger, { key: 'Tab' })
+  expect(document.documentElement).not.toHaveAttribute('data-pointer-input')
+})
+
+test('keeps the selected chapter active when its position changes as the picker closes', async () => {
+  let chapterTop = 700
+  jest.replaceProperty(window, 'scrollY', 300)
+  jest.spyOn(window, 'scrollTo').mockImplementation((options: ScrollToOptions | number) => {
+    if (typeof options !== 'number') {
+      window.scrollY = options.top ?? 0
+    }
+  })
+  const padding = document.documentElement.style.scrollPaddingTop
+  document.documentElement.style.scrollPaddingTop = '100px'
+  try {
+    const { container } = render(
+      <ReadingNavigationProvider>
+        <SiteHeader brand={<span>Brand</span>} navigation={null} languages={null} />
+        <HikeNavigation label="Sections" items={items} />
+        <article id="story">
+          <details id="first-chapter" data-chapter open>
+            <summary>First chapter</summary>
+          </details>
+          <details id="second-chapter" data-chapter open>
+            <summary>Second chapter</summary>
+          </details>
+        </article>
+      </ReadingNavigationProvider>,
+    )
+    const sentinel = container.querySelector('[data-hike-navigation]')
+    const first = document.getElementById('first-chapter')
+    const second = document.getElementById('second-chapter')
+    if (!sentinel || !first || !second) {
+      throw new Error('Missing chapters')
+    }
+    jest.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -1))
+    jest
+      .spyOn(first, 'getBoundingClientRect')
+      .mockImplementation(() => new DOMRect(0, 200 - window.scrollY, 800, chapterTop - 200))
+    jest
+      .spyOn(second, 'getBoundingClientRect')
+      .mockImplementation(() => new DOMRect(0, chapterTop - window.scrollY, 800, 300))
+    fireEvent.scroll(window)
+    const trigger = await screen.findByRole('button', { name: 'The story / First chapter' })
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Second chapter' }))
+    chapterTop += 40
+
+    await waitFor(() => {
+      expect(second.getBoundingClientRect().top).toBe(100)
+      expect(screen.getByRole('button', { name: 'The story / Second chapter' })).toBeVisible()
+    })
+  } finally {
+    document.documentElement.style.scrollPaddingTop = padding
+  }
 })

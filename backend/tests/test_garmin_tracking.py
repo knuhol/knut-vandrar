@@ -138,6 +138,7 @@ def test_public_lifecycle_and_private_historical_replay(
         _kml(
             _fix(0, 15, "Tracking turned on from device."),
             _fix(15, 15.02),
+            _fix(25, 15.02),
             _fix(30, 15.03, "Tracking turned off from device."),
             _fix(FIRST_DAILY_UPDATE + 45, 15.0598),
         )
@@ -179,7 +180,20 @@ def test_public_lifecycle_and_private_historical_replay(
         ).status_code
         == 200
     )
-    assert client.get("/api/settings/mapshare").json() == {"password": "fixture", "active": True}
+    settings_path = "/api/settings/mapshare"
+    credentials = {"password": "fixture", "active": True}
+    assert client.get(settings_path).json() == {**credentials, "tracking_interval_minutes": 10}
+    for invalid in (0, -1, 1.5, True):
+        assert (
+            client.put(
+                settings_path, json={**credentials, "tracking_interval_minutes": invalid}
+            ).status_code
+            == 422
+        )
+    updated = {**credentials, "tracking_interval_minutes": 20}
+    assert client.put(settings_path, json=updated).json() == updated
+    assert client.put(settings_path, json=credentials).json() == updated
+    assert client.get(settings_path).json() == updated
     assert client.get(path, headers={"Authorization": ""}).status_code == 200
     assert client.get(path).json()["progress"]["position"] is None
 
@@ -194,7 +208,14 @@ def test_public_lifecycle_and_private_historical_replay(
     later = at(31)
     assert datetime.fromisoformat(str(early["first_recorded_at"])) == START
     assert early["status"] == "active"
+    assert early["tracking_interval_minutes"] == 20
+    assert early["current_walking_metres_per_hour"] is None
+    moving = at(15)
+    assert moving["current_walking_metres_per_hour"] == pytest.approx(moving["completed"] * 4)
+    assert at(25)["current_walking_metres_per_hour"] == 0
     assert later["status"] == "stopped"
+    assert later["tracking_interval_minutes"] is None
+    assert later["current_walking_metres_per_hour"] is None
     assert at(10) == early
     assert at(3 * 1440)["average_metres_per_day"] is None
     assert at(FIRST_DAILY_UPDATE - 1)["average_metres_per_day"] is None
@@ -235,6 +256,8 @@ def test_public_lifecycle_and_private_historical_replay(
             )
     live = client.get(f"{prefix}/tracking-progress").json()
     assert live["status"] == "awaiting"
+    assert live["tracking_interval_minutes"] == 20
+    assert live["current_walking_metres_per_hour"] == pytest.approx(live["completed"] * 6)
     assert live["position"]["coordinates"] == pytest.approx([15.02, 59])
     with app.state.testing_session_local.begin() as db:
         sync = db.get(GarminSync, hike_id)
@@ -243,6 +266,13 @@ def test_public_lifecycle_and_private_historical_replay(
     unavailable = client.get(f"{prefix}/tracking-progress").json()
     assert unavailable["status"] == "unavailable"
     assert unavailable["position"] == live["position"]
+    assert unavailable["tracking_interval_minutes"] == 20
+    assert client.put(settings_path, json={**credentials, "active": False}).status_code == 200
+    stopped = client.get(f"{prefix}/tracking-progress").json()
+    assert stopped["status"] == "stopped"
+    assert stopped["tracking_interval_minutes"] is None
+    assert stopped["current_walking_metres_per_hour"] is None
+    assert stopped["latest_recorded_at"] == live["latest_recorded_at"]
 
     with app.state.testing_session_local.begin() as db:
         db.add(Hike(id=uuid4(), status=HikeStatus.ONGOING))

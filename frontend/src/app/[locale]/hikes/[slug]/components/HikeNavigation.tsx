@@ -10,7 +10,12 @@ import type { HikeSectionId } from './hikeSections'
 import { MenuItem } from '@/components/MenuItem/MenuItem'
 import { DropdownSurface } from '@/components/DropdownSurface'
 import { useReadingNavigation } from '@/components/ReadingNavigation'
-import { getAnchorScrollTarget, scrollToElement, subscribeAnchorScroll } from '@/navigation/motion'
+import {
+  getAnchorScrollTarget,
+  scrollAlignmentOffset,
+  scrollToElement,
+  subscribeAnchorScroll,
+} from '@/navigation/motion'
 
 export type HikeNavigationItem = { id: HikeSectionId; label: string }
 type Chapter = { element: HTMLDetailsElement; title: string }
@@ -44,7 +49,8 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
         if (
           target
             ? section?.contains(target)
-            : section && section.getBoundingClientRect().top <= padding + 1
+            : section &&
+              section.getBoundingClientRect().top <= scrollAlignmentOffset(section, padding) + 1
         ) {
           current = id
         }
@@ -74,14 +80,16 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
           : discovered,
       )
       const selected =
-        discovered.find(
-          ({ element }) =>
-            element.open &&
-            (target
-              ? element.contains(target)
-              : element.getBoundingClientRect().top <= padding + 1 &&
-                element.getBoundingClientRect().bottom > padding),
-        ) ?? null
+        discovered.findLast(({ element }) => {
+          if (!element.open) {
+            return false
+          }
+          if (target) {
+            return element.contains(target)
+          }
+          const bounds = element.getBoundingClientRect()
+          return bounds.top <= padding + 1 && bounds.bottom > padding
+        }) ?? null
       setChapter((previous) =>
         previous?.element === selected?.element && previous?.title === selected?.title
           ? previous
@@ -121,6 +129,7 @@ export function HikeNavigation({ label, items }: { label: string; items: HikeNav
       >
         <DropdownMenu.Trigger
           ref={trigger}
+          data-keyboard-focus-only=""
           onPointerDown={(event) => {
             if (expanded && event.button === 0 && !event.ctrlKey) {
               // Closing on pointer-down must also suppress the browser's native focus scroll.
