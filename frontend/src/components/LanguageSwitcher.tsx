@@ -56,7 +56,6 @@ export function LanguageSwitcher({ locale }: UIComponentProps<{ locale: Locale }
         <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
       </DropdownMenu.Trigger>
       <DropdownSurface
-        data-keyboard-focus-only=""
         align="end"
         sideOffset={8}
         onCloseAutoFocus={(event) => {
