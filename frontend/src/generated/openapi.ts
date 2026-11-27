@@ -6474,6 +6474,13 @@ export const openapi = {
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "tracking_interval_minutes": {
+            "type": "integer",
+            "maximum": 2_147_483_647,
+            "exclusiveMinimum": 0,
+            "title": "Tracking Interval Minutes",
+            "default": 10
           }
         },
         "type": "object",
@@ -7298,6 +7305,17 @@ export const openapi = {
             ],
             "title": "Latest Recorded At"
           },
+          "tracking_interval_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tracking Interval Minutes"
+          },
           "latest_retrieved_at": {
             "anyOf": [
               {
@@ -7331,6 +7349,17 @@ export const openapi = {
               }
             ],
             "title": "Walking Metres Per Hour"
+          },
+          "current_walking_metres_per_hour": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Walking Metres Per Hour"
           },
           "completed": {
             "type": "number",

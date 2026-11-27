@@ -270,7 +270,7 @@ function PhotoViewer({
                     className={`${styles.caption} absolute inset-x-0 text-center ${captionBelow ? 'top-full' : 'bottom-0'}`}
                   >
                     <p
-                      className={`${styles.overlayText} inline-block max-h-[50dvh] overflow-y-auto ${outgoing ? '' : 'pointer-events-auto'}`}
+                      className={`${styles.overlayText} ${showError ? 'bg-status-error-surface text-status-error-ink' : 'bg-ink/80 text-cream'} inline-block max-h-[50dvh] overflow-y-auto ${outgoing ? '' : 'pointer-events-auto'}`}
                       role={showError ? 'alert' : undefined}
                     >
                       {captionText}
@@ -444,7 +444,11 @@ export function HikeGallery({
           </Button>
         </div>
       )}
-      {error && <p role="alert">{t('loadError')}</p>}
+      {error && (
+        <p role="alert" className="text-status-error-ink">
+          {t('loadError')}
+        </p>
+      )}
       {selectedIndex !== null && (
         <PhotoViewer
           photos={photos}

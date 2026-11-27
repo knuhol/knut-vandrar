@@ -20,7 +20,12 @@ from knut_vandrar_backend.api.hikes import DatabaseSession
 from knut_vandrar_backend.maps.geometry import distance
 from knut_vandrar_backend.models.enums import HikeStatus
 from knut_vandrar_backend.models.hike import Hike
-from knut_vandrar_backend.models.tracking import GarminPoint, GarminSettings, GarminSync
+from knut_vandrar_backend.models.tracking import (
+    DEFAULT_TRACKING_INTERVAL_MINUTES,
+    GarminPoint,
+    GarminSettings,
+    GarminSync,
+)
 from knut_vandrar_backend.settings import settings
 from knut_vandrar_backend.tracking.garmin import MAX_KML_BYTES, Fix, parse_kml, utc
 from knut_vandrar_backend.tracking.match import Projection, match
@@ -79,9 +84,11 @@ class Progress(BaseModel):
     position: Position | None = None
     first_recorded_at: datetime | None = None
     latest_recorded_at: datetime | None = None
+    tracking_interval_minutes: int | None = None
     latest_retrieved_at: datetime | None = None
     average_metres_per_day: float | None = None
     walking_metres_per_hour: float | None = None
+    current_walking_metres_per_hour: float | None = None
     completed: float
     remaining: float
     percentage: float
@@ -168,6 +175,16 @@ def _daily_distance(
     return _position(route, projection).distance if projection else 0.0
 
 
+def _current_walking_metres_per_hour(
+    accepted: list[Projection], latest: Fix | None
+) -> float | None:
+    if len(accepted) < 2 or accepted[-1].fix != latest:
+        return None
+    previous, current = accepted[-2:]
+    hours = (current.fix.recorded_at - previous.fix.recorded_at) / timedelta(hours=1)
+    return abs(current.distance - previous.distance) / hours if hours > 0 else None
+
+
 def _walking_metres_per_hour(accepted: list[Projection]) -> float | None:
     if len(accepted) < 4:
         return None
@@ -193,6 +210,7 @@ def _progress(
     now: datetime,
     *,
     replay: bool = False,
+    tracking_interval_minutes: int | None = None,
 ) -> Progress:
     # Replay and live matching see only the effective-time prefix.
     fixes = [fix for fix in fixes if fix.recorded_at <= now]
@@ -228,12 +246,18 @@ def _progress(
     return Progress(
         revision=route.revision,
         status=status,
+        tracking_interval_minutes=tracking_interval_minutes
+        if status in ("active", "awaiting")
+        else None,
         position=position,
         first_recorded_at=first.recorded_at if first else None,
         latest_recorded_at=latest.recorded_at if latest else None,
         latest_retrieved_at=latest.retrieved_at if latest else None,
         average_metres_per_day=average,
         walking_metres_per_hour=_walking_metres_per_hour(accepted),
+        current_walking_metres_per_hour=_current_walking_metres_per_hour(accepted, latest)
+        if status in ("active", "awaiting")
+        else None,
         completed=completed,
         remaining=total - completed,
         percentage=100 if completed == total else 100 * completed / total,
@@ -281,6 +305,7 @@ def _live_progress(
     sync: GarminSync,
     route: CompiledRoute,
     now: datetime,
+    tracking_interval_minutes: int | None = None,
 ) -> Progress:
     global _live_snapshot
     start = hike.actual_start_at or hike.planned_start_at or sync.started_at
@@ -326,7 +351,17 @@ def _live_progress(
         and now - progress.latest_recorded_at >= FRESH_FIX_WINDOW
     ):
         status = "awaiting"
-    return progress.model_copy(update={"status": status})
+    return progress.model_copy(
+        update={
+            "status": status,
+            "current_walking_metres_per_hour": progress.current_walking_metres_per_hour
+            if tracking_interval_minutes is not None
+            else None,
+            "tracking_interval_minutes": tracking_interval_minutes
+            if progress.status in ("active", "awaiting")
+            else None,
+        }
+    )
 
 
 @router.get("/{hike_id:uuid}/tracking-progress", response_model=Progress)
@@ -358,11 +393,10 @@ def get_tracking_progress(
     now = datetime.now(UTC)
     if sync is None:
         return blank.model_copy(update={"status": "unavailable"})
-    progress = _live_progress(db, hike, sync, route, now)
     config = db.get(GarminSettings, 1)
-    if not (settings.garmin_feed_url and config and config.active and config.password):
-        return progress.model_copy(update={"status": "stopped"})
-    return progress
+    if settings.garmin_feed_url and config and config.active and config.password:
+        return _live_progress(db, hike, sync, route, now, config.tracking_interval_minutes)
+    return _live_progress(db, hike, sync, route, now).model_copy(update={"status": "stopped"})
 
 
 @lru_cache(maxsize=2)
@@ -399,17 +433,24 @@ def get_tracking_replay(
     route = _route(db, hike_id)
     start = fixes[0].recorded_at - timedelta(minutes=1)
     end = fixes[-1].recorded_at
+    config = db.get(GarminSettings, 1)
+    interval = config.tracking_interval_minutes if config else DEFAULT_TRACKING_INTERVAL_MINUTES
     return Replay(
         route=_planned(route) if at is None else None,
         start=start,
         end=end,
-        progress=_progress(route, fixes, at or start, replay=True),
+        progress=_progress(
+            route, fixes, at or start, replay=True, tracking_interval_minutes=interval
+        ),
     )
 
 
 class MapShareSettings(BaseModel):
     password: str = Field(max_length=256)
     active: bool
+    tracking_interval_minutes: int = Field(
+        default=DEFAULT_TRACKING_INTERVAL_MINUTES, strict=True, gt=0, le=2_147_483_647
+    )
 
     @model_validator(mode="after")
     def require_active_password(self) -> "MapShareSettings":
@@ -429,7 +470,11 @@ settings_router = APIRouter(
 def get_mapshare_settings(db: DatabaseSession) -> MapShareSettings:
     config = db.get(GarminSettings, 1)
     return (
-        MapShareSettings(password=config.password, active=config.active)
+        MapShareSettings(
+            password=config.password,
+            active=config.active,
+            tracking_interval_minutes=config.tracking_interval_minutes,
+        )
         if config
         else MapShareSettings(password="", active=False)
     )
@@ -437,13 +482,15 @@ def get_mapshare_settings(db: DatabaseSession) -> MapShareSettings:
 
 @settings_router.put("", response_model=MapShareSettings)
 def put_mapshare_settings(body: MapShareSettings, db: DatabaseSession) -> MapShareSettings:
-    db.execute(
+    values = body.model_dump(exclude_unset=True)
+    saved = db.execute(
         insert(GarminSettings)
-        .values(id=1, password=body.password, active=body.active)
+        .values(id=1, **values)
         .on_conflict_do_update(
             index_elements=[GarminSettings.id],
-            set_={"password": body.password, "active": body.active},
+            set_=values,
         )
-    )
+        .returning(GarminSettings.tracking_interval_minutes)
+    ).scalar_one()
     db.commit()
-    return body
+    return body.model_copy(update={"tracking_interval_minutes": saved})

@@ -41,7 +41,7 @@ export function TrackingPassword({ password }: { password: string }) {
         </code>
         <Button variant="secondary" size="small" onClick={() => void copyPassword()}>
           {status === 'copied' ? (
-            <IconCheck className="size-5" aria-hidden="true" />
+            <IconCheck className="size-5 text-status-success-surface" aria-hidden="true" />
           ) : (
             <IconCopy className="size-5" aria-hidden="true" />
           )}
@@ -51,7 +51,7 @@ export function TrackingPassword({ password }: { password: string }) {
         </Button>
       </div>
       {status === 'failed' && (
-        <p role="status" className="mt-3 text-sm leading-relaxed text-forest">
+        <p role="status" className="mt-3 text-sm leading-relaxed text-status-error-ink">
           {t('trackingPasswordCopyFailed')}
         </p>
       )}

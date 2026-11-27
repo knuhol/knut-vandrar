@@ -41,25 +41,21 @@ export function cancelPageScroll() {
   setAnchorScrollTarget(null)
 }
 
+export function scrollAlignmentOffset(
+  element: HTMLElement,
+  pagePadding = Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0,
+) {
+  // Explicit margins align full-bleed sections to the header instead of the reading gap.
+  return Number.parseFloat(getComputedStyle(element).scrollMarginTop) || pagePadding
+}
+
 export function scrollToElement(
   element: HTMLElement,
   { anchor = false }: { anchor?: boolean } = {},
 ) {
   cancelPageScroll()
   const start = window.scrollY
-  // Explicit target margins can opt into edge-aligned scrolling (for example,
-  // a full-bleed visual), while other sections retain the shared reading gap.
-  const padding =
-    Number.parseFloat(getComputedStyle(element).scrollMarginTop) ||
-    Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
-    0
-  const target = Math.max(
-    0,
-    Math.min(
-      start + element.getBoundingClientRect().top - padding,
-      document.documentElement.scrollHeight - window.innerHeight,
-    ),
-  )
+  let target: number | undefined
   const duration = motionDuration(element)
   const started = performance.now()
   return new Promise<boolean>((resolve) => {
@@ -68,6 +64,16 @@ export function scrollToElement(
       setAnchorScrollTarget(element)
     }
     function step(now: number) {
+      // Measure after menus close and keep anchor destinations aligned during layout changes.
+      if (anchor || target === undefined) {
+        target = Math.max(
+          0,
+          Math.min(
+            window.scrollY + element.getBoundingClientRect().top - scrollAlignmentOffset(element),
+            document.documentElement.scrollHeight - window.innerHeight,
+          ),
+        )
+      }
       const progress = duration === 0 ? 1 : Math.min((now - started) / duration, 1)
       window.scrollTo({
         top: start + (target - start) * (1 - (1 - progress) ** 3),

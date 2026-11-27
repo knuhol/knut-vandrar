@@ -1,6 +1,7 @@
 {
   "cancel": "Cancel",
   "mapshareSettings": "Garmin MapShare settings",
+  "mapshareTrackingInterval": "inReach tracking interval (minutes)",
   "mapshareActive": "Enable live tracking",
   "mapsharePassword": "Garmin MapShare password",
   "mapsharePasswordHelp": "Visitors can copy this password above the tracking card when live tracking is active.",

@@ -53,5 +53,5 @@
 }
 
 .overlayText {
-  @apply rounded-sm bg-ink/80 px-3 py-2 text-sm leading-relaxed text-cream tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl;
+  @apply rounded-sm px-3 py-2 text-sm leading-relaxed tablet:text-base desktop:px-5 desktop:py-3 desktop:text-xl;
 }

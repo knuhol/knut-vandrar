@@ -29,14 +29,16 @@ export const messages = {
         mapLoadGarmin:
           'Du kan också följa mig på Garmin MapShare. Kopiera lösenordet ovanför kortet ”Min senaste position” och öppna sedan kortet.',
         lastPositionUpdate: 'Senaste uppdatering: {time}',
+        trackingInterval:
+          'Nästa förväntade uppdatering: {elapsed, number} / {interval, number} min',
         trackingStats: 'Vandringsstatistik',
-        completion: 'Avklarat: {percent}',
-        distanceProgress: '{current}/{total} km',
+        distanceProgress: '{current} / {total} km · {percent}',
         elapsedHikeMinutes: 'Tid sedan start: {minutes, plural, one {# minut} other {# minuter}}',
         elapsedHikeHoursAndMinutes:
           'Tid sedan start: {hours, plural, one {# timme} other {# timmar}} {minutes, plural, one {# minut} other {# minuter}}',
         elapsedHikeTime:
           'Tid sedan start: {days} dygn {hours, plural, one {# timme} other {# timmar}}',
+        currentWalkingSpeed: 'Gånghastighet: {speed} km/h',
         averageHikeProgress: 'I snitt: {kilometers} km/dygn',
         estimatedHikeHours:
           'Ungefär {hours, plural, one {# timmes} other {# timmars}} vandring kvar',
@@ -53,7 +55,7 @@ export const messages = {
         open: 'Förstora kartan',
         close: 'Stäng kartan',
         showWholeTrail: 'Visa hela leden',
-        centerOnPosition: 'Centrera kartan på aktuell position',
+        followPosition: 'Följ aktuell position på kartan',
         scrollZoom: 'Håll ned {key} och rulla för att zooma på kartan.',
         twoFingerPan: 'Använd två fingrar för att flytta kartan.',
         zoomIn: 'Zooma in',
@@ -328,14 +330,15 @@ export const messages = {
         mapLoadGarmin:
           'You can also follow me on Garmin MapShare. Copy the password above the “My live position” card, then open the card.',
         lastPositionUpdate: 'Last update: {time}',
+        trackingInterval: 'Next expected update: {elapsed, number} / {interval, number} min',
         trackingStats: 'Hike statistics',
-        completion: 'Completion: {percent}',
-        distanceProgress: '{current}/{total} km',
+        distanceProgress: '{current} / {total} km · {percent}',
         elapsedHikeMinutes: 'Elapsed: {minutes, plural, one {# minute} other {# minutes}}',
         elapsedHikeHoursAndMinutes:
           'Elapsed: {hours, plural, one {# hour} other {# hours}} {minutes, plural, one {# minute} other {# minutes}}',
         elapsedHikeTime:
           'Elapsed: {days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}',
+        currentWalkingSpeed: 'Walking speed: {speed} km/h',
         averageHikeProgress: 'Average progress: {kilometers} km/day',
         estimatedHikeHours:
           'Estimated walking time left: {hours, plural, one {# hour} other {# hours}}',
@@ -352,7 +355,7 @@ export const messages = {
         open: 'Enlarge map',
         close: 'Close map',
         showWholeTrail: 'Show the whole trail',
-        centerOnPosition: 'Center map on current position',
+        followPosition: 'Follow current position on the map',
         scrollZoom: 'Hold {key} and scroll to zoom the map.',
         twoFingerPan: 'Use two fingers to move the map.',
         zoomIn: 'Zoom in',
@@ -625,15 +628,16 @@ export const messages = {
         mapLoadGarmin:
           'Sledovat mě můžeš i na Garmin MapShare. Zkopíruj si heslo nad kartou „Moje poslední poloha“ a pak ji otevři.',
         lastPositionUpdate: 'Poslední aktualizace: {time}',
+        trackingInterval: 'Další očekávaná aktualizace: {elapsed, number} / {interval, number} min',
         trackingStats: 'Statistiky hiku',
-        completion: 'Dokončeno: {percent}',
-        distanceProgress: '{current}/{total} km',
+        distanceProgress: '{current} / {total} km · {percent}',
         elapsedHikeMinutes:
           'Uplynulo: {minutes, plural, one {# minuta} few {# minuty} other {# minut}}',
         elapsedHikeHoursAndMinutes:
           'Uplynulo: {hours, plural, one {# hodina} few {# hodiny} other {# hodin}} {minutes, plural, one {# minuta} few {# minuty} other {# minut}}',
         elapsedHikeTime:
           'Uplynulo: {days, plural, one {# den} few {# dny} other {# dní}} {hours, plural, one {# hodina} few {# hodiny} other {# hodin}}',
+        currentWalkingSpeed: 'Rychlost chůze: {speed} km/h',
         averageHikeProgress: 'V průměru: {kilometers} km za den',
         estimatedHikeHours:
           'Zbývá asi {hours, plural, one {# hodina} few {# hodiny} other {# hodin}} chůze',
@@ -651,7 +655,7 @@ export const messages = {
         open: 'Zvětšit mapu',
         close: 'Zavřít mapu',
         showWholeTrail: 'Zobrazit celou trasu',
-        centerOnPosition: 'Přejít na aktuální polohu',
+        followPosition: 'Sledovat aktuální polohu na mapě',
         scrollZoom: 'Podrž {key} a scrolluj pro přiblížení nebo oddálení mapy.',
         twoFingerPan: 'Mapu posuneš dvěma prsty.',
         zoomIn: 'Přiblížit',

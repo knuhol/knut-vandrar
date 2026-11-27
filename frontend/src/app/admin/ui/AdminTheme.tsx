@@ -8,7 +8,11 @@ const theme = createTheme({
     rootSelector: '.admin-theme',
     colorSchemeSelector: '.admin-theme',
   },
-  palette: { mode: 'dark' },
+  palette: {
+    mode: 'dark',
+    warning: { main: 'var(--color-warning)' },
+    error: { main: 'var(--color-error)' },
+  },
   spacing: (factor: number) => `calc(var(--spacing) * ${String(factor)} * 2)`,
   typography: {
     fontFamily: 'var(--font-admin-roboto), "Helvetica", "Arial", sans-serif',

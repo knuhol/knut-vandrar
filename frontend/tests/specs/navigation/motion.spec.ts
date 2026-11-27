@@ -109,6 +109,23 @@ describe('page scrolling', () => {
     expect(window.scrollY).toBe(636)
   })
 
+  test('keeps the selected anchor aligned when the menu closes and the chapter moves', async () => {
+    let chapterTop = 700
+    const chapter = document.createElement('details')
+    jest
+      .spyOn(chapter, 'getBoundingClientRect')
+      .mockImplementation(() => new DOMRect(0, chapterTop - window.scrollY))
+
+    const completed = scrollToElement(chapter, { anchor: true })
+    chapterTop = 740
+    advance(150)
+    chapterTop = 760
+    advance(300)
+
+    await expect(completed).resolves.toBe(true)
+    expect(window.scrollY).toBe(660)
+  })
+
   test('interpolates toward the header offset and stops when canceled', async () => {
     const interrupted = scrollToElement(elementAt(700))
     advance(50)

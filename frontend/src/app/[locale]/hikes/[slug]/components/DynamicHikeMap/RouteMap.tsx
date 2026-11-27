@@ -13,9 +13,12 @@ import contour from 'maplibre-contour'
 import styles from './RouteMap.module.css'
 import { MapFrame } from './MapFrame'
 import { MapUnavailable } from './MapUnavailable'
+import { positionMotion, type RouteLocation } from './positionMotion'
+import { positionOffset } from './positionOffset'
 import { MediaModal } from '@/components/MediaModal/MediaModal'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
 import type { PlannedMap, TrackingProgress } from '@/api/tracking'
+import { motionDuration } from '@/navigation/motion'
 import { useCharacterShortcutsEnabled } from '@/navigation/shortcutPreferences'
 import { usePageShortcut } from '@/navigation/usePageShortcut'
 
@@ -70,20 +73,25 @@ function displayPoint(point: number[], route: PlannedMap): Point {
   return [lon, point[1]]
 }
 
-function features(route: PlannedMap, completed: boolean, progress?: TrackingProgress) {
-  const position = progress?.position ?? route.stop
+function features(
+  route: PlannedMap,
+  routeLines: Lines,
+  completed: boolean,
+  position: RouteLocation | undefined = route.stop ?? undefined,
+) {
   const walked: Lines = []
   const remaining: Lines = []
-  for (const [index, line] of route.lines.entries()) {
-    if (completed || progress?.remaining === 0) {
+  for (const [index, line] of routeLines.entries()) {
+    if (completed) {
       walked.push(line)
     } else if (!position || index > position.line) {
       remaining.push(line)
     } else if (index < position.line) {
       walked.push(line)
     } else {
-      walked.push([...line.slice(0, position.edge + 1), position.coordinates])
-      remaining.push([position.coordinates, ...line.slice(position.edge + 1)])
+      const point = displayPoint(position.coordinates, route)
+      walked.push([...line.slice(0, position.edge + 1), point])
+      remaining.push([point, ...line.slice(position.edge + 1)])
     }
   }
 
@@ -92,7 +100,7 @@ function features(route: PlannedMap, completed: boolean, progress?: TrackingProg
     properties: { kind },
     geometry: {
       type: 'MultiLineString' as const,
-      coordinates: paths.map((line) => line.map((point) => displayPoint(point, route))),
+      coordinates: paths,
     },
   })
   const point = (kind: string, coordinates: number[]) => ({
@@ -108,7 +116,6 @@ function features(route: PlannedMap, completed: boolean, progress?: TrackingProg
       lines('walked', walked),
       point(route.circular ? 'loop' : 'start', route.start),
       ...(route.circular ? [] : [point('finish', route.finish)]),
-      ...(progress?.position ? [point('position', progress.position.coordinates)] : []),
     ],
   }
   return data
@@ -264,19 +271,6 @@ function addEndpointLabels(
   }
 }
 
-function updateMarker(
-  marker: PositionMarker,
-  map: MapInstance,
-  current: ReturnType<typeof features>,
-) {
-  const position = current.features.find((feature) => feature.properties.kind === 'position')
-  if (position?.geometry.type === 'Point') {
-    marker.setLngLat(position.geometry.coordinates).addTo(map)
-  } else {
-    marker.remove()
-  }
-}
-
 export function RouteMap({
   route,
   progress,
@@ -287,6 +281,7 @@ export function RouteMap({
   hikeId,
   hasMapShareCard,
   overlay,
+  overlayExpanded = true,
 }: {
   route: PlannedMap
   progress?: TrackingProgress
@@ -297,20 +292,34 @@ export function RouteMap({
   hikeId: string
   hasMapShareCard?: boolean
   overlay?: React.ReactNode
+  overlayExpanded?: boolean
 }) {
   const t = useTranslations('Site.map')
   const host = useRef<HTMLDivElement>(null)
   const fullscreenHost = useRef<HTMLDivElement>(null)
   const mapFrame = useRef<HTMLDivElement>(null)
+  const summaryRef = useRef<HTMLDivElement>(null)
+  const controlsRef = useRef<HTMLDivElement>(null)
   const keepViewport = useRef(false)
   const creditsHeight = useRef(0)
   const [fullscreen, setFullscreen] = useState(false)
+  const [following, setFollowing] = useState(false)
+  const [readyMap, setReadyMap] = useState<MapInstance>()
   const mapRef = useRef<MapInstance | null>(null)
-  const data = useMemo(() => features(route, completed, progress), [route, completed, progress])
-  const latest = useRef(data)
+  const routeLines = useMemo(
+    () => route.lines.map((line) => line.map((point) => displayPoint(point, route))),
+    [route],
+  )
+  const latest = useRef<ReturnType<typeof features> | undefined>(undefined)
   const latestStaleness = useRef(stalePosition)
   const markerRef = useRef<PositionMarker | null>(null)
+  const markerLocation = useRef<RouteLocation | undefined>(undefined)
   const [failed, setFailed] = useState(false)
+  const longitude = progress?.position?.coordinates[0]
+  const latitude = progress?.position?.coordinates[1]
+  const positionLine = progress?.position?.line
+  const positionEdge = progress?.position?.edge
+  const progressFinished = progress?.remaining === 0
   const characterShortcutsEnabled = useCharacterShortcutsEnabled()
 
   function openFullscreen() {
@@ -330,12 +339,89 @@ export function RouteMap({
   )
 
   useEffect(() => {
-    latest.current = data
-    if (markerRef.current && mapRef.current) {
-      updateMarker(markerRef.current, mapRef.current, data)
+    const marker = markerRef.current
+    if (!readyMap || readyMap !== mapRef.current || !marker) {
+      return
     }
-    void mapRef.current?.getSource<GeoJSONSource>(source)?.setData(data)
-  }, [data])
+    const updateTrail = (location: RouteLocation | undefined, finished: boolean) => {
+      const data = features(route, routeLines, completed || finished, location)
+      latest.current = data
+      return readyMap.getSource<GeoJSONSource>(source)?.setData(data)
+    }
+    if (
+      longitude === undefined ||
+      latitude === undefined ||
+      positionLine === undefined ||
+      positionEdge === undefined
+    ) {
+      markerLocation.current = undefined
+      marker.remove()
+      void updateTrail(undefined, progressFinished)
+      return
+    }
+
+    const target = { line: positionLine, edge: positionEdge, coordinates: [longitude, latitude] }
+    const element = marker.getElement()
+    const previous = markerLocation.current
+    const duration = motionDuration(element, '--duration-map-position')
+    const sample = previous && duration ? positionMotion(route.lines, previous, target) : undefined
+
+    const place = (location: RouteLocation) => {
+      markerLocation.current = location
+      marker.setLngLat(displayPoint(location.coordinates, route))
+    }
+
+    if (!sample) {
+      place(target)
+      void updateTrail(target, progressFinished)
+      if (!element.parentElement) {
+        marker.addTo(readyMap)
+      }
+      return
+    }
+
+    const startedAt = performance.now()
+    let frame: number
+    let cancelled = false
+    const move = (now: number) => {
+      if (mapRef.current !== readyMap || markerRef.current !== marker) {
+        return
+      }
+      const progress = Math.min((now - startedAt) / duration, 1)
+      const eased = 1 - (1 - progress) ** 3
+      const location = sample(eased)
+      place(location)
+      const rendered = updateTrail(location, progress === 1 && progressFinished)
+      if (progress < 1) {
+        const schedule = () => {
+          if (!cancelled) {
+            frame = requestAnimationFrame(move)
+          }
+        }
+        // Keep at most one trail update in flight so geometry work cannot queue up.
+        if (rendered) {
+          void rendered.then(schedule, schedule)
+        } else {
+          schedule()
+        }
+      }
+    }
+    frame = requestAnimationFrame(move)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(frame)
+    }
+  }, [
+    completed,
+    latitude,
+    longitude,
+    positionEdge,
+    positionLine,
+    progressFinished,
+    readyMap,
+    route,
+    routeLines,
+  ])
 
   useEffect(() => {
     latestStaleness.current = stalePosition
@@ -362,6 +448,67 @@ export function RouteMap({
       }
     }
   }, [fullscreen])
+
+  useEffect(() => {
+    if (!following || !readyMap || longitude === undefined || latitude === undefined || failed) {
+      return
+    }
+    const map = readyMap
+    const coordinates = displayPoint([longitude, latitude], route)
+    const summary = overlayExpanded ? summaryRef.current : null
+    const controls = controlsRef.current
+    let previousTarget: { width: number; height: number; offset: Point } | undefined
+    function center(animate = true) {
+      if (mapRef.current !== map) {
+        return
+      }
+      const viewport = map.getContainer().getBoundingClientRect()
+      const { width, height } = viewport
+      if (!width || !height) {
+        return
+      }
+      const offset = positionOffset(
+        viewport,
+        summary?.getBoundingClientRect(),
+        controls?.getBoundingClientRect(),
+      )
+      if (
+        previousTarget?.width === width &&
+        previousTarget.height === height &&
+        previousTarget.offset[0] === offset[0] &&
+        previousTarget.offset[1] === offset[1]
+      ) {
+        return
+      }
+      previousTarget = { width, height, offset }
+      map.panTo(coordinates, {
+        offset,
+        animate,
+        duration: motionDuration(map.getContainer(), '--duration-map-position'),
+      })
+    }
+
+    const realign = () => {
+      center(false)
+    }
+    const observer = new ResizeObserver(realign)
+    if (summary) {
+      observer.observe(summary)
+    }
+    if (controls) {
+      observer.observe(controls)
+    }
+    const credits = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+    if (credits) {
+      observer.observe(credits)
+    }
+    map.on('resize', realign)
+    center()
+    return () => {
+      observer.disconnect()
+      map.off('resize', realign)
+    }
+  }, [failed, readyMap, following, fullscreen, latitude, longitude, overlayExpanded, route])
 
   useEffect(() => {
     const inlineHost = host.current
@@ -426,8 +573,8 @@ export function RouteMap({
         element.classList.toggle(styles.stalePosition, latestStaleness.current)
         element.classList.toggle('live-position-pulse', !latestStaleness.current)
         element.setAttribute('aria-hidden', 'true')
-        markerRef.current = new Marker({ element })
-        updateMarker(markerRef.current, map, latest.current)
+        markerRef.current = new Marker({ element, subpixelPositioning: true })
+        setReadyMap(map)
         if (route.stop) {
           const stopElement = document.createElement('div')
           stopElement.className = styles.stop
@@ -467,7 +614,12 @@ export function RouteMap({
         }
         initializedMap.on('style.load', () => {
           addTopography(initializedMap, topography, terrain, route.tokens)
-          addLayers(initializedMap, route, latest.current, aborted)
+          addLayers(
+            initializedMap,
+            route,
+            latest.current ?? features(route, routeLines, completed),
+            aborted,
+          )
           removeOutdoorFacilities = addOutdoorFacilities(initializedMap, route)
           addDetailLabelLayer(initializedMap, route, labelRequests.signal, areaName)
           removeEndpointLabels = addEndpointLabels(initializedMap, Marker, route, aborted)
@@ -497,38 +649,44 @@ export function RouteMap({
       stopMarker?.remove()
       markerRef.current?.remove()
       markerRef.current = null
+      markerLocation.current = undefined
+      latest.current = undefined
       map?.remove()
       map?.getContainer().remove()
       topography?.dispose()
       mapRef.current = null
     }
-  }, [aborted, areaName, failed, route, t])
+  }, [aborted, areaName, completed, failed, route, routeLines, t])
 
   if (failed) {
     return <MapUnavailable hikeId={hikeId} hasMapShareCard={hasMapShareCard} />
   }
 
   const summary = overlay && (
-    <div className="pointer-events-none absolute top-2 left-2 z-10">{overlay}</div>
+    <div ref={summaryRef} className="pointer-events-none absolute inset-x-2 top-2 z-10 w-fit">
+      {overlay}
+    </div>
   )
 
-  const position = progress?.position
-  const centerControl = position && (
+  const centerControl = progress?.position && (
     <MediaControl
       action="center"
-      label={t('centerOnPosition')}
+      label={t('followPosition')}
+      disabled={!readyMap}
+      pressed={following}
       onClick={() => {
-        const map = mapRef.current
-        if (map) {
-          keepViewport.current = true
-          map.panTo(displayPoint(position.coordinates, route))
+        keepViewport.current = true
+        if (following) {
+          mapRef.current?.stop()
         }
+        setFollowing(!following)
       }}
     />
   )
   function showWholeTrail() {
     const map = mapRef.current
     if (map) {
+      setFollowing(false)
       keepViewport.current = false
       fitTrail(map, route.bounds as [Point, Point], creditsHeight.current)
     }
@@ -546,7 +704,7 @@ export function RouteMap({
     <MapFrame ref={mapFrame}>
       <div ref={host} className="absolute inset-0 overflow-hidden bg-cream" />
       {!fullscreen && summary}
-      <div className={controlClass}>
+      <div ref={fullscreen ? undefined : controlsRef} className={controlClass}>
         {!fullscreen && trailControls}
         <MediaControl action="expand" label={t('open')} onClick={openFullscreen} />
       </div>
@@ -573,7 +731,9 @@ export function RouteMap({
         >
           <div ref={fullscreenHost} className={`${styles.fullscreenHost} h-full w-full`} />
           {summary}
-          <div className={controlClass}>{trailControls}</div>
+          <div ref={controlsRef} className={controlClass}>
+            {trailControls}
+          </div>
         </MediaModal>
       )}
     </MapFrame>
