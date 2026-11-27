@@ -177,10 +177,28 @@ export function DynamicHikeMap({
   const finished = shown?.remaining === 0 && route.total > 0
   const percentage = finished ? 100 : Math.min(99, Math.round(shown?.percentage ?? 0))
   const firstFixTime = shown?.first_recorded_at
-  const elapsedHours =
+  const millisecondsPerMinute = 60 * 1000
+  const elapsedMilliseconds =
     firstFixTime && effectiveTime !== undefined
-      ? Math.max(0, effectiveTime - Date.parse(firstFixTime)) / (60 * 60 * 1000)
+      ? Math.max(0, effectiveTime - Date.parse(firstFixTime))
       : undefined
+  const elapsedHours =
+    elapsedMilliseconds === undefined
+      ? undefined
+      : elapsedMilliseconds / (60 * millisecondsPerMinute)
+  let elapsedTime: string | undefined
+  if (elapsedMilliseconds !== undefined) {
+    const minutes = Math.floor(elapsedMilliseconds / millisecondsPerMinute)
+    const hours = Math.floor(minutes / 60)
+    if (hours < 1) {
+      elapsedTime = t('elapsedHikeMinutes', { minutes })
+    } else if (hours < 24) {
+      elapsedTime = t('elapsedHikeHoursAndMinutes', { hours, minutes: minutes % 60 })
+    } else {
+      elapsedTime = t('elapsedHikeTime', { days: Math.floor(hours / 24), hours: hours % 24 })
+    }
+  }
+
   const metersPerHour =
     elapsedHours !== undefined && elapsedHours >= 72 ? completed / elapsedHours : undefined
   const walkingPace = shown?.walking_metres_per_hour
@@ -249,14 +267,7 @@ export function DynamicHikeMap({
                       })}
                     </div>
                   )}
-                  {elapsedHours !== undefined && (
-                    <div>
-                      {t('elapsedHikeTime', {
-                        days: Math.floor(elapsedHours / 24),
-                        hours: Math.floor(elapsedHours % 24),
-                      })}
-                    </div>
-                  )}
+                  {elapsedTime && <div>{elapsedTime}</div>}
                   {estimate && <div>{estimate}</div>}
                   {stalePosition && (
                     <div className="font-normal">
