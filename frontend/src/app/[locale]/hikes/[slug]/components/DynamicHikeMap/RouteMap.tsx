@@ -11,6 +11,7 @@ import type {
 
 import contour from 'maplibre-contour'
 import styles from './RouteMap.module.css'
+import { MapFrame } from './MapFrame'
 import { MapUnavailable } from './MapUnavailable'
 import { MediaModal } from '@/components/MediaModal/MediaModal'
 import { MediaControl } from '@/components/MediaModal/MediaControl'
@@ -503,15 +504,8 @@ export function RouteMap({
     }
   }, [aborted, areaName, failed, route, t])
 
-  const frameClass = 'relative aspect-square w-full tablet:aspect-video'
   if (failed) {
-    return (
-      <div className={frameClass}>
-        <div className="absolute inset-0 flex flex-col gap-4 overflow-auto bg-beige p-4 tablet:gap-6 tablet:p-6">
-          <MapUnavailable hikeId={hikeId} hasMapShareCard={hasMapShareCard} />
-        </div>
-      </div>
-    )
+    return <MapUnavailable hikeId={hikeId} hasMapShareCard={hasMapShareCard} />
   }
 
   const summary = overlay && (
@@ -549,7 +543,7 @@ export function RouteMap({
   const controlClass = `${styles.bottomControls} absolute right-2 z-10 flex gap-2`
 
   return (
-    <div ref={mapFrame} className={frameClass}>
+    <MapFrame ref={mapFrame}>
       <div ref={host} className="absolute inset-0 overflow-hidden bg-cream" />
       {!fullscreen && summary}
       <div className={controlClass}>
@@ -582,6 +576,6 @@ export function RouteMap({
           <div className={controlClass}>{trailControls}</div>
         </MediaModal>
       )}
-    </div>
+    </MapFrame>
   )
 }
