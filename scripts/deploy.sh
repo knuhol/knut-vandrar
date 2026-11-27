@@ -43,6 +43,7 @@ fi
 git -C "$repo_root" checkout --detach "$commit_sha"
 export NODE_VERSION="$(<"$repo_root/.nvmrc")"
 export PYTHON_VERSION="$(<"$repo_root/.python-version")"
+export NEXT_PUBLIC_SOURCE_REVISION="$commit_sha"
 
 cd "$repo_root"
 docker compose \

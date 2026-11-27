@@ -12,7 +12,7 @@ import type { UIComponentProps } from './uiComponentProps'
 
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { headerLogoVariant } from '@/config/site'
+import { headerLogoVariant, softwareLinks } from '@/config/site'
 import { PageKey, staticPages } from '@/content/staticPages'
 
 export async function Header({ locale }: UIComponentProps<{ locale: Locale }>) {
@@ -52,22 +52,23 @@ export async function Footer({ locale }: { locale?: Locale }) {
     : await getTranslations('Site')
 
   return (
-    <footer className="links-on-dark bg-forest text-cream">
+    <footer className="forest-landscape links-on-dark text-cream tablet:bg-position-[center,right_76%] desktop:bg-position-[center,right_70%] wide:bg-position-[center,right_66%]">
       <Container>
-        <div className="flex flex-col items-center justify-between gap-4 py-7.5 text-center text-sm desktop:grid desktop:grid-cols-3">
-          <Link
-            data-link-kind="brand"
-            href="/"
-            locale={locale}
-            className="mb-1.5 md:mb-0 desktop:justify-self-start"
-          >
-            <Logo size="compact" variant="monochromatic" locale={locale} />
-          </Link>
-          <div className="desktop:text-center">
-            <p>{t('footer')}</p>
-            <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+        <div className="flex flex-col items-center gap-3 py-5 text-center">
+          <div className="flex flex-col items-center gap-x-4 gap-y-1 tablet:flex-row">
+            <Link data-link-kind="brand" href="/" locale={locale} className="w-44 tablet:w-56">
+              <Logo size="compact" variant="monochromatic" locale={locale} />
+            </Link>
+            <p className="text-sm text-beige">{t('footer')}</p>
           </div>
-          <div className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-2 desktop:justify-end desktop:justify-self-end">
+
+          <div className="flex flex-wrap items-baseline justify-center gap-x-5 gap-y-2 text-sm">
+            <a className="link-dotted" href={softwareLinks.source}>
+              {t('sourceCode')}
+            </a>
+            <a className="link-dotted" href={softwareLinks.license}>
+              {t('softwareLicense')}
+            </a>
             <Link
               href={staticPages[PageKey.PrivacyPolicy].href}
               locale={locale}
@@ -76,6 +77,11 @@ export async function Footer({ locale }: { locale?: Locale }) {
               {t('privacyPolicy')}
             </Link>
             <KeyboardShortcuts />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-beige">
+            <span>{t('copyright', { year: new Date().getFullYear() })}</span>
+            <p>{t('softwareLicenseNotice')}</p>
           </div>
         </div>
       </Container>

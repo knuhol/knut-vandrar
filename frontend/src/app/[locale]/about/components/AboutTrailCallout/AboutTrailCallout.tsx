@@ -1,5 +1,3 @@
-import styles from './AboutTrailCallout.module.css'
-
 import { ButtonLink } from '@/components/Button'
 import { Heading } from '@/components/Heading'
 
@@ -13,9 +11,7 @@ export function AboutTrailCallout({
   action: string
 }) {
   return (
-    <section
-      className={`${styles.landscape} mb-12 rounded-lg bg-forest p-6 text-cream tablet:mb-16 tablet:p-10`}
-    >
+    <section className="forest-landscape mb-12 rounded-lg p-6 text-cream tablet:mb-16 tablet:p-10">
       <div className="flex flex-col items-start justify-between gap-6 desktop:flex-row desktop:items-center desktop:gap-12">
         <div className="max-w-reading">
           <Heading as="h2" tone="inverse">

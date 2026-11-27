@@ -1,6 +1,6 @@
 ## Licenses
 
-The license of this project is [MIT](https://www.tldrlegal.com/license/mit-license).
+The OpenFreeMap project and style source retain their original MIT license. This notice applies to that upstream material, not to the Knut vandrar application.
 
 Map data is from [OpenStreetMap](https://www.openstreetmap.org/copyright).
 
@@ -40,7 +40,7 @@ spritezero-cli is from [mapbox/spritezero-cli](https://github.com/mapbox/spritez
 
 ---
 
-## Licence of this repo
+## Original OpenFreeMap repository license
 
 MIT License
 
