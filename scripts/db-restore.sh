@@ -21,6 +21,7 @@ fi
 
 db_load_config "$environment"
 db_require_postgres_tools createdb dropdb pg_restore psql
+db_enable_tunnel_cleanup
 
 if [[ ! -r "$backup_file" || ! -s "$backup_file" ]]; then
   printf 'Error: backup file is missing, unreadable, or empty: %s\n' "$backup_file" >&2
@@ -30,7 +31,7 @@ fi
 # Validate the custom-format archive before touching the selected database.
 pg_restore --list "$backup_file" >/dev/null
 
-printf 'Target: %s database "%s" on %s:%s\n' "$environment" "$PGDATABASE" "$PGHOST" "$PGPORT"
+printf 'Target: %s database "%s" on %s:%s\n' "$environment" "$PGDATABASE" "${DB_SSH_HOST:-$PGHOST}" "$PGPORT"
 printf 'This replaces the selected database contents with the supplied backup.\n'
 if [[ "$skip_confirmation" != --yes ]]; then
   printf 'Type the database name (%s) to continue: ' "$PGDATABASE"
@@ -42,6 +43,7 @@ if [[ "$skip_confirmation" != --yes ]]; then
 fi
 
 # Confirm access to the maintenance database before dropping the target.
+db_start_ssh_tunnel "$environment" postgres
 psql --no-psqlrc --set=ON_ERROR_STOP=1 --dbname=postgres --command='SELECT 1' >/dev/null
 
 dropdb --if-exists --force --maintenance-db=postgres "$PGDATABASE"

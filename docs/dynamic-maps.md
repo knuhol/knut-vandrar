@@ -6,7 +6,7 @@ Dynamic maps use OpenFreeMap for the basemap and worldwide Mapterhorn terrain fo
 
 ## Production
 
-1. Set `GARMIN_MAPSHARE_USERNAME` in the backend environment to the MapShare username (for example, `knuhol`). The backend uses it for the Garmin feed and the public link on active tracking cards. Publish the intended data in Garmin MapShare and enable live tracking and set a password under **Garmin MapShare settings** in admin. The same site-wide value is used for polling and shown with a copy button above every active tracking card. Inactive cards display without a password.
+1. Set `GARMIN_MAPSHARE_USERNAME` in the backend environment to the MapShare username (for example, `knuhol`). The backend uses it for the Garmin feed and the public link on active tracking cards. Publish the intended data in Garmin MapShare and enable live tracking and set a password under **Garmin MapShare settings** in admin. The same site-wide value is used for polling and shown with a copy button above every active tracking card. Inactive cards display without a password. Set the expected inReach reporting interval in the same admin panel. Live maps display this interval separately from the backend’s Garmin polling cadence.
 2. Assign an imported GPX collection and set the start date and time on the hike. The actual start takes precedence over the planned start. If neither is set, the first polling attempt establishes the start boundary.
 3. Set the hike to ongoing. The backend polls while exactly one hike is ongoing and it has a selected GPX collection. If several hikes are ongoing, it suspends Garmin polling and shows a configuration error on their dynamic maps. Completing the hike stops live publication and leaves its collected fixes in PostgreSQL.
 
