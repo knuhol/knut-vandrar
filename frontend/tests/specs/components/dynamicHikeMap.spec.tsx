@@ -185,6 +185,27 @@ test('keeps a stale marker visible until a freshly recorded fix arrives', async 
   }
 })
 
+test.each([
+  ['2026-09-17T11:29:59.999Z', 'Elapsed: 59 minutes'],
+  ['2026-09-17T11:30:00.000Z', 'Elapsed: 1 hour 0 minutes'],
+  ['2026-09-17T14:55:59.999Z', 'Elapsed: 4 hours 25 minutes'],
+  ['2026-09-18T10:29:59.999Z', 'Elapsed: 23 hours 59 minutes'],
+  ['2026-09-18T10:30:00.000Z', 'Elapsed: 1 day 0 hours'],
+])('formats elapsed time at %s', async (now, expected) => {
+  jest.useFakeTimers({ now: new Date(now) })
+  try {
+    const halfway = { ...progress(1000, 15.02), first_recorded_at: '2026-09-17T10:30:00Z' }
+    mockReadProgress.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(halfway) })
+    await act(() => {
+      renderLive()
+      return Promise.resolve()
+    })
+    expect(screen.getByText(expected)).toBeInTheDocument()
+  } finally {
+    jest.useRealTimers()
+  }
+})
+
 test('shows elapsed days and hours and estimates time remaining after 72 hours', async () => {
   jest.useFakeTimers({ now: new Date('2026-09-20T10:29:30Z') })
   try {

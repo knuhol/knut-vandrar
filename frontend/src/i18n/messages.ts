@@ -32,6 +32,9 @@ export const messages = {
         trackingStats: 'Vandringsstatistik',
         completion: 'Avklarat: {percent}',
         distanceProgress: '{current}/{total} km',
+        elapsedHikeMinutes: 'Tid sedan start: {minutes, plural, one {# minut} other {# minuter}}',
+        elapsedHikeHoursAndMinutes:
+          'Tid sedan start: {hours, plural, one {# timme} other {# timmar}} {minutes, plural, one {# minut} other {# minuter}}',
         elapsedHikeTime:
           'Tid sedan start: {days} dygn {hours, plural, one {# timme} other {# timmar}}',
         averageHikeProgress: 'I snitt: {kilometers} km/dygn',
@@ -323,6 +326,9 @@ export const messages = {
         trackingStats: 'Hike statistics',
         completion: 'Completion: {percent}',
         distanceProgress: '{current}/{total} km',
+        elapsedHikeMinutes: 'Elapsed: {minutes, plural, one {# minute} other {# minutes}}',
+        elapsedHikeHoursAndMinutes:
+          'Elapsed: {hours, plural, one {# hour} other {# hours}} {minutes, plural, one {# minute} other {# minutes}}',
         elapsedHikeTime:
           'Elapsed: {days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}',
         averageHikeProgress: 'Average progress: {kilometers} km/day',
@@ -612,6 +618,10 @@ export const messages = {
         trackingStats: 'Statistiky hiku',
         completion: 'Dokončeno: {percent}',
         distanceProgress: '{current}/{total} km',
+        elapsedHikeMinutes:
+          'Uplynulo: {minutes, plural, one {# minuta} few {# minuty} other {# minut}}',
+        elapsedHikeHoursAndMinutes:
+          'Uplynulo: {hours, plural, one {# hodina} few {# hodiny} other {# hodin}} {minutes, plural, one {# minuta} few {# minuty} other {# minut}}',
         elapsedHikeTime:
           'Uplynulo: {days, plural, one {# den} few {# dny} other {# dní}} {hours, plural, one {# hodina} few {# hodiny} other {# hodin}}',
         averageHikeProgress: 'V průměru: {kilometers} km za den',
