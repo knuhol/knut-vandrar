@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { getPathname } from './navigation'
 import type { routing, Locale } from './routing'
+import { languageNoticeParameter, missingHikeTranslation } from './languageNotice'
 
 import { PageKey, staticPages } from '@/content/staticPages'
 import { getPage } from '@/api/pages'
@@ -22,8 +23,14 @@ function hikeDestination(pathname: '/hikes/[slug]'): ResolveDestination {
       return undefined
     }
     const hike = await getHike(locale, params.slug)
-    const alternative = hike?.available_translations.find((item) => item.locale === target)
-    return alternative ? { pathname, params: { slug: alternative.slug } } : undefined
+    if (!hike) {
+      return undefined
+    }
+
+    const alternative = hike.available_translations.find((item) => item.locale === target)
+    return alternative
+      ? { pathname, params: { slug: alternative.slug } }
+      : { pathname: '/', query: { [languageNoticeParameter]: missingHikeTranslation } }
   }
 }
 
