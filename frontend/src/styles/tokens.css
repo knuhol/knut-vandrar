@@ -2,7 +2,9 @@
   /* Primary palette from the style guide; paper is the only additional tint. */
   --color-*: initial;
   --color-orange: #f39200;
-  --color-live-position: #c94f3d;
+  --color-error: #c94f3d;
+  --color-error-ink: color-mix(in srgb, var(--color-error) 80%, var(--color-ink));
+  --color-live-position: var(--color-error);
   --color-live-position-soft: color-mix(
     in srgb,
     var(--color-live-position) 18%,
@@ -16,12 +18,41 @@
   --color-forest-soft: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper));
   --color-forest-outline: color-mix(in srgb, var(--color-forest) 28%, var(--color-forest-soft));
   --color-orange-soft: color-mix(in srgb, var(--color-orange) 10%, transparent);
-  --color-warning-surface: color-mix(in srgb, var(--color-orange) 12%, var(--color-paper));
+  --color-warning: var(--color-orange-dark);
   --color-orange-outline: color-mix(in srgb, var(--color-orange) 30%, transparent);
   --color-sage: #6b8f71;
   --color-ink: #222222;
   --color-muted: #6b6b6b;
   --color-paper: color-mix(in srgb, var(--color-cream) 25%, white);
+
+  /* Public status palette. Existing component colours remain independent. */
+  --color-status-success: var(--color-forest);
+  --color-status-success-ink: var(--color-status-success);
+  --color-status-success-surface: color-mix(
+    in srgb,
+    var(--color-status-success) 12%,
+    var(--color-paper)
+  );
+
+  --color-status-info: #2c6e8f;
+  --color-status-info-ink: var(--color-status-info);
+  --color-status-info-surface: color-mix(in srgb, var(--color-status-info) 12%, var(--color-paper));
+
+  --color-status-warning: #c98a00;
+  --color-status-warning-ink: color-mix(in srgb, var(--color-status-warning) 60%, var(--color-ink));
+  --color-status-warning-surface: color-mix(
+    in srgb,
+    var(--color-status-warning) 12%,
+    var(--color-paper)
+  );
+
+  --color-status-error: var(--color-error);
+  --color-status-error-ink: var(--color-error-ink);
+  --color-status-error-surface: color-mix(
+    in srgb,
+    var(--color-status-error) 12%,
+    var(--color-paper)
+  );
 
   --color-cover-shadow: color-mix(in srgb, var(--color-forest-dark) 24%, transparent);
   --background-map-shadow: linear-gradient(
@@ -97,6 +128,7 @@
   --shadow-sm: 0 2px 8px color-mix(in srgb, var(--color-ink) 10%, transparent);
   --shadow-lg: 0 16px 48px color-mix(in srgb, var(--color-ink) 20%, transparent);
   --duration-live-pulse: 1.8s;
+  --duration-map-position: 500ms;
   --duration-motion: var(--duration-fast);
   --duration-entrance: 700ms;
   --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);

@@ -14,16 +14,12 @@ import {
 } from '@/api/tracking'
 import { publicConfig } from '@/config/public'
 
-import {
-  freshFixWindowMs,
-  isSendingLive,
-  liveRefreshMs,
-  usePublishHikeActivity,
-} from '@/components/HikeActivity'
+import { isSendingLive, liveRefreshMs, usePublishHikeActivity } from '@/components/HikeActivity'
 
 const client = trackingClient(publicConfig.apiBaseUrl)
+const minuteMs = 60_000
 const replayRefreshMs = 1000
-const replayMinutesPerSecond = 10
+const replayMinutesPerSecond = 60
 const replayTimeMultiplier = replayMinutesPerSecond * 60
 
 export function DynamicHikeMap({
@@ -56,19 +52,6 @@ export function DynamicHikeMap({
   const replayStart = replay ? Date.parse(replay.start) : undefined
   const replayEnd = replay ? Date.parse(replay.end) : undefined
   const [effectiveTime, setEffectiveTime] = useState(replayStart)
-
-  useEffect(() => {
-    if (!ongoing || replayStart !== undefined) {
-      return
-    }
-    const tick = () => {
-      setEffectiveTime(Date.now())
-    }
-    const timer = globalThis.setInterval(tick, liveRefreshMs)
-    return () => {
-      globalThis.clearInterval(timer)
-    }
-  }, [ongoing, replayStart])
 
   useEffect(() => {
     if (!ongoing && replayStart === undefined) {
@@ -151,11 +134,45 @@ export function DynamicHikeMap({
   const shown = progress?.revision === route.revision ? progress : undefined
   const lastFix = shown?.latest_recorded_at
   const lastFixTime = lastFix ? Date.parse(lastFix) : undefined
-  const stalePosition =
-    Boolean(shown?.position) &&
-    lastFixTime !== undefined &&
-    effectiveTime !== undefined &&
-    effectiveTime - lastFixTime >= freshFixWindowMs
+  useEffect(() => {
+    if (!ongoing || replayStart !== undefined || lastFixTime === undefined) {
+      return
+    }
+    const recordedAt = lastFixTime
+    let timer: ReturnType<typeof setTimeout>
+    function scheduleTick(now: number) {
+      const elapsed = now - recordedAt
+      const nextMinute = elapsed < 0 ? minuteMs - elapsed : minuteMs - (elapsed % minuteMs)
+      timer = globalThis.setTimeout(() => {
+        const time = Date.now()
+        setEffectiveTime(time)
+        scheduleTick(time)
+      }, nextMinute)
+    }
+    scheduleTick(Date.now())
+    return () => {
+      globalThis.clearTimeout(timer)
+    }
+  }, [lastFixTime, ongoing, replayStart])
+
+  const interval = shown?.tracking_interval_minutes
+  const currentSpeed = shown?.current_walking_metres_per_hour
+  const elapsedMinutes =
+    lastFixTime !== undefined && effectiveTime !== undefined
+      ? Math.max(0, Math.floor((effectiveTime - lastFixTime) / minuteMs))
+      : undefined
+  const trackingReadout =
+    interval != null && elapsedMinutes !== undefined
+      ? {
+          text: t('trackingInterval', { elapsed: elapsedMinutes, interval }),
+          color:
+            elapsedMinutes > 2 * interval
+              ? 'text-status-error-ink'
+              : elapsedMinutes > 1.5 * interval
+                ? 'text-status-warning-ink'
+                : undefined,
+        }
+      : undefined
   const sending = isSendingLive(shown, effectiveTime)
   const publishActivity = usePublishHikeActivity()
   const replaying = replay !== undefined
@@ -237,6 +254,7 @@ export function DynamicHikeMap({
           areaName={areaName}
           hikeId={hikeId}
           hasMapShareCard={hasMapShareCard}
+          overlayExpanded={statsOpen}
           overlay={
             (ongoing || replay) && (
               <div className="flex items-start rounded-sm bg-paper/95 text-sm text-ink shadow-sm">
@@ -252,12 +270,12 @@ export function DynamicHikeMap({
                 >
                   <IconInfoCircle className="size-5" aria-hidden="true" />
                 </button>
-                <div id={statsId} hidden={!statsOpen} className="py-2 pr-3 font-semibold">
-                  <div>{t('completion', { percent })}</div>
-                  <div>
+                <div id={statsId} hidden={!statsOpen} className="py-2 pr-3">
+                  <div className="font-semibold">
                     {t('distanceProgress', {
                       current: kilometers(completed),
                       total: kilometers(route.total),
+                      percent,
                     })}
                   </div>
                   {averageMetresPerDay != null && (
@@ -269,12 +287,29 @@ export function DynamicHikeMap({
                   )}
                   {elapsedTime && <div>{elapsedTime}</div>}
                   {estimate && <div>{estimate}</div>}
-                  {stalePosition && (
-                    <div className="font-normal">
-                      {t('lastPositionUpdate', {
-                        time: format.relativeTime(lastFixTime, { now: effectiveTime }),
-                      })}
+                  {trackingReadout ? (
+                    <div className="mt-1 italic">
+                      {currentSpeed != null && (
+                        <div>
+                          {t('currentWalkingSpeed', {
+                            speed: format.number(currentSpeed / 1000, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            }),
+                          })}
+                        </div>
+                      )}
+                      <div className={trackingReadout.color}>{trackingReadout.text}</div>
                     </div>
+                  ) : (
+                    lastFixTime !== undefined &&
+                    effectiveTime !== undefined && (
+                      <div className="mt-1 italic">
+                        {t('lastPositionUpdate', {
+                          time: format.relativeTime(lastFixTime, { now: effectiveTime }),
+                        })}
+                      </div>
+                    )
                   )}
                 </div>
               </div>

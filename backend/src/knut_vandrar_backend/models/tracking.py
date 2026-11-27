@@ -4,10 +4,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, false
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, false, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knut_vandrar_backend.database.base import Base
+
+DEFAULT_TRACKING_INTERVAL_MINUTES = 10
 
 
 class GarminPoint(Base):
@@ -42,3 +44,6 @@ class GarminSettings(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     password: Mapped[str] = mapped_column(String(256))
     active: Mapped[bool] = mapped_column(default=False, server_default=false())
+    tracking_interval_minutes: Mapped[int] = mapped_column(
+        server_default=text(str(DEFAULT_TRACKING_INTERVAL_MINUTES))
+    )

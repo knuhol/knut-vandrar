@@ -105,10 +105,10 @@ test('refreshes progress in place', async () => {
     expect(viewport).toHaveTextContent('15.01,59')
     const stats = screen.getByRole('button', { name: 'Hike statistics' })
     expect(stats).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByText('Completion: 25%')).toBeVisible()
+    expect(screen.getByText('1 / 2 km · 25%')).toBeVisible()
     fireEvent.click(stats)
     expect(stats).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getByText('Completion: 25%')).not.toBeVisible()
+    expect(screen.getByText('1 / 2 km · 25%')).not.toBeVisible()
     await act(async () => {
       await jest.advanceTimersByTimeAsync(30_000)
     })
@@ -116,7 +116,7 @@ test('refreshes progress in place', async () => {
     expect(viewport).toHaveTextContent('15.02,59')
     expect(stats).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(stats)
-    expect(screen.getByText('Completion: 50%')).toBeVisible()
+    expect(screen.getByText('1 / 2 km · 50%')).toBeVisible()
   } finally {
     jest.useRealTimers()
   }
@@ -136,11 +136,11 @@ test('keeps the last position during a failed refresh and recovers on the next p
 
     await act(() => jest.advanceTimersByTimeAsync(30_000))
     expect(screen.getByTestId('test-viewport')).toHaveTextContent('15.01,59')
-    expect(screen.getByText('Completion: 25%')).toBeVisible()
+    expect(screen.getByText('1 / 2 km · 25%')).toBeVisible()
 
     await act(() => jest.advanceTimersByTimeAsync(30_000))
     expect(screen.getByTestId('test-viewport')).toHaveTextContent('15.02,59')
-    expect(screen.getByText('Completion: 50%')).toBeVisible()
+    expect(screen.getByText('1 / 2 km · 50%')).toBeVisible()
   } finally {
     jest.useRealTimers()
   }
@@ -156,6 +156,7 @@ test('keeps a stale marker visible until a freshly recorded fix arrives', async 
           Promise.resolve({
             ...progress(500, 15.01),
             latest_recorded_at: '2026-09-17T10:30:00Z',
+            current_walking_metres_per_hour: 3400,
           }),
       })
       .mockResolvedValueOnce({
@@ -164,6 +165,8 @@ test('keeps a stale marker visible until a freshly recorded fix arrives', async 
           Promise.resolve({
             ...progress(1000, 15.02),
             latest_recorded_at: '2026-09-17T11:00:25Z',
+            tracking_interval_minutes: 10,
+            current_walking_metres_per_hour: 0,
           }),
       })
     await act(() => {
@@ -174,12 +177,14 @@ test('keeps a stale marker visible until a freshly recorded fix arrives', async 
     expect(viewport).toHaveAttribute('data-stale', 'true')
     expect(viewport).toHaveTextContent('15.01,59')
     expect(viewport).toHaveTextContent('Last update: 30 minutes ago')
+    expect(screen.queryByText(/Walking speed/)).not.toBeInTheDocument()
     await act(async () => {
       await jest.advanceTimersByTimeAsync(30_000)
     })
     expect(viewport).toHaveAttribute('data-stale', 'false')
     expect(viewport).toHaveTextContent('15.02,59')
-    expect(viewport).not.toHaveTextContent('Last update')
+    const readout = screen.getByText('Next expected update: 0 / 10 min')
+    expect(readout.previousElementSibling).toBe(screen.getByText('Walking speed: 0.0 km/h'))
   } finally {
     jest.useRealTimers()
   }
@@ -250,6 +255,48 @@ test('shows elapsed days and hours and estimates time remaining after 72 hours',
     })
     expect(screen.getByText('Average progress: 1 km/day')).toBeInTheDocument()
     expect(screen.getByText('Estimated walking time left: 1 hour')).toBeInTheDocument()
+  } finally {
+    mockReadProgress.mockReset()
+    jest.useRealTimers()
+  }
+})
+
+test('updates the tracking interval readout as the latest point ages', async () => {
+  jest.useFakeTimers({ now: new Date('2026-09-17T10:45:00Z') })
+  try {
+    const point = {
+      ...progress(500, 15.01),
+      latest_recorded_at: '2026-09-17T10:30:00Z',
+      tracking_interval_minutes: 10,
+    }
+    mockReadProgress
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(point) })
+      .mockRejectedValue(new Error('Network unavailable'))
+    await act(() => {
+      renderLive()
+      return Promise.resolve()
+    })
+    const normal = screen.getByText('Next expected update: 15 / 10 min')
+    expect(normal).not.toHaveClass('text-status-warning-ink')
+    expect(normal).not.toHaveClass('text-status-error-ink')
+    expect(normal.parentElement?.lastElementChild).toBe(normal)
+
+    await act(() => jest.advanceTimersByTimeAsync(60_000))
+    expect(screen.getByText('Next expected update: 16 / 10 min')).toHaveClass(
+      'text-status-warning-ink',
+    )
+    await act(() => jest.advanceTimersByTimeAsync(4 * 60_000))
+    expect(screen.getByText('Next expected update: 20 / 10 min')).toHaveClass(
+      'text-status-warning-ink',
+    )
+    await act(() => jest.advanceTimersByTimeAsync(60_000))
+    expect(screen.getByText('Next expected update: 21 / 10 min')).toHaveClass(
+      'text-status-error-ink',
+    )
+    await act(() => jest.advanceTimersByTimeAsync(10 * 60_000))
+    expect(screen.getByText('Next expected update: 31 / 10 min')).toHaveClass(
+      'text-status-error-ink',
+    )
   } finally {
     mockReadProgress.mockReset()
     jest.useRealTimers()
