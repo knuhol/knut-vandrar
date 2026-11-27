@@ -3,6 +3,7 @@ import type * as WhatwgFetch from '@whatwg-node/fetch'
 import { NextRequest } from 'next/server'
 
 import { GET as switchLanguage } from '@/app/api/language/route'
+import { getHike } from '@/api/hikes'
 import { getPage } from '@/api/pages'
 import { resolveLanguageDestination } from '@/i18n/destinations'
 
@@ -18,6 +19,7 @@ jest.mock('@whatwg-node/fetch', () => ({
 const fetchMock = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
 beforeEach(() => {
   fetchMock.mockReset()
+  jest.mocked(getHike).mockReset()
   jest.spyOn(globalThis, 'fetch').mockImplementation(fetchMock)
 })
 
@@ -43,21 +45,46 @@ test('available page locales preserve their explicit route when switching langua
   expect(await resolveLanguageDestination('/privacyPolicy', 'en', 'cs', {})).toBe('/privacyPolicy')
 })
 
-test('keyboard language switching falls back to the target home if a hike has no translation', async () => {
+function hikeLanguageRequest(fallback?: string) {
   const url = new URL('https://example.test/api/language')
   url.search = new URLSearchParams({
     locale: 'en',
     target: 'cs',
     pathname: '/hikes/[slug]',
     params: JSON.stringify({ slug: 'forest-trail' }),
+    ...(fallback ? { fallback } : {}),
   }).toString()
-  expect((await switchLanguage(new NextRequest(url))).status).toBe(404)
-  url.searchParams.set('fallback', 'home')
+  return new NextRequest(url)
+}
 
-  const response = await switchLanguage(new NextRequest(url))
+test.each([undefined, 'home'])(
+  'switching a hike with a missing translation opens the localized home with a notice (fallback %s)',
+  async (fallback) => {
+    jest.mocked(getHike).mockResolvedValue({
+      available_translations: [{ locale: 'en', slug: 'forest-trail' }],
+    } as Awaited<ReturnType<typeof getHike>>)
+
+    const response = await switchLanguage(hikeLanguageRequest(fallback))
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe('/cs?languageNotice=missing-hike-translation')
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('cs')
+  },
+)
+
+test('an available hike translation uses its localized slug without a notice', async () => {
+  jest.mocked(getHike).mockResolvedValue({
+    available_translations: [{ locale: 'cs', slug: 'lesni-stezka' }],
+  } as Awaited<ReturnType<typeof getHike>>)
+
+  const response = await switchLanguage(hikeLanguageRequest())
   expect(response.status).toBe(307)
+  expect(response.headers.get('location')).toBe('/cs/hiky/lesni-stezka')
+})
+
+test('an unknown source hike keeps the ordinary fallback behavior', async () => {
+  expect((await switchLanguage(hikeLanguageRequest())).status).toBe(404)
+  const response = await switchLanguage(hikeLanguageRequest('home'))
   expect(response.headers.get('location')).toBe('/cs')
-  expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('cs')
 })
 
 test('API failures surface as errors instead of pretending content is missing', async () => {

@@ -239,6 +239,11 @@ export const messages = {
       previous: 'Föregående',
       next: 'Nästa',
       language: 'Språk',
+      missingHikeTranslation: {
+        title: 'Översättningen saknas',
+        description: 'Den här vandringen finns inte på svenska.',
+        close: 'Stäng',
+      },
       keyboardShortcuts: {
         title: 'Kortkommandon',
         close: 'Stäng',
@@ -529,6 +534,11 @@ export const messages = {
       previous: 'Previous',
       next: 'Next',
       language: 'Language',
+      missingHikeTranslation: {
+        title: 'Translation unavailable',
+        description: 'This hike is unavailable in English.',
+        close: 'Close',
+      },
       keyboardShortcuts: {
         title: 'Keyboard shortcuts',
         close: 'Close',
@@ -821,6 +831,11 @@ export const messages = {
       previous: 'Předchozí',
       next: 'Další',
       language: 'Jazyk',
+      missingHikeTranslation: {
+        title: 'Překlad není dostupný',
+        description: 'Tenhle hike není dostupný v češtině.',
+        close: 'Zavřít',
+      },
       keyboardShortcuts: {
         title: 'Klávesové zkratky',
         close: 'Zavřít',
