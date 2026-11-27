@@ -1,0 +1,45 @@
+name: Link Linear issue in PR description
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: linear-pr-link-${{ github.event.pull_request.number }}
+
+jobs:
+  link-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepend Linear issue link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          branch="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+          shopt -s nocasematch
+          if [[ ! "$branch" =~ (^|/)(kv-[0-9]+)(-|$) ]]; then
+            exit 0
+          fi
+
+          issue="$(printf '%s' "${BASH_REMATCH[2]}" | tr '[:lower:]' '[:upper:]')"
+          url="https://linear.app/knutvandrar/issue/$issue"
+          number="$(jq -r '.number' "$GITHUB_EVENT_PATH")"
+          endpoint="repos/$GITHUB_REPOSITORY/pulls/$number"
+
+          # Read the current body in case it changed since the event was sent.
+          payload="$(gh api "$endpoint" | jq -c --arg issue "$issue" --arg url "$url" '
+            (.body // "") as $body
+            | if $body | test($url + "(?=$|[/?#)<>[:space:]])"; "i") then
+                empty
+              else
+                {body: ("**Linear issue:** [\($issue)](\($url))"
+                  + (if $body == "" then "" else "\n\n" + $body end))}
+              end
+          ')"
+          if [[ -n "$payload" ]]; then
+            printf '%s\n' "$payload" | gh api --method PATCH "$endpoint" --input - --silent
+          fi
