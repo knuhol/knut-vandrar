@@ -62,10 +62,11 @@ export function Hero() {
   }, [])
 
   return (
-    <section
-      className={`relative isolate overflow-clip bg-cream wide:min-h-122.5 ${styles.landscape}`}
-      ref={hero}
-    >
+    <section className="photo-collage-backdrop wide:min-h-122.5" data-header-backdrop ref={hero}>
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 overflow-clip ${styles.landscape}`}
+      />
       <div className={styles.copy}>
         <div className="grid gap-5 desktop:max-w-220 desktop:grid-cols-[minmax(0,1fr)_calc(var(--spacing)*40)] desktop:items-start desktop:gap-10">
           <div className="flex items-center gap-5 desktop:col-start-2 desktop:row-start-1 desktop:flex-col desktop:gap-3">

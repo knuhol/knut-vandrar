@@ -121,6 +121,21 @@ button.link-dotted:is(:hover, :focus-visible) {
   }
 }
 
+@utility header-control-surface {
+  @apply rounded-sm border;
+  border-color: var(--header-control-border, var(--color-beige));
+  background-color: var(--header-control-surface, transparent);
+
+  @variant hover {
+    background-color: var(--header-control-hover, var(--color-beige));
+  }
+
+  &:active,
+  &[data-state='open'] {
+    background-color: var(--header-control-hover, var(--color-beige));
+  }
+}
+
 @utility header-control {
-  @apply flex items-center gap-1.25 rounded-sm border border-beige bg-transparent p-2 text-sm font-normal text-ink hover:bg-beige active:bg-beige data-[state=open]:bg-beige tablet:gap-2.25 tablet:px-3;
+  @apply header-control-surface flex items-center gap-1.25 p-2 text-sm font-normal text-ink tablet:gap-2.25 tablet:px-3;
 }

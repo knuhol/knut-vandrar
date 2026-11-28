@@ -17,6 +17,9 @@
   --color-forest-dark: color-mix(in srgb, var(--color-forest) 50%, var(--color-ink));
   --color-forest-soft: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper));
   --color-forest-outline: color-mix(in srgb, var(--color-forest) 28%, var(--color-forest-soft));
+  --color-glass-control-border: color-mix(in srgb, var(--color-forest) 24%, var(--color-beige));
+  --color-glass-control-surface: color-mix(in srgb, var(--color-cream) 45%, transparent);
+  --color-glass-control-hover: color-mix(in srgb, var(--color-forest) 9%, var(--color-beige));
   --color-orange-soft: color-mix(in srgb, var(--color-orange) 10%, transparent);
   --color-warning: var(--color-orange-dark);
   --color-orange-outline: color-mix(in srgb, var(--color-orange) 30%, transparent);
@@ -85,6 +88,7 @@
     calc(var(--spacing) * 47.5)
   );
   --spacing-brand-icon: calc(var(--spacing-header-brand) * 112 / 654);
+  --spacing-header-brand-height: calc(var(--spacing) * 11);
   --spacing-header-switcher: calc(var(--spacing) * 11);
   --container-page: 1240px;
   --container-reading: 68ch;
@@ -152,6 +156,11 @@
 
   --link-underline-offset: calc(var(--spacing) * 2);
 
-  /* Updated by SiteHeader's ResizeObserver, rather than a fixed layout token. */
-  --header-height: calc(var(--spacing) * 22);
+  --header-block-padding: calc(var(--spacing) * 3);
+  /* Reserve the header space before its ResizeObserver measures the live height. */
+  --header-height: calc(var(--spacing-header-brand-height) + 2 * var(--header-block-padding) + 1px);
+
+  @variant tablet {
+    --header-block-padding: calc(var(--spacing) * 5.5);
+  }
 }

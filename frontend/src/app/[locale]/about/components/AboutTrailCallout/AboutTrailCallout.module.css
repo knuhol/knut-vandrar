@@ -1,0 +1,16 @@
+.artwork::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    radial-gradient(
+      ellipse at 85% 15%,
+      color-mix(in srgb, var(--color-sage) 36%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--color-forest-dark) 45%, transparent),
+      transparent 65%
+    );
+}
