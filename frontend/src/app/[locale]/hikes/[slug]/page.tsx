@@ -100,12 +100,12 @@ export default async function HikePage({ params }: Props) {
   }
 
   return (
-    <div>
+    <>
       <HikeMasthead hike={hike} />
       <Suspense fallback={null}>
         <HikePageContent hike={hike} locale={locale} />
       </Suspense>
-    </div>
+    </>
   )
 }
 

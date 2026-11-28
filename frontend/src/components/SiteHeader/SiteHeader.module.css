@@ -1,5 +1,41 @@
 @reference '../../app/globals.css';
 
+/* An opening section opts into glass by marking the artwork's bottom edge. */
+@media (scripting: enabled) and (forced-colors: none) {
+  .surface:has(+ main [data-header-backdrop]) {
+    @apply border-transparent bg-transparent;
+
+    &:not([data-header-backdrop-passed]) {
+      --header-control-border: var(--color-glass-control-border);
+      --header-control-surface: var(--color-glass-control-surface);
+      --header-control-hover: var(--color-glass-control-hover);
+    }
+
+    &::before,
+    &::after {
+      @apply pointer-events-none absolute inset-0 -bottom-px;
+      content: '';
+    }
+
+    &::after {
+      @apply -z-2 bg-cream/72 backdrop-blur-sm;
+    }
+
+    &::before {
+      @apply -z-1 border-b border-beige bg-cream;
+      opacity: 0;
+
+      @variant motion-safe {
+        transition: opacity var(--duration-fast) ease;
+      }
+    }
+
+    &[data-header-backdrop-passed]::before {
+      opacity: 1;
+    }
+  }
+}
+
 .frame {
   --header-gap: calc(var(--spacing) * 2.5);
   gap: var(--header-gap);

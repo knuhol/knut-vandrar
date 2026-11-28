@@ -5,6 +5,11 @@
   text-shadow: var(--text-shadow-on-image);
 }
 
+.cover {
+  /* Paint the same cover behind the sticky navigation. */
+  top: calc(-1 * var(--header-height));
+}
+
 .shade {
   background: linear-gradient(
     to bottom,

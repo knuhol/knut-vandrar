@@ -1,3 +1,20 @@
+@utility photo-collage {
+  background-image: url('/brand/hero-collage.webp');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@utility photo-collage-backdrop {
+  @apply relative isolate bg-cream;
+
+  &::before {
+    @apply photo-collage pointer-events-none absolute inset-0 -z-1 bg-cream;
+    content: '';
+    top: calc(-1 * var(--header-height));
+  }
+}
+
 @utility forest-landscape {
   background-color: var(--color-forest);
   background-image:

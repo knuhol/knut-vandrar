@@ -77,6 +77,30 @@ without requesting replacements. Profiles and glossary changes do not enqueue wo
 Existing published translations remain available while outdated. Failed requests use
 bounded retries; restarting the worker does not reset the attempt limit.
 
+## Homepage photo collage
+
+Regenerate the hero collage from the public hike galleries using the backend Python
+environment from the repository root.
+
+```sh
+backend/.venv/bin/python backend/scripts/generate_hero_collage.py --api-url https://knut.vandrar.se
+```
+
+The script rediscovers the full gallery pool on every run. It downloads only the
+selected photos and writes `frontend/public/brand/hero-collage.webp`, which the
+frontend serves as a static asset. The hero falls back to the cream design token
+if the image is unavailable.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `--photo-count` | 12 | Number of distinct gallery images, up to the available count |
+| `--rotation` | 14 | Maximum rotation in degrees in either direction |
+| `--scale` | 1 | Multiplier for print dimensions |
+| `--overlap` | 0.25 | Extra print size relative to its grid cell |
+| `--tint-intensity` | 0.17 | Base visibility of the toned prints, with a stronger tint behind the glass navigation |
+| `--seed` | Random | Integer seed for a repeatable result with unchanged inputs and tooling |
+| `--output` | Hero asset path | Alternate WebP path for reviewing a variation |
+
 ## API schema and typed frontend client
 
 FastAPI is the source of truth for the API contract and serves its OpenAPI document at `/openapi.json`. The frontend uses the [feTS client](https://www.fets.dev/) with a generated TypeScript OpenAPI constant; the API client takes its endpoint from `NEXT_PUBLIC_API_URL`.

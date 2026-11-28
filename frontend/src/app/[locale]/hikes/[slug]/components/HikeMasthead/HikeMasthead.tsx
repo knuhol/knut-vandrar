@@ -21,6 +21,7 @@ export function HikeMasthead({ hike }: { hike: Hike }) {
   return (
     <header
       className={`${styles.landscape} relative isolate flex items-end overflow-hidden bg-forest text-cream`}
+      data-header-backdrop={covers ? '' : undefined}
     >
       {covers && (
         <HikeCoverPicture key={covers.mobile} covers={covers} title={hike.translation.title} />

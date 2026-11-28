@@ -20,7 +20,16 @@ export function PageHeader({
   children?: ReactNode
 }>) {
   return (
-    <header className={media ? 'bg-cream' : 'border-b border-beige bg-cream'}>
+    <header
+      className={`photo-collage-backdrop ${media ? '' : 'border-b border-beige'}`}
+      data-header-backdrop
+    >
+      {media && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-1 bg-cream/60 desktop:hidden"
+        />
+      )}
       <Container>
         <div
           className={
