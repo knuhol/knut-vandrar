@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
+import { usePathname } from 'next/navigation'
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react'
 
 import { useHikeActivity } from '../HikeActivity'
@@ -21,6 +22,7 @@ export function SiteHeader({
   languages: ReactNode
   hikeAction?: ReactNode
 }) {
+  const pathname = usePathname()
   const header = useRef<HTMLElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
   const { active, siteMenuOpen, setSiteMenuOpen, setSlot } = useReadingNavigation()
@@ -33,19 +35,42 @@ export function SiteHeader({
     if (!element) {
       return
     }
-    const update = () => {
-      document.documentElement.style.setProperty(
-        '--header-height',
-        `${String(element.getBoundingClientRect().height)}px`,
-      )
+    const main = element.nextElementSibling
+    let frame: number | undefined
+
+    const updateSurface = () => {
+      frame = undefined
+      const backdrop = main?.querySelector('[data-header-backdrop]')
+      const backdropBottom = backdrop?.getBoundingClientRect().bottom ?? Infinity
+      element.toggleAttribute('data-header-backdrop-passed', backdropBottom <= 0)
     }
-    update()
-    const observer = new ResizeObserver(update)
+
+    const scheduleSurface = () => {
+      frame ??= window.requestAnimationFrame(updateSurface)
+    }
+
+    const updateHeight = () => {
+      const height = element.getBoundingClientRect().height
+      document.documentElement.style.setProperty('--header-height', `${String(height)}px`)
+      scheduleSurface()
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
     observer.observe(element)
+    window.addEventListener('scroll', scheduleSurface, { passive: true })
+    if (main) {
+      observer.observe(main)
+    }
+
     return () => {
       observer.disconnect()
+      window.removeEventListener('scroll', scheduleSurface)
+      if (frame !== undefined) {
+        window.cancelAnimationFrame(frame)
+      }
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
     if (!siteMenuOpen) {
@@ -67,12 +92,14 @@ export function SiteHeader({
     <header
       ref={header}
       data-site-header
-      className={`${reading ? styles.reading : ''} ${showHikeAction ? styles.hasHikeAction : ''} sticky top-0 z-40 border-b border-beige bg-cream shadow-sm`}
+      className={`${styles.surface} ${reading ? styles.reading : ''} ${showHikeAction ? styles.hasHikeAction : ''} sticky top-0 z-40 border-b border-beige bg-cream shadow-sm`}
     >
       <div
-        className={`${styles.frame} mx-auto flex max-w-page items-center px-4 py-3 tablet:px-8 tablet:py-5.5`}
+        className={`${styles.frame} mx-auto flex max-w-page items-center px-4 py-(--header-block-padding) tablet:px-8`}
       >
-        <div className={`${styles.brand} relative h-11 w-47.5 shrink-0 tablet:w-64 desktop:w-80`}>
+        <div
+          className={`${styles.brand} relative h-(--spacing-header-brand-height) w-47.5 shrink-0 tablet:w-64 desktop:w-80`}
+        >
           <div className={styles.brandFull}>{brand}</div>
           <div className={styles.brandIcon}>{brandIcon ?? brand}</div>
         </div>

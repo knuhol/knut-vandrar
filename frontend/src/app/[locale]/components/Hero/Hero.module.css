@@ -3,8 +3,8 @@
 .landscape::before {
   @apply pointer-events-none absolute inset-0;
   content: '';
-  background: url('/brand/forest.svg') center bottom / max(calc(var(--spacing) * 224), 100%) auto
-    no-repeat;
+  background: url('/brand/forest.svg#transparent-sky') center bottom /
+    max(calc(var(--spacing) * 224), 100%) auto no-repeat;
   translate: 0 var(--poster-offset, 0);
 }
 

@@ -1,10 +1,12 @@
+import styles from './HikeMasthead.module.css'
+
 import type { CoverSources } from '@/api/images'
 import { RevealImage } from '@/components/RevealImage'
 import { responsiveMedia } from '@/config/breakpoints'
 
 export function HikeCoverPicture({ covers, title }: { covers: CoverSources; title: string }) {
   return (
-    <picture className="absolute inset-0 -z-20 overflow-hidden">
+    <picture className={`absolute inset-0 -z-20 overflow-hidden bg-forest ${styles.cover}`}>
       {covers.wide && (
         <source media={responsiveMedia.fullHikeCover} type="image/avif" srcSet={covers.wide} />
       )}
